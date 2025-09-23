@@ -1,3 +1,4 @@
+import Link from "next/link";
 
 
 
@@ -46,11 +47,11 @@ export default function Home() {
         </a>
       </nav>
       <div className="flex items-center space-x-4">
-        <a href="#" className="text-gray-600 hover:text-indigo-600 font-medium">
+        <Link href="/login" className="text-gray-600 hover:text-indigo-600 font-medium">
           লগইন
-        </a>
+        </Link>
         <a
-          href="#"
+          href="/registration"
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition"
         >
           ফ্রি ট্রায়াল শুরু করুন
