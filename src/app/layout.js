@@ -19,7 +19,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable}`}
+        data-new-gr-c-s-check-loaded="14.1254.0"
+        data-gr-ext-installed=""
+        cz-shortcut-listen="true"
+      >
         {children}
       </body>
     </html>
