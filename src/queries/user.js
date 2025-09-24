@@ -3,10 +3,13 @@ import { UserModel } from "@/model/user-model";
 // default export or named export
 
 import { dbConnect } from "@/service/mongo";
-import { sendWelcomeEmail } from "@/utlis/mail";
+import { sendVerifyEmail, sendWelcomeEmail } from "@/utlis/mail";
 import bcrypt from "bcryptjs";
 import slugify from "slugify";
 
+function generateVerificationCode() {
+  return Math.floor(1000 + Math.random() * 9000).toString(); // 1000-9999
+}
 async function registerUserAndShopQuery(data) {
   await dbConnect();
 
@@ -23,9 +26,18 @@ async function registerUserAndShopQuery(data) {
 
   // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
+  const code = generateVerificationCode();
+  const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
   // Create user
-  const user = new UserModel({ fullName, email, phone, password: hashedPassword });
+  const user = new UserModel({
+    fullName,
+    email,
+    phone,
+    password: hashedPassword,
+    emailVerificationCode: code,
+    emailVerificationExpires: expiry,
+  });
   await user.save();
 
   // Create shop
@@ -37,11 +49,11 @@ async function registerUserAndShopQuery(data) {
   await user.save();
 
   // Send welcome email
-  await sendWelcomeEmail({ toEmail: email, fullName, password });
+  // await sendWelcomeEmail({ toEmail: email, fullName, password });
+  await sendVerifyEmail({ toEmail: email, fullName, code,expiry });
 
   return {
-    user: JSON.parse(JSON.stringify(user)),
-    shop: JSON.parse(JSON.stringify(shop))
+    message: "User registered. Please check your email for the verification code."
   };
 }
 
