@@ -2,17 +2,24 @@
 import { useState, useRef, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import {
+  resendVerificationEmailAction,
+  verifyEmailAction,
+} from "@/app/actions/user";
+import { toast } from "react-toastify";
+import { Router } from "next/router";
+import { useRouter } from "next/navigation";
 
-export default function VerifyEmail() {
+export default function VerifyEmail({ user }) {
   const [code, setCode] = useState(["", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [errors, setErrors] = useState({});
+  const router = useRouter();
 
   const inputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
-  // Handle input change
   const handleChange = (index, value) => {
     if (value.length > 1) {
       value = value.slice(0, 1); // Only allow one character
@@ -58,11 +65,7 @@ export default function VerifyEmail() {
       return false;
     }
 
-    if (code.join("") !== "1234") {
-      // Demo code - in real app, this would be from backend
-      setErrors({ code: "ভুল ভেরিফিকেশন কোড" });
-      return false;
-    }
+    setErrors({});
 
     return true;
   };
@@ -77,16 +80,20 @@ export default function VerifyEmail() {
 
     try {
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await verifyEmailAction(user.email, code.join(""));
 
-      // Mock successful verification
-      console.log("Email verified successfully");
+      if (response.status) {
+        toast.success("ইমেইল ভেরিফিকেশন সফল!");
+        router.push("/login");
+      }
+
       alert("ইমেইল ভেরিফিকেশন সফল! আপনার অ্যাকাউন্ট এখন সক্রিয়।");
 
       // Redirect to dashboard or login
-      // router.push('/dashboard');
     } catch (error) {
-      console.error("Verification failed", error);
+      toast.error(
+        error.message || "ভেরিফিকেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।"
+      );
       setErrors({
         general: "ভেরিফিকেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।",
       });
@@ -96,16 +103,20 @@ export default function VerifyEmail() {
   };
 
   // Handle resend code
-  const handleResendCode = () => {
-    setCountdown(60);
-    setCanResend(false);
-
-    // Simulate API call to resend code
-    console.log("Resending verification code...");
-    alert("একটি নতুন ভেরিফিকেশন কোড আপনার ইমেইলে পাঠানো হয়েছে।");
+  const handleResendCode = async () => {
+    try {
+      setCanResend(false);
+      await resendVerificationEmailAction(user.email);
+      console.log("Resending verification code...");
+      alert("✅ একটি নতুন ভেরিফিকেশন কোড আপনার ইমেইলে পাঠানো হয়েছে।");
+      setCountdown(60);
+    } catch (error) {
+      console.error("Resend error:", error);
+      alert("❌ কোড পাঠাতে সমস্যা হয়েছে, আবার চেষ্টা করুন।");
+      setCanResend(true);
+    }
   };
 
-  // Countdown timer effect
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -158,7 +169,10 @@ export default function VerifyEmail() {
             আমরা আপনার ইমেইলে একটি ৪-অঙ্কের ভেরিফিকেশন কোড পাঠিয়েছি
           </p>
           <p className="mt-1 text-center text-sm text-gray-600 bangla-text">
-            example@email.com
+            ইমেইল: <span className="font-medium">{user?.email}</span>
+          </p>
+          <p className="mt-1 text-center text-sm text-gray-600 bangla-text">
+            যদি আপনি ইমেইল না পান, তাহলে স্প্যাম ফোল্ডার চেক করুন অথবা{" "}
           </p>
         </div>
 

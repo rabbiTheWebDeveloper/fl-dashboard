@@ -49,13 +49,12 @@ async function registerUserAndShopQuery(data) {
   user.shops.push(shop._id);
   await user.save();
 
-  // Send welcome email
-  // await sendWelcomeEmail({ toEmail: email, fullName, password });
+ 
   await sendVerifyEmail({ toEmail: email, fullName, code, expiry });
 
   return {
     message: "Please check your email for the verification code.",
-    status: 201,
+    status: 200,
     data: {
       emailVerified: user.emailVerified,
       email: user.email,
@@ -83,4 +82,74 @@ async function getUser(email) {
   };
 }
 
-export { registerUserAndShopQuery ,getUser };
+async function verifyEmailQuary(email, code) {
+  await dbConnect();
+
+  // 1️⃣ Find user
+  const user = await UserModel.findOne({ email });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // 2️⃣ Check if already verified
+  if (user.emailVerified) {
+    return { success: true, message: "Email already verified" };
+  }
+
+  // 3️⃣ Validate code & expiry
+  if (
+    user.emailVerificationCode !== code ||
+    !user.emailVerificationExpires ||
+    user.emailVerificationExpires < new Date()
+  ) {
+    throw new Error("Invalid or expired verification code");
+  }
+
+  // 4️⃣ Update verification
+  user.emailVerified = true;
+  user.emailVerificationCode = undefined;
+  user.emailVerificationExpires = undefined;
+  await user.save();
+  await sendWelcomeEmail({ toEmail: user.email, fullName });
+  return { success: true, message: "Email verified successfully" };
+}
+
+async function resendVerificationEmailQuary(email) {
+  await dbConnect();
+
+  // 1️⃣ Find user
+  const user = await UserModel.findOne({ email });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // 2️⃣ Already verified?
+  if (user.emailVerified) {
+    return { success: true, message: "Email is already verified" };
+  }
+
+  // 3️⃣ Generate new code & expiry
+  const code = generateVerificationCode();
+  const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+  // 4️⃣ Update user
+  user.emailVerificationCode = code;
+  user.emailVerificationExpires = expiry;
+  await user.save();
+
+  // 5️⃣ Send email again
+  await sendVerifyEmail({
+    toEmail: user.email,
+    fullName: user.fullName,
+    code,
+    expiry,
+  });
+
+  return { success: true, message: "Verification email resent successfully" };
+}
+export {
+  registerUserAndShopQuery,
+  getUser,
+  verifyEmailQuary,
+  resendVerificationEmailQuary,
+};

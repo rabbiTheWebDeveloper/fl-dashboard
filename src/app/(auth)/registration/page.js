@@ -4,8 +4,10 @@ import Head from "next/head";
 import Link from "next/link";
 import { registrationAction } from "@/app/actions/user";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 export default function Register() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: "",
     shopName: "",
@@ -94,10 +96,13 @@ export default function Register() {
 
       // Mock successful registration
       console.log("Registration successful", response);
-      if (response.success) {
-        alert("রেজিস্ট্রেশন সফল! লগইন পৃষ্ঠায় রিডাইরেক্ট করা হচ্ছে...");
+      if (
+        response.status === 200 &&
+        response.data.email &&
+        response.data.emailVerified === false
+      ) {
+        router.push(`/account-verify?email=${response.data.email} `);
       }
-   
     } catch (error) {
       toast.error(error.message);
       setErrors({

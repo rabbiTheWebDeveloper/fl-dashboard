@@ -39,7 +39,7 @@ async function sendVerifyEmail({ toEmail, fullName, code, expiry }) {
   });
 
   const mailOptions = {
-    from: `"AMARDokan" <rabbithedeveloper@gmail.com>`,
+    from: `"AMARDokan" <su31f2@gmail.com>`,
     to: toEmail,
     subject: "আপনার AMARDokan ইমেইল ভেরিফিকেশন কোড",
     html: `

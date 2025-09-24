@@ -87,7 +87,7 @@ export default async function VerifyPage({ searchParams }) {
 
   return (
     <>
-      <VerifyEmail />
+      <VerifyEmail user={user}  />
     </>
   );
 }
