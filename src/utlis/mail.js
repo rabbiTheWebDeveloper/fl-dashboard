@@ -5,7 +5,7 @@ async function sendWelcomeEmail({ toEmail, fullName, password }) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "rabbithedeveloper@gmail.com", // your Gmail
+      user: "su31f2@gmail.com", // your Gmail
       pass: process.env.GMAIL_APP_PASSWORD, // App Password, not your normal password
     },
   });
@@ -33,7 +33,7 @@ async function sendVerifyEmail({ toEmail, fullName, code, expiry }) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "rabbithedeveloper@gmail.com", // your Gmail
+      user: "su31f2@gmail.com", // your Gmail
       pass: process.env.GMAIL_APP_PASSWORD, // App Password, not your normal password
     },
   });

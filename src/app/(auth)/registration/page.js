@@ -97,10 +97,7 @@ export default function Register() {
       if (response.success) {
         alert("রেজিস্ট্রেশন সফল! লগইন পৃষ্ঠায় রিডাইরেক্ট করা হচ্ছে...");
       }
-      // For demo purposes, we'll just show an alert
-
-      // In real app, you would redirect to login or dashboard
-      // router.push('/login');
+   
     } catch (error) {
       toast.error(error.message);
       setErrors({
