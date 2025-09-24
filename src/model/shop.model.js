@@ -23,7 +23,7 @@ const shopSchema = new Schema(
       required: true
     }
   },
-  { timestamps: true }
+  { timestamps: true ,  versionKey: false,   strict: true,}
 );
 
 // Pre-save hook to generate slug

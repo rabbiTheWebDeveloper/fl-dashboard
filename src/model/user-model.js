@@ -20,8 +20,8 @@ const userSchema = new Schema(
     password: { type: String, required: true },
     avatar: { type: String, default: "" },
     emailVerified: { type: Boolean, default: false },
-    emailVerificationCode: { type: String },
-    emailVerificationExpires: { type: Date },
+    emailVerificationCode: { type: String ,required: true },
+    emailVerificationExpires: { type: Date , required : true },
     payment_status: {
       type: String,
       enum: ["paid", "unpaid"],

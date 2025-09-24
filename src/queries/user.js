@@ -30,14 +30,17 @@ async function registerUserAndShopQuery(data) {
   const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
   // Create user
-  const user = new UserModel({
-    fullName,
-    email,
-    phone,
-    password: hashedPassword,
-    emailVerificationCode: code,
-    emailVerificationExpires: expiry,
-  });
+  const user = new UserModel(
+    {
+      fullName,
+      email,
+      phone,
+      password: hashedPassword,
+      emailVerificationCode: code,
+      emailVerificationExpires: expiry,
+    }
+  );
+
   await user.save();
 
   // Create shop
@@ -50,10 +53,11 @@ async function registerUserAndShopQuery(data) {
 
   // Send welcome email
   // await sendWelcomeEmail({ toEmail: email, fullName, password });
-  await sendVerifyEmail({ toEmail: email, fullName, code,expiry });
+  await sendVerifyEmail({ toEmail: email, fullName, code, expiry });
 
   return {
-    message: "User registered. Please check your email for the verification code."
+    message:
+      "User registered. Please check your email for the verification code.",
   };
 }
 
