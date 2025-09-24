@@ -61,4 +61,10 @@ async function registerUserAndShopQuery(data) {
   };
 }
 
+
+ async function getUser(id) {
+  await dbConnect();
+  const user = await UserModel.findOne({}).lean();
+  return JSON.parse(JSON.stringify(user));
+}
 export { registerUserAndShopQuery };
