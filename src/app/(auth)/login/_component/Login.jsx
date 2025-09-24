@@ -4,6 +4,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { loginUserQuaryAction } from "@/app/actions/user";
 import { toast } from "react-toastify";
+import { setRole, setToken, setUser } from "@/lib/auth";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -55,12 +56,15 @@ export default function Login() {
     if (!validateForm()) return;
     setIsLoading(true);
     try {
-      const response = await  loginUserQuaryAction(formData);
+      const response = await loginUserQuaryAction(formData);
       console.log("Login successful", response);
       if (response.status) {
         // window.location.href = "/dashboard";
         // router.push('/dashboard');
-        toast.success("সফলভাবে লগইন হয়েছে!");
+        const tokenSet = setToken(response.token);
+        const userSet = setUser(response.user);
+        const roleSet = setRole(response.user.role);
+        toast.success("Login successful");
       }
     } catch (error) {
       toast.error(
