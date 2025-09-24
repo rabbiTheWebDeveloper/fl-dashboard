@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-async function sendWelcomeEmail({ toEmail, fullName,}) {
+async function sendWelcomeEmail({ toEmail, fullName }) {
   // 🔹 Gmail SMTP setup
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -11,7 +11,7 @@ async function sendWelcomeEmail({ toEmail, fullName,}) {
   });
 
   const mailOptions = {
-    from: `"AMARDokan" <rabbithedeveloper@gmail.com>`,
+    from: `"AMARDokan" <su31f2@gmail.com>`,
     to: toEmail,
     subject: "আপনার AMARDokan অ্যাকাউন্ট তৈরি হয়েছে",
     html: `
@@ -52,7 +52,7 @@ async function sendVerifyEmail({ toEmail, fullName, code, expiry }) {
       </div>
       
       <p>এই কোডটি <strong>${expiry}</strong> পর্যন্ত বৈধ।</p>
-      <p>লগইন করতে <a href="https://amardokan-two.vercel.app/login">এখানে ক্লিক করুন</a></p>
+      <p>লগইন করতে <a href="https://amardokan-two.vercel.app/account-verify?email=${toEmail}">এখানে ক্লিক করুন</a></p>
       <p>ধন্যবাদ,<br>AMARDokan টিম</p>
     </div>
   `,
