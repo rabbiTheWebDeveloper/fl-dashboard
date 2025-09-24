@@ -111,7 +111,7 @@ async function verifyEmailQuary(email, code) {
   await user.save();
   await sendWelcomeEmail({
     toEmail: user.email,
-    fullName: user.fullNam,
+    fullName: user.fullName,
   });
   return { success: true, message: "Email verified successfully" };
 }
