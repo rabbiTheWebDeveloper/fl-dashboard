@@ -207,7 +207,8 @@ const DashboardLayout = ({ children }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <p className="text-sm font-medium truncate">{user?.fullName}</p>
+                    <p className="text-sm font-medium truncate">{user?.shopName}</p>
+                    <p className="text-sm font-medium truncate">{user?.shopId}</p>
                     {/* Verification badge */}
                     <svg
                       className="w-3 h-3 text-indigo-400 flex-shrink-0"

@@ -157,7 +157,10 @@ async function loginUserQuary(credentials) {
   const { email, password } = credentials;
 
   // 1️⃣ Find user
-  const user = await UserModel.findOne({ email });
+    const user = await UserModel
+    .findOne({ email })
+    .populate("shops", "shopId shopName shopSlug") // only select necessary fields
+    .lean();
   if (!user) {
     throw new Error("User not found");
   }
@@ -192,7 +195,7 @@ async function loginUserQuary(credentials) {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        shops: user.shops,
+        shops: user.shops[0],
       },
     })
   );
