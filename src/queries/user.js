@@ -6,7 +6,8 @@ import { dbConnect } from "@/service/mongo";
 import { sendVerifyEmail, sendWelcomeEmail } from "@/utlis/mail";
 import bcrypt from "bcryptjs";
 import slugify from "slugify";
-
+import jwt from "jsonwebtoken";
+const JWT_SECRET = process.env.JWT_SECRET;
 function generateVerificationCode() {
   return Math.floor(1000 + Math.random() * 9000).toString(); // 1000-9999
 }
@@ -149,9 +150,58 @@ async function resendVerificationEmailQuary(email) {
 
   return { success: true, message: "Verification email resent successfully" };
 }
+
+async function loginUserQuary(credentials) {
+  await dbConnect();
+
+  const { email, password } = credentials;
+
+  // 1️⃣ Find user
+  const user = await UserModel.findOne({ email });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // 2️⃣ Check if email is verified
+  if (!user.emailVerified) {
+    throw new Error("Email not verified. Please verify your email.");
+  }
+
+  // 3️⃣ Compare password
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    throw new Error("Invalid password");
+  }
+
+  // 4️⃣ Generate JWT token
+  const token = jwt.sign(
+    { id: user._id, email: user.email, role: user.role },
+    JWT_SECRET,
+    { expiresIn: "7d" } // adjust expiry as needed
+  );
+
+  // 5️⃣ Return user info + token
+  return JSON.parse(
+    JSON.stringify({
+      status: true,
+      message: "Login successful",
+      token: token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        shops: user.shops,
+      },
+    })
+  );
+}
+
 export {
   registerUserAndShopQuery,
   getUser,
   verifyEmailQuary,
   resendVerificationEmailQuary,
+  loginUserQuary,
 };

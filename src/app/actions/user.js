@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  loginUserQuary,
   registerUserAndShopQuery,
   resendVerificationEmailQuary,
   verifyEmailQuary,
@@ -30,6 +31,16 @@ export async function verifyEmailAction(email, code) {
 export async function resendVerificationEmailAction(email) {
   try {
     const response = await resendVerificationEmailQuary(email);
+    // revalidatePath(`/registration`);
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+export async function loginUserQuaryAction(data) {
+  try {
+    const response = await loginUserQuary(data);
     // revalidatePath(`/registration`);
     return response;
   } catch (error) {
