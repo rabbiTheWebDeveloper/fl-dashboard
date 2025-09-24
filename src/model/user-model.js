@@ -2,48 +2,46 @@ import mongoose, { Schema } from "mongoose";
 
 const userSchema = new Schema(
   {
-    name: {
-      required: true,
+    fullName: { type: String, required: true, trim: true },
+    email: {
       type: String,
-    },
-    telegramId: {
       required: true,
-      type: String,
+      unique: true,
+      lowercase: true,
+      index: true,
     },
+    phone: { type: String, required: true, unique: true, index: true },
     role: {
-      required: true,
       type: String,
-      default: "user",
-      enum: ["user", "admin"],
+      enum: ["admin", "merchant"],
+      default: "merchant",
+      index: true,
     },
-    status: {
-      required: true,
-      type: Boolean,
-      default: true,
-    },
-    balance: {
-      required: true,
-      type: Number,
-      default: 0,
-    },
-    account_active_payment: {
-      required: true,
+    password: { type: String, required: true },
+    avatar: { type: String, default: "" },
+    emailVerified: { type: Boolean, default: false },
+    payment_status: {
       type: String,
-      default: "unpaid",
-      enum: ["pending", "paid", "unpaid"],
+      enum: ["paid", "unpaid"],
+      default: "paid",
+      index: true,
     },
-    password: {
-      required: true,
-      type: String,
-    },
+    next_payment_date: { type: Date, default: null },
+    shops: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Shop",
+      },
+    ],
   },
   {
     timestamps: true,
     versionKey: false,
   }
 );
-// Create indexes for better query performance
-userSchema.index({ telegramId: 1 });
 
-export const userModel =
-  mongoose.models.users ?? mongoose.model("users", userSchema);
+userSchema.index({ createdAt: -1 });
+userSchema.index({ email: 1, role: 1 });
+
+export const UserModel =
+  mongoose.models.User ?? mongoose.model("User", userSchema);
