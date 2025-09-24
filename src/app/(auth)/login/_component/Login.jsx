@@ -59,7 +59,7 @@ export default function Login() {
       const response = await loginUserQuaryAction(formData);
       console.log("Login successful", response);
       if (response.status) {
-        // window.location.href = "/dashboard";
+        window.location.href = "/dashboard";
         // router.push('/dashboard');
         const tokenSet = setToken(response.token);
         const userSet = setUser(response.user);
