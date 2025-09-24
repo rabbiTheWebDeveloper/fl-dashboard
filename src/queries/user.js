@@ -30,16 +30,14 @@ async function registerUserAndShopQuery(data) {
   const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
   // Create user
-  const user = new UserModel(
-    {
-      fullName,
-      email,
-      phone,
-      password: hashedPassword,
-      emailVerificationCode: code,
-      emailVerificationExpires: expiry,
-    }
-  );
+  const user = new UserModel({
+    fullName,
+    email,
+    phone,
+    password: hashedPassword,
+    emailVerificationCode: code,
+    emailVerificationExpires: expiry,
+  });
 
   await user.save();
 
@@ -56,15 +54,33 @@ async function registerUserAndShopQuery(data) {
   await sendVerifyEmail({ toEmail: email, fullName, code, expiry });
 
   return {
-    message:
-      "User registered. Please check your email for the verification code.",
+    message: "Please check your email for the verification code.",
+    status: 201,
+    data: {
+      emailVerified: user.emailVerified,
+      email: user.email,
+    },
   };
 }
 
-
- async function getUser(id) {
+async function getUser(email) {
   await dbConnect();
-  const user = await UserModel.findOne({}).lean();
-  return JSON.parse(JSON.stringify(user));
+
+  const user = await UserModel.findOne({ email }).lean();
+
+  if (!user) {
+    return {
+      status: false,
+      message: "User not found",
+    };
+  }
+
+  return {
+    fullName: user.fullName,
+    email: user.email,
+    phone: user.phone,
+    status: true,
+  };
 }
-export { registerUserAndShopQuery };
+
+export { registerUserAndShopQuery ,getUser };
