@@ -3,6 +3,7 @@ import { useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { registrationAction } from "@/app/actions/user";
+import { toast } from "react-toastify";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -101,7 +102,7 @@ export default function Register() {
       // In real app, you would redirect to login or dashboard
       // router.push('/login');
     } catch (error) {
-      console.error("Registration failed", error);
+      toast.error(error.message);
       setErrors({
         general: "রেজিস্ট্রেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।",
       });
