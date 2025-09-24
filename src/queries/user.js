@@ -49,7 +49,6 @@ async function registerUserAndShopQuery(data) {
   user.shops.push(shop._id);
   await user.save();
 
- 
   await sendVerifyEmail({ toEmail: email, fullName, code, expiry });
 
   return {
@@ -110,7 +109,10 @@ async function verifyEmailQuary(email, code) {
   user.emailVerificationCode = undefined;
   user.emailVerificationExpires = undefined;
   await user.save();
-  await sendWelcomeEmail({ toEmail: user.email, fullName });
+  await sendWelcomeEmail({
+    toEmail: user.email,
+    fullName: user.fullNam,
+  });
   return { success: true, message: "Email verified successfully" };
 }
 

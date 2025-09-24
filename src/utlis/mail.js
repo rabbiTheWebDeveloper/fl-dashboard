@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-async function sendWelcomeEmail({ toEmail, fullName, password }) {
+async function sendWelcomeEmail({ toEmail, fullName,}) {
   // 🔹 Gmail SMTP setup
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -18,7 +18,6 @@ async function sendWelcomeEmail({ toEmail, fullName, password }) {
       <p>প্রিয় ${fullName},</p>
       <p>আপনার AMARDokan অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।</p>
       <p><strong>ইমেইল:</strong> ${toEmail}</p>
-      <p><strong>পাসওয়ার্ড:</strong> ${password}</p>
       <p>লগইন করতে <a href="https://yourfrontend.com/login">এখানে ক্লিক করুন</a></p>
       <p>ধন্যবাদ,<br>AMARDokan টিম</p>
     `,

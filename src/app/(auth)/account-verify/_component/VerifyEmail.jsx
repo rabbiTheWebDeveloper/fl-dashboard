@@ -81,13 +81,12 @@ export default function VerifyEmail({ user }) {
     try {
       // Simulate API call
       const response = await verifyEmailAction(user.email, code.join(""));
+      console.log("Verification response:", response);
 
-      if (response.status) {
+      if (response.success) {
         toast.success("ইমেইল ভেরিফিকেশন সফল!");
         router.push("/login");
       }
-
-      alert("ইমেইল ভেরিফিকেশন সফল! আপনার অ্যাকাউন্ট এখন সক্রিয়।");
 
       // Redirect to dashboard or login
     } catch (error) {
@@ -107,12 +106,14 @@ export default function VerifyEmail({ user }) {
     try {
       setCanResend(false);
       await resendVerificationEmailAction(user.email);
-      console.log("Resending verification code...");
-      alert("✅ একটি নতুন ভেরিফিকেশন কোড আপনার ইমেইলে পাঠানো হয়েছে।");
+
       setCountdown(60);
+      toast.success("নতুন ভেরিফিকেশন কোড আপনার ইমেইলে পাঠানো হয়েছে।");
     } catch (error) {
       console.error("Resend error:", error);
-      alert("❌ কোড পাঠাতে সমস্যা হয়েছে, আবার চেষ্টা করুন।");
+      toast.error(
+        error.message || "কোড পুনরায় পাঠানো যায়নি। দয়া করে আবার চেষ্টা করুন।"
+      );
       setCanResend(true);
     }
   };
@@ -126,7 +127,6 @@ export default function VerifyEmail({ user }) {
     }
   }, [countdown]);
 
-  // Auto-focus first input on mount
   useEffect(() => {
     inputRefs[0].current.focus();
   }, []);
