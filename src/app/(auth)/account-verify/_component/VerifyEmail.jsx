@@ -314,7 +314,7 @@ export default function VerifyEmail({ user }) {
                 <p className="text-sm text-gray-600 bangla-text">
                   সমস্যা হচ্ছে?{" "}
                   <Link
-                    href="/support"
+                    href="/"
                     className="font-medium text-indigo-600 hover:text-indigo-500 bangla-text"
                   >
                     সহায়তা কেন্দ্রে যোগাযোগ করুন
@@ -329,7 +329,7 @@ export default function VerifyEmail({ user }) {
           <p className="text-sm text-gray-500 bangla-text">
             ইমেইল ঠিকানা পরিবর্তন করতে চান?{" "}
             <Link
-              href="/register"
+              href="/registration"
               className="font-medium text-indigo-600 hover:text-indigo-500 bangla-text"
             >
               নিবন্ধন পৃষ্ঠায় ফিরে যান
