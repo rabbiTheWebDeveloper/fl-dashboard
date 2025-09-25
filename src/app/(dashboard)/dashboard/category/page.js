@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
+import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import {
   FiPlus,
@@ -228,13 +229,13 @@ const CategoryPage = () => {
             <h1 className="text-2xl font-bold text-gray-900">Category Management</h1>
             <p className="text-gray-600">Manage your product categories and organization</p>
           </div>
-          <button
-            onClick={openAddModal}
+          <Link
+            href="/dashboard/category/add"
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
           >
             <FiPlus className="w-4 h-4" />
             Add Category
-          </button>
+          </Link>
         </div>
       </div>
 

@@ -1,16 +1,49 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
-const categorySchema = new Schema({
+const categorySchema = new mongoose.Schema(
+  {
     name: {
-        required: true,
-        type: String,
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
     },
-    thumbnail: {
-        required: true,
-        type: String,
+    shopId: {
+      type: String,
+      required: true,
     },
-},  { timestamps: true,
-    versionKey:false
-   });
+    userId: {
+      type: String,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+    },
+    description: {
+      type: String,
+      default: "",
+    },
+    image: {
+      type: String, // store image URL
+      default: "",
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+      strict: true,
 
-export const Category = mongoose.models.Category || mongoose.model("Category", categorySchema);
+  }
+);
+
+const Category =
+  mongoose.models.Category ?? mongoose.model("Category", categorySchema);
+
+export default Category;
