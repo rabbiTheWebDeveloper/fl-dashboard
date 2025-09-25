@@ -54,13 +54,13 @@ import {
   X,
   Image as ImageIcon,
 } from "lucide-react";
-  const categories = [
-    { id: 1, name: "Electronics" },
-    { id: 2, name: "Clothing" },
-    { id: 3, name: "Home & Kitchen" },
-    { id: 4, name: "Books" },
-    { id: 5, name: "Beauty & Health" },
-  ];
+const categories = [
+  { id: 1, name: "Electronics" },
+  { id: 2, name: "Clothing" },
+  { id: 3, name: "Home & Kitchen" },
+  { id: 4, name: "Books" },
+  { id: 5, name: "Beauty & Health" },
+];
 const AddProduct = () => {
   // Main form state
   const [formData, setFormData] = useState({
@@ -105,7 +105,6 @@ const AddProduct = () => {
   const [activeTab, setActiveTab] = useState("basic");
 
   // Mock categories
-
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -251,19 +250,58 @@ const AddProduct = () => {
               Create a new product for your store
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="lg">
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-end">
+            <button
+              type="button"
+              className="order-2 sm:order-1 px-6 py-3 border border-indigo-600 text-indigo-600 bg-white rounded-lg font-semibold text-base hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 bangla-text"
+            >
               Cancel
-            </Button>
-            <Button
-              size="lg"
+            </button>
+            <button
+              type="button"
               onClick={handleSubmit}
               disabled={isLoading}
-              className="gap-2"
+              className="order-1 sm:order-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold text-base hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 bangla-text"
             >
-              <Save className="h-4 w-4" />
-              {isLoading ? "Adding Product..." : "Add Product"}
-            </Button>
+              {isLoading ? (
+                <>
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 2V6M12 18V22M6 12H2M22 12H18M19.0784 19.0784L16.25 16.25M19.0784 4.99999L16.25 7.82843M4.92157 19.0784L7.75 16.25M4.92157 4.92157L7.75 7.75"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M5 13l4 4L19 7"
+                    ></path>
+                  </svg>
+                  Add Product
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -558,6 +596,7 @@ const AddProduct = () => {
           <TabsContent value="media" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Main Image */}
+              {/* Main Image */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -594,33 +633,35 @@ const AddProduct = () => {
                     ) : (
                       <div className="space-y-3">
                         <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto" />
-                        <p className="text-sm text-muted-foreground">
-                          Click below to upload main image
-                        </p>
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            Click to upload main image
+                          </p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(e, "main")}
+                            className="hidden"
+                            id="mainImageInput"
+                          />
+                        </div>
                         <Button
                           variant="outline"
                           className="gap-2"
                           onClick={() =>
-                            document.getElementById("mainImageInput").click()
+                            document.getElementById("mainImageInput")?.click()
                           }
                         >
                           <Upload className="h-4 w-4" />
                           Upload Image
                         </Button>
-                        {/* hidden input */}
-                        <input
-                          id="mainImageInput"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleFileUpload(e, "main")}
-                        />
                       </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Gallery Images */}
               {/* Gallery Images */}
               <Card>
                 <CardHeader>
@@ -661,25 +702,26 @@ const AddProduct = () => {
                           Add more images ({5 - formData.galleryImages.length}{" "}
                           remaining)
                         </p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => handleFileUpload(e, "gallery")}
+                          className="hidden"
+                          id="galleryImageInput"
+                        />
                         <Button
                           variant="outline"
                           className="gap-2 w-full"
                           onClick={() =>
-                            document.getElementById("galleryImageInput").click()
+                            document
+                              .getElementById("galleryImageInput")
+                              ?.click()
                           }
                         >
                           <Upload className="h-4 w-4" />
                           Upload Images
                         </Button>
-                        {/* hidden input */}
-                        <input
-                          id="galleryImageInput"
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="hidden"
-                          onChange={(e) => handleFileUpload(e, "gallery")}
-                        />
                       </div>
                     )}
                   </div>
