@@ -118,7 +118,7 @@ const ProductsPage = () => {
     };
 
     fetchProducts();
-  }, []);
+  }, [categories]);
 
   // Filter and search products
   useEffect(() => {
