@@ -59,7 +59,14 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { DialogHeader } from "@/components/ui/dialog";
 import { DialogTitle } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
-
+  const categories = [
+    "All",
+    "Electronics",
+    "Clothing",
+    "Home & Kitchen",
+    "Books",
+    "Beauty",
+  ];
 const ProductsPage = () => {
   const router = useRouter();
   const [products, setProducts] = useState([]);
@@ -74,14 +81,7 @@ const ProductsPage = () => {
   const [productToDelete, setProductToDelete] = useState(null);
 
   // Mock data - replace with API call
-  const categories = [
-    "All",
-    "Electronics",
-    "Clothing",
-    "Home & Kitchen",
-    "Books",
-    "Beauty",
-  ];
+
   const statusOptions = ["All", "Active", "Inactive", "Out of Stock"];
 
   useEffect(() => {
@@ -248,7 +248,7 @@ const ProductsPage = () => {
               <Upload className="h-4 w-4" />
               Import
             </button>
-            <Link href="/dashboard/products/add">
+            <Link href="/dashboard/add-product">
               <button className="inline-flex items-center gap-2 rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                 <Plus className="h-4 w-4" />
                 Add Product
