@@ -1,5 +1,4 @@
-// pages/privacy.js
-"use client"
+
 import Head from 'next/head';
 import Link from 'next/link';
 
@@ -146,20 +145,7 @@ export default function Privacy() {
         </div>
       </div>
 
-      <style jsx global>{`
-        body {
-          font-family: 'Hind Siliguri', sans-serif;
-        }
-        .bangla-text {
-          line-height: 1.8;
-        }
-        .prose {
-          line-height: 1.8;
-        }
-        .prose p {
-          margin-bottom: 1rem;
-        }
-      `}</style>
+   
     </>
   );
 }
