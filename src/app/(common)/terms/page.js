@@ -8,7 +8,7 @@ export default function Terms() {
       <Head>
         <title>AMARDokan - শর্তাবলী</title>
         <meta name="description" content="AMARDokan এর সেবা শর্তাবলী ও ব্যবহারের নিয়ম" />
-        <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+       
       </Head>
 
       <div className="min-h-screen bg-gray-50">

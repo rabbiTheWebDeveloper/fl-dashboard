@@ -8,7 +8,6 @@ export default function Privacy() {
       <Head>
         <title>AMARDokan - গোপনীয়তা নীতি</title>
         <meta name="description" content="AMARDokan এর গোপনীয়তা নীতি ও ডেটা সুরক্ষা" />
-        <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
       <div className="min-h-screen bg-gray-50">
