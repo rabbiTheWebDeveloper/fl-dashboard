@@ -83,7 +83,7 @@ async function getAllCategoriesUserQuary({ shopId, userId }) {
   try {
     const categories = await Category.find({ shopId, userId })
       .sort({ createdAt: -1 })
-      .select("name _id") // fetch only required fields
+      .select("name _id") 
       .lean();
     return JSON.parse(JSON.stringify(categories));
   } catch (error) {

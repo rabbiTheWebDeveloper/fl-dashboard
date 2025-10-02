@@ -56,13 +56,8 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 
-const categories = [
-  { id: 1, name: "Electronics" },
-  { id: 2, name: "Clothing" },
-  { id: 3, name: "Home & Kitchen" },
-  { id: 4, name: "Books" },
-  { id: 5, name: "Beauty & Health" },
-];
+import { API_ENDPOINTS } from "@/config/ApiEndpoints";
+import { toast } from "react-toastify";
 
 // Predefined variant types
 const variantTypes = [
@@ -83,7 +78,7 @@ const variantTypes = [
   },
 ];
 
-const AddProduct = () => {
+const AddProduct = ({ categories, userInfo: {} }) => {
   // Main form state
   const [formData, setFormData] = useState({
     productName: "",
@@ -92,7 +87,7 @@ const AddProduct = () => {
     discountValue: "",
     productCode: "",
     availableQuantity: "",
-    categoryName: "",
+    categoryId: "",
     deliveryCharge: "free",
     deliveryCharges: {
       dhaka: "",
@@ -354,45 +349,58 @@ const AddProduct = () => {
     if (
       !formData.productName ||
       !formData.productCode ||
-      !formData.categoryName
+      !formData.categoryId
     ) {
       alert("Please fill in all required fields");
       setIsLoading(false);
       return;
     }
-    const formData = new FormData();
-    formData.append("productName", formData.productName);
-    formData.append("productCode", formData.productCode);
-    formData.append("categoryId", formData.categoryName);
-    formData.append("availableQuantity", formData.availableQuantity || 0);
-    formData.append("shortDescription", formData.shortDescription);
-    formData.append("longDescription", formData.longDescription);
-    formData.append("regularPrice", formData.regularPrice || 0);
-    formData.append("discountType", formData.discountType);
-    formData.append("discountValue", formData.discountValue || 0);
-    formData.append("isActive", formData.isActive);
-    formData.append("isFeatured", formData.isFeatured);
-    formData.append("metaTitle", formData.metaTitle);
-    formData.append("metaDescription", formData.metaDescription);
-    formData.append("deliveryCharge", formData.deliveryCharge);
-    if (formData.deliveryCharge === "paid") {
-      formData.append(
-        "deliveryCharges",
-        JSON.stringify(formData.deliveryCharges)
-      );
-    }
-    if (formData.mainImage) {
-      formData.append("mainImage", formData.mainImage.file);
-    }
-    formData.galleryImages.forEach((img, index) => {
-      formData.append(`galleryImage_${index}`, img.file);
-    });
-    formData.append("variants", JSON.stringify(variants));
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("Product data:", { ...formData, variants });
-      alert("Product added successfully!");
+      const formData = new FormData();
+
+      formData.append("productName", formData.productName);
+      formData.append("productCode", formData.productCode);
+      formData.append("categoryId", formData.categoryName);
+      formData.append("availableQuantity", formData.availableQuantity || 0);
+      formData.append("shortDescription", formData.shortDescription);
+      formData.append("longDescription", formData.longDescription);
+      formData.append("regularPrice", formData.regularPrice || 0);
+      formData.append("discountType", formData.discountType);
+      formData.append("discountValue", formData.discountValue || 0);
+      formData.append("isActive", formData.isActive);
+      formData.append("isFeatured", formData.isFeatured);
+      formData.append("metaTitle", formData.metaTitle);
+      formData.append("metaDescription", formData.metaDescription);
+      formData.append("deliveryCharge", formData.deliveryCharge);
+      if (formData.deliveryCharge === "paid") {
+        formData.append(
+          "deliveryCharges",
+          JSON.stringify(formData.deliveryCharges)
+        );
+      }
+      if (formData.mainImage) {
+        formData.append("mainImage", formData.mainImage.file);
+      }
+      formData.galleryImages.forEach((img, index) => {
+        formData.append(`galleryImage_${index}`, img.file);
+      });
+      formData.append("variants", JSON.stringify(variants));
+      formData.append("shopId", userInfos.shopId);
+      formData.append("userId", userInfos.userId);
+
+      const response = await fetch(API_ENDPOINTS.BASE_URL + "/product/create", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save category");
+      }
+
+      const data = await response.json();
+      toast.success("Product created successfully!");
+      // router.push("/dashboard/category");
       // Reset form would go here
     } catch (error) {
       console.error("Error adding product:", error);
@@ -530,11 +538,11 @@ const AddProduct = () => {
                       Category <span className="text-destructive">*</span>
                     </Label>
                     <Select
-                      value={formData.categoryName}
+                      value={formData.categoryId}
                       onValueChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
-                          categoryName: value,
+                          categoryId: value,
                         }))
                       }
                     >
@@ -543,7 +551,7 @@ const AddProduct = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.name}>
+                          <SelectItem key={category._id} value={category._id}>
                             {category.name}
                           </SelectItem>
                         ))}
