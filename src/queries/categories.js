@@ -70,11 +70,10 @@ async function getAllCategoriesQuary(shopId) {
   await dbConnect();
   try {
     const objectId = mongoose.Types.ObjectId.createFromHexString(shopId);
-    console.log("Fetching categories for shopId:", objectId);
+
     const categories = await Category.find( {shopId: objectId }).sort({
       createdAt: -1,
     });
-    console.log(`Found ${categories.length} categories`);
     return JSON.parse(JSON.stringify(categories));
   } catch (error) {
     throw new Error(error.message || "Failed to fetch categories");
