@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,6 +55,7 @@ import {
   X,
   Image as ImageIcon,
 } from "lucide-react";
+
 const categories = [
   { id: 1, name: "Electronics" },
   { id: 2, name: "Clothing" },
@@ -62,6 +63,26 @@ const categories = [
   { id: 4, name: "Books" },
   { id: 5, name: "Beauty & Health" },
 ];
+
+// Predefined variant types
+const variantTypes = [
+  { 
+    id: "size", 
+    name: "Size", 
+    options: ["S", "M", "L", "XL", "XXL"] 
+  },
+  { 
+    id: "color", 
+    name: "Color", 
+    options: ["Red", "Blue", "Green", "Black", "White"] 
+  },
+  { 
+    id: "material", 
+    name: "Material", 
+    options: ["Cotton", "Polyester", "Silk", "Wool"] 
+  }
+];
+
 const AddProduct = () => {
   // Main form state
   const [formData, setFormData] = useState({
@@ -88,24 +109,30 @@ const AddProduct = () => {
     metaDescription: "",
   });
 
-  // Product variants state
+  // Variant system state
+  const [selectedVariantType1, setSelectedVariantType1] = useState("");
+  const [selectedVariantType2, setSelectedVariantType2] = useState("none");
+  const [variantOptions1, setVariantOptions1] = useState([]);
+  const [variantOptions2, setVariantOptions2] = useState([]);
+  const [selectedOptions1, setSelectedOptions1] = useState([]);
+  const [selectedOptions2, setSelectedOptions2] = useState([]);
+  
+  const [variantCombinations, setVariantCombinations] = useState([]);
   const [variants, setVariants] = useState([]);
-  const [currentVariant, setCurrentVariant] = useState({
-    image: null,
-    variant: "",
-    price: "",
-    productCode: "",
-    quantity: "",
-    description: "",
-  });
 
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [showVariantDialog, setShowVariantDialog] = useState(false);
   const [editingVariantIndex, setEditingVariantIndex] = useState(null);
   const [activeTab, setActiveTab] = useState("basic");
-
-  // Mock categories
+  const [currentVariant, setCurrentVariant] = useState({
+    combination: "",
+    image: null,
+    price: "",
+    productCode: "",
+    quantity: "",
+    description: "",
+  });
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -153,27 +180,116 @@ const AddProduct = () => {
     }));
   };
 
+  // Update options when variant types are selected
+  useEffect(() => {
+    if (selectedVariantType1) {
+      const type1 = variantTypes.find(vt => vt.id === selectedVariantType1);
+      setVariantOptions1(type1 ? type1.options : []);
+      setSelectedOptions1([]);
+    } else {
+      setVariantOptions1([]);
+      setSelectedOptions1([]);
+    }
+
+    if (selectedVariantType2 && selectedVariantType2 !== "none") {
+      const type2 = variantTypes.find(vt => vt.id === selectedVariantType2);
+      setVariantOptions2(type2 ? type2.options : []);
+      setSelectedOptions2([]);
+    } else {
+      setVariantOptions2([]);
+      setSelectedOptions2([]);
+    }
+  }, [selectedVariantType1, selectedVariantType2]);
+
+  // Generate combinations when options change
+  useEffect(() => {
+    generateCombinations();
+  }, [selectedOptions1, selectedOptions2]);
+
+  // Generate all possible combinations
+  const generateCombinations = () => {
+    let combinations = [];
+
+    if (selectedOptions1.length > 0 && selectedOptions2.length > 0 && selectedVariantType2 !== "none") {
+      // Both variant types selected - create matrix
+      const type1 = variantTypes.find(vt => vt.id === selectedVariantType1);
+      const type2 = variantTypes.find(vt => vt.id === selectedVariantType2);
+      
+      selectedOptions1.forEach(opt1 => {
+        selectedOptions2.forEach(opt2 => {
+          combinations.push({
+            id: `${opt1}-${opt2}`,
+            name: `${type1?.name}: ${opt1}, ${type2?.name}: ${opt2}`,
+            values: {
+              [type1?.name]: opt1,
+              [type2?.name]: opt2
+            }
+          });
+        });
+      });
+    } else if (selectedOptions1.length > 0) {
+      // Only first variant type selected
+      const type1 = variantTypes.find(vt => vt.id === selectedVariantType1);
+      selectedOptions1.forEach(opt1 => {
+        combinations.push({
+          id: opt1,
+          name: `${type1?.name}: ${opt1}`,
+          values: {
+            [type1?.name]: opt1
+          }
+        });
+      });
+    }
+
+    setVariantCombinations(combinations);
+    
+    // Initialize variants with combinations
+    const newVariants = combinations.map(comb => {
+      const existingVariant = variants.find(v => v.combination === comb.name);
+      return existingVariant || {
+        combination: comb.name,
+        values: comb.values,
+        image: null,
+        price: "",
+        productCode: "",
+        quantity: "",
+        description: ""
+      };
+    });
+    
+    setVariants(newVariants);
+  };
+
+  // Toggle option selection
+  const toggleOption1 = (option) => {
+    setSelectedOptions1(prev => 
+      prev.includes(option) 
+        ? prev.filter(opt => opt !== option)
+        : [...prev, option]
+    );
+  };
+
+  const toggleOption2 = (option) => {
+    setSelectedOptions2(prev => 
+      prev.includes(option) 
+        ? prev.filter(opt => opt !== option)
+        : [...prev, option]
+    );
+  };
+
   // Variant management
   const handleVariantInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentVariant((prev) => ({ ...prev, [name]: value }));
   };
 
-  const addOrUpdateVariant = () => {
-    if (!currentVariant.variant || !currentVariant.price) {
-      alert("Variant name and price are required");
-      return;
-    }
-
-    if (editingVariantIndex !== null) {
-      const updatedVariants = [...variants];
-      updatedVariants[editingVariantIndex] = currentVariant;
-      setVariants(updatedVariants);
-    } else {
-      setVariants((prev) => [...prev, currentVariant]);
-    }
-
-    resetVariantForm();
+  const updateVariant = (index, field, value) => {
+    const updatedVariants = [...variants];
+    updatedVariants[index] = {
+      ...updatedVariants[index],
+      [field]: value
+    };
+    setVariants(updatedVariants);
   };
 
   const editVariant = (index) => {
@@ -182,14 +298,28 @@ const AddProduct = () => {
     setShowVariantDialog(true);
   };
 
-  const deleteVariant = (index) => {
-    setVariants((prev) => prev.filter((_, i) => i !== index));
+  const saveVariant = () => {
+    if (editingVariantIndex !== null) {
+      const updatedVariants = [...variants];
+      updatedVariants[editingVariantIndex] = currentVariant;
+      setVariants(updatedVariants);
+    }
+    setShowVariantDialog(false);
+    setEditingVariantIndex(null);
+    setCurrentVariant({
+      combination: "",
+      image: null,
+      price: "",
+      productCode: "",
+      quantity: "",
+      description: "",
+    });
   };
 
   const resetVariantForm = () => {
     setCurrentVariant({
+      combination: "",
       image: null,
-      variant: "",
       price: "",
       productCode: "",
       quantity: "",
@@ -475,7 +605,7 @@ const AddProduct = () => {
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Select discount type" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="percentage">
@@ -546,7 +676,7 @@ const AddProduct = () => {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select delivery type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="free">Free Delivery</SelectItem>
@@ -596,7 +726,6 @@ const AddProduct = () => {
           {/* Media Tab */}
           <TabsContent value="media" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Main Image */}
               {/* Main Image */}
               <Card>
                 <CardHeader>
@@ -662,7 +791,6 @@ const AddProduct = () => {
                 </CardContent>
               </Card>
 
-              {/* Gallery Images */}
               {/* Gallery Images */}
               <Card>
                 <CardHeader>
@@ -731,244 +859,332 @@ const AddProduct = () => {
             </div>
           </TabsContent>
 
-          {/* Variants Tab */}
+          {/* Enhanced Variants Tab */}
           <TabsContent value="variants" className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Tag className="h-5 w-5" />
-                      Product Variants
-                    </CardTitle>
-                    <CardDescription>
-                      Manage different variations of your product
-                    </CardDescription>
-                  </div>
-                  <Dialog
-                    open={showVariantDialog}
-                    onOpenChange={setShowVariantDialog}
-                  >
-                    <DialogTrigger asChild>
-                      <Button className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add Variant
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {editingVariantIndex !== null
-                            ? "Edit Variant"
-                            : "Add New Variant"}
-                        </DialogTitle>
-                        <DialogDescription>
-                          Add variant details like color, size, etc.
-                        </DialogDescription>
-                      </DialogHeader>
-
-                      <div className="space-y-4">
-                        {/* Variant Image */}
-                        <div className="space-y-2">
-                          <Label>Variant Image</Label>
-                          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
-                            {currentVariant.image ? (
-                              <div className="space-y-3">
-                                <img
-                                  src={currentVariant.image.url}
-                                  alt="Variant"
-                                  className="h-20 w-20 object-cover rounded-lg mx-auto"
-                                />
-                                <Button
-                                  variant="outline"
-                                  onClick={() =>
-                                    setCurrentVariant((prev) => ({
-                                      ...prev,
-                                      image: null,
-                                    }))
-                                  }
-                                  className="gap-2"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  Remove Image
-                                </Button>
-                              </div>
-                            ) : (
-                              <div>
-                                <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                                <p className="text-sm text-muted-foreground">
-                                  Upload variant image
-                                </p>
-                                <Input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) =>
-                                    handleFileUpload(e, "variant")
-                                  }
-                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                />
-                                <Button
-                                  variant="outline"
-                                  className="gap-2 mt-2"
-                                >
-                                  <Upload className="h-4 w-4" />
-                                  Upload Image
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="variant">Variant Name *</Label>
-                            <Input
-                              id="variant"
-                              name="variant"
-                              value={currentVariant.variant}
-                              onChange={handleVariantInputChange}
-                              placeholder="e.g., Red, Large"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="price">Price *</Label>
-                            <div className="relative">
-                              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                id="price"
-                                name="price"
-                                type="number"
-                                value={currentVariant.price}
-                                onChange={handleVariantInputChange}
-                                placeholder="0.00"
-                                min="0"
-                                step="0.01"
-                                className="pl-10"
-                                required
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="productCode">Product Code</Label>
-                            <Input
-                              id="productCode"
-                              name="productCode"
-                              value={currentVariant.productCode}
-                              onChange={handleVariantInputChange}
-                              placeholder="Variant code"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="quantity">Quantity</Label>
-                            <Input
-                              id="quantity"
-                              name="quantity"
-                              type="number"
-                              value={currentVariant.quantity}
-                              onChange={handleVariantInputChange}
-                              placeholder="0"
-                              min="0"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="description">Description</Label>
-                          <Textarea
-                            id="description"
-                            name="description"
-                            value={currentVariant.description}
-                            onChange={handleVariantInputChange}
-                            placeholder="Variant description..."
-                            rows={3}
-                          />
-                        </div>
-                      </div>
-
-                      <DialogFooter>
-                        <Button variant="outline" onClick={resetVariantForm}>
-                          Cancel
-                        </Button>
-                        <Button onClick={addOrUpdateVariant} className="gap-2">
-                          <Save className="h-4 w-4" />
-                          {editingVariantIndex !== null
-                            ? "Update Variant"
-                            : "Add Variant"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  <Tag className="h-5 w-5" />
+                  Product Variants
+                </CardTitle>
+                <CardDescription>
+                  Create variant combinations by selecting types and options
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                {variants.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Image</TableHead>
-                        <TableHead>Variant</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Product Code</TableHead>
-                        <TableHead>Quantity</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {variants.map((variant, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            {variant.image && (
-                              <img
-                                src={variant.image.url}
-                                alt="Variant"
-                                className="h-10 w-10 object-cover rounded"
-                              />
-                            )}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {variant.variant}
-                          </TableCell>
-                          <TableCell>${variant.price}</TableCell>
-                          <TableCell>{variant.productCode}</TableCell>
-                          <TableCell>{variant.quantity}</TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {variant.description}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => editVariant(index)}
-                              >
-                                <Edit3 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => deleteVariant(index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Tag className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No variants added yet.</p>
-                    <p className="text-sm">
-                      Click "Add Variant" to create your first variant.
-                    </p>
+              <CardContent className="space-y-6">
+                {/* Variant Type Selection */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Variant Type 1 */}
+                  <div className="space-y-4">
+                    <Label htmlFor="variant-type-1">
+                      Variant Type 1 <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={selectedVariantType1}
+                      onValueChange={setSelectedVariantType1}
+                    >
+                      <SelectTrigger id="variant-type-1">
+                        <SelectValue placeholder="Select first variant type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {variantTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {selectedVariantType1 && (
+                      <div className="space-y-2">
+                        <Label>
+                          Select {variantTypes.find(vt => vt.id === selectedVariantType1)?.name} Options
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {variantOptions1.map((option) => (
+                            <Badge
+                              key={option}
+                              variant={selectedOptions1.includes(option) ? "default" : "outline"}
+                              className="cursor-pointer px-3 py-1"
+                              onClick={() => toggleOption1(option)}
+                            >
+                              {option}
+                              {selectedOptions1.includes(option) && (
+                                <X className="h-3 w-3 ml-1" />
+                              )}
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedOptions1.length} selected
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Variant Type 2 */}
+                  <div className="space-y-4">
+                    <Label htmlFor="variant-type-2">Variant Type 2 (Optional)</Label>
+                    <Select
+                      value={selectedVariantType2}
+                      onValueChange={setSelectedVariantType2}
+                    >
+                      <SelectTrigger id="variant-type-2">
+                        <SelectValue placeholder="Select second variant type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {variantTypes
+                          .filter(vt => vt.id !== selectedVariantType1)
+                          .map((type) => (
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    {selectedVariantType2 && selectedVariantType2 !== "none" && (
+                      <div className="space-y-2">
+                        <Label>
+                          Select {variantTypes.find(vt => vt.id === selectedVariantType2)?.name} Options
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {variantOptions2.map((option) => (
+                            <Badge
+                              key={option}
+                              variant={selectedOptions2.includes(option) ? "default" : "outline"}
+                              className="cursor-pointer px-3 py-1"
+                              onClick={() => toggleOption2(option)}
+                            >
+                              {option}
+                              {selectedOptions2.includes(option) && (
+                                <X className="h-3 w-3 ml-1" />
+                              )}
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedOptions2.length} selected
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Generated Combinations */}
+                {variantCombinations.length > 0 && (
+                  <div className="space-y-4">
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg">Variant Combinations</CardTitle>
+                      <span className="text-sm text-muted-foreground">
+                        {variantCombinations.length} combinations generated
+                      </span>
+                    </div>
+                    
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Variant Combination</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Quantity</TableHead>
+                            <TableHead>SKU</TableHead>
+                            <TableHead>Image</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {variants.map((variant, index) => (
+                            <TableRow key={variant.combination}>
+                              <TableCell className="font-medium">
+                                {variant.combination}
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  placeholder="0.00"
+                                  value={variant.price}
+                                  onChange={(e) => updateVariant(index, 'price', e.target.value)}
+                                  className="w-24"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  placeholder="0"
+                                  value={variant.quantity}
+                                  onChange={(e) => updateVariant(index, 'quantity', e.target.value)}
+                                  className="w-20"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  placeholder="SKU"
+                                  value={variant.productCode}
+                                  onChange={(e) => updateVariant(index, 'productCode', e.target.value)}
+                                  className="w-32"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {variant.image ? (
+                                  <img
+                                    src={variant.image.url}
+                                    alt="Variant"
+                                    className="h-10 w-10 object-cover rounded"
+                                  />
+                                ) : (
+                                  <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => editVariant(index)}
+                                >
+                                  <Edit3 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Variant Detail Dialog */}
+            <Dialog open={showVariantDialog} onOpenChange={setShowVariantDialog}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Variant</DialogTitle>
+                  <DialogDescription>
+                    Configure details for {currentVariant.combination}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  {/* Variant Image */}
+                  <div className="space-y-2">
+                    <Label>Variant Image</Label>
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
+                      {currentVariant.image ? (
+                        <div className="space-y-3">
+                          <img
+                            src={currentVariant.image.url}
+                            alt="Variant"
+                            className="h-20 w-20 object-cover rounded-lg mx-auto"
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              setCurrentVariant((prev) => ({
+                                ...prev,
+                                image: null,
+                              }))
+                            }
+                            className="gap-2"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Remove Image
+                          </Button>
+                        </div>
+                      ) : (
+                        <div>
+                          <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">
+                            Upload variant image
+                          </p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(e, "variant")}
+                            className="hidden"
+                            id="variantImageInput"
+                          />
+                          <Button
+                            variant="outline"
+                            className="gap-2 mt-2"
+                            onClick={() => document.getElementById("variantImageInput")?.click()}
+                          >
+                            <Upload className="h-4 w-4" />
+                            Upload Image
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Price</Label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="price"
+                          name="price"
+                          type="number"
+                          value={currentVariant.price}
+                          onChange={handleVariantInputChange}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="quantity">Quantity</Label>
+                      <Input
+                        id="quantity"
+                        name="quantity"
+                        type="number"
+                        value={currentVariant.quantity}
+                        onChange={handleVariantInputChange}
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="productCode">Product Code</Label>
+                      <Input
+                        id="productCode"
+                        name="productCode"
+                        value={currentVariant.productCode}
+                        onChange={handleVariantInputChange}
+                        placeholder="Variant code"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      value={currentVariant.description}
+                      onChange={handleVariantInputChange}
+                      placeholder="Variant description..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={resetVariantForm}>
+                    Cancel
+                  </Button>
+                  <Button onClick={saveVariant} className="gap-2">
+                    <Save className="h-4 w-4" />
+                    Save Variant
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* SEO Tab */}
