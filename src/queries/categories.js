@@ -66,12 +66,10 @@ async function createCategoryQuary(data, userId, shopId) {
 
 const mongoose = require("mongoose");
 
-async function getAllCategoriesQuary(shopId) {
+async function getAllCategoriesQuary({ shopId, userId }) {
   await dbConnect();
   try {
-    const objectId = mongoose.Types.ObjectId.createFromHexString(shopId);
-
-    const categories = await Category.find( {shopId: objectId }).sort({
+    const categories = await Category.find({ shopId, userId }).sort({
       createdAt: -1,
     });
     return JSON.parse(JSON.stringify(categories));
