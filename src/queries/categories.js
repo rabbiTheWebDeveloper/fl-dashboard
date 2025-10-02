@@ -2,8 +2,7 @@ import { dbConnect } from "@/service/mongo";
 import Category from "@/model/category-model";
 import slugify from "slugify";
 import ImageKit from "imagekit";
-import { ObjectId } from "mongodb";
-import mongoose from "mongoose";
+import { Types } from "mongoose";
 
 const imagekit = new ImageKit({
   publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
@@ -65,11 +64,17 @@ async function createCategoryQuary(data, userId, shopId) {
   }
 }
 
-async function getAllCategoriesQuary({ shopId }) {
+const mongoose = require("mongoose");
+
+async function getAllCategoriesQuary(shopId) {
   await dbConnect();
   try {
-    const categories = await Category.find(shopId).sort({ createdAt: -1 });
-
+    const objectId = mongoose.Types.ObjectId.createFromHexString(shopId);
+    console.log("Fetching categories for shopId:", objectId);
+    const categories = await Category.find( {shopId: objectId }).sort({
+      createdAt: -1,
+    });
+    console.log(`Found ${categories.length} categories`);
     return JSON.parse(JSON.stringify(categories));
   } catch (error) {
     throw new Error(error.message || "Failed to fetch categories");

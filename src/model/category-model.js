@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose , { Schema } from "mongoose";
 
 const categorySchema = new mongoose.Schema(
   {
@@ -6,12 +6,13 @@ const categorySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    shopId: {
-      type: String,
-      required: true,
+   shopId: {
+      type: Schema.Types.ObjectId,
+      ref: "Shop",
     },
     userId: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
     slug: {
       type: String,
