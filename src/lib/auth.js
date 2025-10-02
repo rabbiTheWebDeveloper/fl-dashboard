@@ -57,7 +57,7 @@ export const setUser = (user) => {
 
 // Role management
 export const getRole = () => Cookies.get(ROLE_KEY);
-export const getUserId = () => JSON?.parse(Cookies.get(USER_KEY))._id;
+export const getUserId = () => Cookies?.get(USER_KEY);
 
 export const setRole = (role) => {
   if (!role) return false;

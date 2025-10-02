@@ -5,8 +5,6 @@ const categorySchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true,
-      unique: true,
     },
     shopId: {
       type: String,
@@ -17,16 +15,18 @@ const categorySchema = new mongoose.Schema(
     },
     slug: {
       type: String,
-      required: true,
       unique: true,
-      lowercase: true,
     },
     description: {
       type: String,
       default: "",
     },
     image: {
-      type: String, // store image URL
+      type: String,
+      default: "",
+    },
+    imageFileId: {
+      type: String,
       default: "",
     },
     status: {
