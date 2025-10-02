@@ -61,6 +61,14 @@ const productSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    shopId: {
+      type: Schema.Types.ObjectId,
+      ref: "Shop",
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
     categoryName: {
       type: String,
       required: [true, "Category is required"],
