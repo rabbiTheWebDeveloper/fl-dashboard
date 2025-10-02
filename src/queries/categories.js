@@ -78,4 +78,21 @@ async function getAllCategoriesQuary({ shopId, userId }) {
   }
 }
 
-export { getAllCategoriesQuary, createCategoryQuary };
+async function getAllCategoriesUserQuary({ shopId, userId }) {
+  await dbConnect();
+  try {
+    const categories = await Category.find({ shopId, userId })
+      .sort({ createdAt: -1 })
+      .select("name _id") // fetch only required fields
+      .lean();
+    return JSON.parse(JSON.stringify(categories));
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch categories");
+  }
+}
+
+export {
+  getAllCategoriesQuary,
+  createCategoryQuary,
+  getAllCategoriesUserQuary,
+};

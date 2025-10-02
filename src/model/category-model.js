@@ -42,7 +42,8 @@ const categorySchema = new mongoose.Schema(
     strict: true,
   }
 );
-
+categorySchema.index({ shopId: 1, userId: 1 }); // for filtering
+categorySchema.index({ createdAt: -1 }); // for sorting
 const Category =
   mongoose.models.Category ?? mongoose.model("Category", categorySchema);
 

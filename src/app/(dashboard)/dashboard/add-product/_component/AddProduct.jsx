@@ -66,21 +66,21 @@ const categories = [
 
 // Predefined variant types
 const variantTypes = [
-  { 
-    id: "size", 
-    name: "Size", 
-    options: ["S", "M", "L", "XL", "XXL"] 
+  {
+    id: "size",
+    name: "Size",
+    options: ["S", "M", "L", "XL", "XXL"],
   },
-  { 
-    id: "color", 
-    name: "Color", 
-    options: ["Red", "Blue", "Green", "Black", "White"] 
+  {
+    id: "color",
+    name: "Color",
+    options: ["Red", "Blue", "Green", "Black", "White"],
   },
-  { 
-    id: "material", 
-    name: "Material", 
-    options: ["Cotton", "Polyester", "Silk", "Wool"] 
-  }
+  {
+    id: "material",
+    name: "Material",
+    options: ["Cotton", "Polyester", "Silk", "Wool"],
+  },
 ];
 
 const AddProduct = () => {
@@ -116,7 +116,7 @@ const AddProduct = () => {
   const [variantOptions2, setVariantOptions2] = useState([]);
   const [selectedOptions1, setSelectedOptions1] = useState([]);
   const [selectedOptions2, setSelectedOptions2] = useState([]);
-  
+
   const [variantCombinations, setVariantCombinations] = useState([]);
   const [variants, setVariants] = useState([]);
 
@@ -183,7 +183,7 @@ const AddProduct = () => {
   // Update options when variant types are selected
   useEffect(() => {
     if (selectedVariantType1) {
-      const type1 = variantTypes.find(vt => vt.id === selectedVariantType1);
+      const type1 = variantTypes.find((vt) => vt.id === selectedVariantType1);
       setVariantOptions1(type1 ? type1.options : []);
       setSelectedOptions1([]);
     } else {
@@ -192,7 +192,7 @@ const AddProduct = () => {
     }
 
     if (selectedVariantType2 && selectedVariantType2 !== "none") {
-      const type2 = variantTypes.find(vt => vt.id === selectedVariantType2);
+      const type2 = variantTypes.find((vt) => vt.id === selectedVariantType2);
       setVariantOptions2(type2 ? type2.options : []);
       setSelectedOptions2([]);
     } else {
@@ -210,69 +210,75 @@ const AddProduct = () => {
   const generateCombinations = () => {
     let combinations = [];
 
-    if (selectedOptions1.length > 0 && selectedOptions2.length > 0 && selectedVariantType2 !== "none") {
+    if (
+      selectedOptions1.length > 0 &&
+      selectedOptions2.length > 0 &&
+      selectedVariantType2 !== "none"
+    ) {
       // Both variant types selected - create matrix
-      const type1 = variantTypes.find(vt => vt.id === selectedVariantType1);
-      const type2 = variantTypes.find(vt => vt.id === selectedVariantType2);
-      
-      selectedOptions1.forEach(opt1 => {
-        selectedOptions2.forEach(opt2 => {
+      const type1 = variantTypes.find((vt) => vt.id === selectedVariantType1);
+      const type2 = variantTypes.find((vt) => vt.id === selectedVariantType2);
+
+      selectedOptions1.forEach((opt1) => {
+        selectedOptions2.forEach((opt2) => {
           combinations.push({
             id: `${opt1}-${opt2}`,
             name: `${type1?.name}: ${opt1}, ${type2?.name}: ${opt2}`,
             values: {
               [type1?.name]: opt1,
-              [type2?.name]: opt2
-            }
+              [type2?.name]: opt2,
+            },
           });
         });
       });
     } else if (selectedOptions1.length > 0) {
       // Only first variant type selected
-      const type1 = variantTypes.find(vt => vt.id === selectedVariantType1);
-      selectedOptions1.forEach(opt1 => {
+      const type1 = variantTypes.find((vt) => vt.id === selectedVariantType1);
+      selectedOptions1.forEach((opt1) => {
         combinations.push({
           id: opt1,
           name: `${type1?.name}: ${opt1}`,
           values: {
-            [type1?.name]: opt1
-          }
+            [type1?.name]: opt1,
+          },
         });
       });
     }
 
     setVariantCombinations(combinations);
-    
+
     // Initialize variants with combinations
-    const newVariants = combinations.map(comb => {
-      const existingVariant = variants.find(v => v.combination === comb.name);
-      return existingVariant || {
-        combination: comb.name,
-        values: comb.values,
-        image: null,
-        price: "",
-        productCode: "",
-        quantity: "",
-        description: ""
-      };
+    const newVariants = combinations.map((comb) => {
+      const existingVariant = variants.find((v) => v.combination === comb.name);
+      return (
+        existingVariant || {
+          combination: comb.name,
+          values: comb.values,
+          image: null,
+          price: "",
+          productCode: "",
+          quantity: "",
+          description: "",
+        }
+      );
     });
-    
+
     setVariants(newVariants);
   };
 
   // Toggle option selection
   const toggleOption1 = (option) => {
-    setSelectedOptions1(prev => 
-      prev.includes(option) 
-        ? prev.filter(opt => opt !== option)
+    setSelectedOptions1((prev) =>
+      prev.includes(option)
+        ? prev.filter((opt) => opt !== option)
         : [...prev, option]
     );
   };
 
   const toggleOption2 = (option) => {
-    setSelectedOptions2(prev => 
-      prev.includes(option) 
-        ? prev.filter(opt => opt !== option)
+    setSelectedOptions2((prev) =>
+      prev.includes(option)
+        ? prev.filter((opt) => opt !== option)
         : [...prev, option]
     );
   };
@@ -287,7 +293,7 @@ const AddProduct = () => {
     const updatedVariants = [...variants];
     updatedVariants[index] = {
       ...updatedVariants[index],
-      [field]: value
+      [field]: value,
     };
     setVariants(updatedVariants);
   };
@@ -354,6 +360,34 @@ const AddProduct = () => {
       setIsLoading(false);
       return;
     }
+    const formData = new FormData();
+    formData.append("productName", formData.productName);
+    formData.append("productCode", formData.productCode);
+    formData.append("categoryId", formData.categoryName);
+    formData.append("availableQuantity", formData.availableQuantity || 0);
+    formData.append("shortDescription", formData.shortDescription);
+    formData.append("longDescription", formData.longDescription);
+    formData.append("regularPrice", formData.regularPrice || 0);
+    formData.append("discountType", formData.discountType);
+    formData.append("discountValue", formData.discountValue || 0);
+    formData.append("isActive", formData.isActive);
+    formData.append("isFeatured", formData.isFeatured);
+    formData.append("metaTitle", formData.metaTitle);
+    formData.append("metaDescription", formData.metaDescription);
+    formData.append("deliveryCharge", formData.deliveryCharge);
+    if (formData.deliveryCharge === "paid") {
+      formData.append(
+        "deliveryCharges",
+        JSON.stringify(formData.deliveryCharges)
+      );
+    }
+    if (formData.mainImage) {
+      formData.append("mainImage", formData.mainImage.file);
+    }
+    formData.galleryImages.forEach((img, index) => {
+      formData.append(`galleryImage_${index}`, img.file);
+    });
+    formData.append("variants", JSON.stringify(variants));
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -898,13 +932,23 @@ const AddProduct = () => {
                     {selectedVariantType1 && (
                       <div className="space-y-2">
                         <Label>
-                          Select {variantTypes.find(vt => vt.id === selectedVariantType1)?.name} Options
+                          Select{" "}
+                          {
+                            variantTypes.find(
+                              (vt) => vt.id === selectedVariantType1
+                            )?.name
+                          }{" "}
+                          Options
                         </Label>
                         <div className="flex flex-wrap gap-2">
                           {variantOptions1.map((option) => (
                             <Badge
                               key={option}
-                              variant={selectedOptions1.includes(option) ? "default" : "outline"}
+                              variant={
+                                selectedOptions1.includes(option)
+                                  ? "default"
+                                  : "outline"
+                              }
                               className="cursor-pointer px-3 py-1"
                               onClick={() => toggleOption1(option)}
                             >
@@ -924,7 +968,9 @@ const AddProduct = () => {
 
                   {/* Variant Type 2 */}
                   <div className="space-y-4">
-                    <Label htmlFor="variant-type-2">Variant Type 2 (Optional)</Label>
+                    <Label htmlFor="variant-type-2">
+                      Variant Type 2 (Optional)
+                    </Label>
                     <Select
                       value={selectedVariantType2}
                       onValueChange={setSelectedVariantType2}
@@ -935,7 +981,7 @@ const AddProduct = () => {
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
                         {variantTypes
-                          .filter(vt => vt.id !== selectedVariantType1)
+                          .filter((vt) => vt.id !== selectedVariantType1)
                           .map((type) => (
                             <SelectItem key={type.id} value={type.id}>
                               {type.name}
@@ -944,31 +990,42 @@ const AddProduct = () => {
                       </SelectContent>
                     </Select>
 
-                    {selectedVariantType2 && selectedVariantType2 !== "none" && (
-                      <div className="space-y-2">
-                        <Label>
-                          Select {variantTypes.find(vt => vt.id === selectedVariantType2)?.name} Options
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {variantOptions2.map((option) => (
-                            <Badge
-                              key={option}
-                              variant={selectedOptions2.includes(option) ? "default" : "outline"}
-                              className="cursor-pointer px-3 py-1"
-                              onClick={() => toggleOption2(option)}
-                            >
-                              {option}
-                              {selectedOptions2.includes(option) && (
-                                <X className="h-3 w-3 ml-1" />
-                              )}
-                            </Badge>
-                          ))}
+                    {selectedVariantType2 &&
+                      selectedVariantType2 !== "none" && (
+                        <div className="space-y-2">
+                          <Label>
+                            Select{" "}
+                            {
+                              variantTypes.find(
+                                (vt) => vt.id === selectedVariantType2
+                              )?.name
+                            }{" "}
+                            Options
+                          </Label>
+                          <div className="flex flex-wrap gap-2">
+                            {variantOptions2.map((option) => (
+                              <Badge
+                                key={option}
+                                variant={
+                                  selectedOptions2.includes(option)
+                                    ? "default"
+                                    : "outline"
+                                }
+                                className="cursor-pointer px-3 py-1"
+                                onClick={() => toggleOption2(option)}
+                              >
+                                {option}
+                                {selectedOptions2.includes(option) && (
+                                  <X className="h-3 w-3 ml-1" />
+                                )}
+                              </Badge>
+                            ))}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {selectedOptions2.length} selected
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {selectedOptions2.length} selected
-                        </p>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
 
@@ -977,12 +1034,14 @@ const AddProduct = () => {
                   <div className="space-y-4">
                     <Separator />
                     <div className="flex justify-between items-center">
-                      <CardTitle className="text-lg">Variant Combinations</CardTitle>
+                      <CardTitle className="text-lg">
+                        Variant Combinations
+                      </CardTitle>
                       <span className="text-sm text-muted-foreground">
                         {variantCombinations.length} combinations generated
                       </span>
                     </div>
-                    
+
                     <div className="border rounded-lg">
                       <Table>
                         <TableHeader>
@@ -1006,7 +1065,13 @@ const AddProduct = () => {
                                   type="number"
                                   placeholder="0.00"
                                   value={variant.price}
-                                  onChange={(e) => updateVariant(index, 'price', e.target.value)}
+                                  onChange={(e) =>
+                                    updateVariant(
+                                      index,
+                                      "price",
+                                      e.target.value
+                                    )
+                                  }
                                   className="w-24"
                                 />
                               </TableCell>
@@ -1015,7 +1080,13 @@ const AddProduct = () => {
                                   type="number"
                                   placeholder="0"
                                   value={variant.quantity}
-                                  onChange={(e) => updateVariant(index, 'quantity', e.target.value)}
+                                  onChange={(e) =>
+                                    updateVariant(
+                                      index,
+                                      "quantity",
+                                      e.target.value
+                                    )
+                                  }
                                   className="w-20"
                                 />
                               </TableCell>
@@ -1023,7 +1094,13 @@ const AddProduct = () => {
                                 <Input
                                   placeholder="SKU"
                                   value={variant.productCode}
-                                  onChange={(e) => updateVariant(index, 'productCode', e.target.value)}
+                                  onChange={(e) =>
+                                    updateVariant(
+                                      index,
+                                      "productCode",
+                                      e.target.value
+                                    )
+                                  }
                                   className="w-32"
                                 />
                               </TableCell>
@@ -1058,7 +1135,10 @@ const AddProduct = () => {
             </Card>
 
             {/* Variant Detail Dialog */}
-            <Dialog open={showVariantDialog} onOpenChange={setShowVariantDialog}>
+            <Dialog
+              open={showVariantDialog}
+              onOpenChange={setShowVariantDialog}
+            >
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Edit Variant</DialogTitle>
@@ -1109,7 +1189,11 @@ const AddProduct = () => {
                           <Button
                             variant="outline"
                             className="gap-2 mt-2"
-                            onClick={() => document.getElementById("variantImageInput")?.click()}
+                            onClick={() =>
+                              document
+                                .getElementById("variantImageInput")
+                                ?.click()
+                            }
                           >
                             <Upload className="h-4 w-4" />
                             Upload Image
