@@ -2,6 +2,8 @@ import { dbConnect } from "@/service/mongo";
 import Category from "@/model/category-model";
 import slugify from "slugify";
 import ImageKit from "imagekit";
+import { ObjectId } from "mongodb";
+import mongoose from "mongoose";
 
 const imagekit = new ImageKit({
   publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
@@ -63,4 +65,15 @@ async function createCategoryQuary(data, userId, shopId) {
   }
 }
 
-export { createCategoryQuary };
+async function getAllCategoriesQuary({ shopId }) {
+  await dbConnect();
+  try {
+    const categories = await Category.find(shopId).sort({ createdAt: -1 });
+
+    return JSON.parse(JSON.stringify(categories));
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch categories");
+  }
+}
+
+export { getAllCategoriesQuary, createCategoryQuary };
