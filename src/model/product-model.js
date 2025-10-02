@@ -69,10 +69,9 @@ const productSchema = new mongoose.Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    categoryName: {
-      type: String,
-      required: [true, "Category is required"],
-      trim: true,
+    categoryId: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
     },
     availableQuantity: {
       type: Number,
