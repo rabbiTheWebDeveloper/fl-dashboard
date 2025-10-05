@@ -642,6 +642,7 @@ export default function Home() {
         </div>
       </div>
       <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                  <a target="_blank" href="https://www.sslcommerz.com/" title="SSLCommerz" alt="SSLCommerz"><img style="width:300px;height:auto;" src="https://securepay.sslcommerz.com/public/image/SSLCommerz-Pay-With-logo-All-Size-01.png" /></a>
         <p className="bangla-text">© ২০২৫ AMARDokan. সকল স্বত্ব সংরক্ষিত।</p>
       </div>
     </div>
