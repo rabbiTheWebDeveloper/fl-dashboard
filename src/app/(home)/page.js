@@ -651,7 +651,7 @@ export default function Home() {
     <img
       src="https://securepay.sslcommerz.com/public/image/SSLCommerz-Pay-With-logo-All-Size-01.png"
       alt="SSLCommerz"
-      style={{ width: "300px", height: "auto" }}
+      style={{ width: "100%", height: "auto" }}
     />
   </a>
 
