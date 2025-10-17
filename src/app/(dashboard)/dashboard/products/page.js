@@ -4,7 +4,7 @@ import { userInfo } from "@/lib";
 
 const page = async () => {
   const category = await getAllProductQuary(await userInfo());
-  console.log(category);
+  // console.log(category);
   return (
     <>
       <ProductList productlist={category} />

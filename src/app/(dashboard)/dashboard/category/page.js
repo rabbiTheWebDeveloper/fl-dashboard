@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+
 import CategoryContainer from "./_component/CategoryContainer";
 import { getAllCategoriesQuary } from "@/queries/categories";
 import { userInfo } from "@/lib";
