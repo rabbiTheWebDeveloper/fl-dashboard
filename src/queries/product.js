@@ -1,35 +1,29 @@
-import { replaceMongoIdInArray, replaceMongoIdInObject } from "@/lib/convertData";
-import { ProductModel } from "@/model/product-model";
 import { dbConnect } from "@/service/mongo";
+import { ProductModel } from "@/model/product-model";
 
-
-export async function createProductDB(data) {
+async function getAllProductQuary({ shopId, userId }) {
   await dbConnect();
-  const newSetting = await ProductModel.create(data);
-  return newSetting;
-  // return replaceMongoIdInArray(categories);
+  try {
+    const categories = await ProductModel.find({ shopId, userId }).sort({
+      createdAt: -1,
+    });
+    return JSON.parse(JSON.stringify(categories));
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch categories");
+  }
 }
 
-export async function getProducts() {
+async function getAllProductUserQuary({ shopId, userId }) {
   await dbConnect();
-  const products = await ProductModel.find({}).lean();
-  return replaceMongoIdInArray(products);
+  try {
+    const categories = await ProductModel.find({ shopId, userId })
+      .sort({ createdAt: -1 })
+      .select("name _id")
+      .lean();
+    return JSON.parse(JSON.stringify(categories));
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch categories");
+  }
 }
 
-export async function getProductById(titleSlug) {
-  await dbConnect();
-  const product = await ProductModel.findOne({ titleSlug }).lean();
-  return replaceMongoIdInObject(product);
-}
-
-export async function updateProduct(id, data) {
-  await dbConnect();
-  const product = await ProductModel.findByIdAndUpdate(id, data, { new: true }).lean();
-  return replaceMongoIdInObject(product);
-}
-
-export async function deleteProduct(id) {
-  await dbConnect();
-  const product = await ProductModel.findByIdAndDelete(id).lean();
-  return replaceMongoIdInObject(product);
-}
+export { getAllProductQuary, getAllProductUserQuary };
