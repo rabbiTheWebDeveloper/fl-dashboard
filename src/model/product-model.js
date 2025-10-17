@@ -1,15 +1,15 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const variantSchema = new mongoose.Schema(
   {
     combination: {
       type: String,
-      required: true,
+      // required: true,
     },
     values: {
       type: Map,
       of: String,
-      required: true,
+      // required: true,
     },
     image: {
       url: String,
@@ -21,7 +21,7 @@ const variantSchema = new mongoose.Schema(
     },
     productCode: {
       type: String,
-      required: true,
+      // required: true,
     },
     quantity: {
       type: Number,
@@ -58,6 +58,7 @@ const productSchema = new mongoose.Schema(
     productCode: {
       type: String,
       required: [true, "Product code is required"],
+      // unique: true,
       trim: true,
     },
     shopId: {
@@ -162,21 +163,12 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-
-    // Audit Fields
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-    updatedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    versionKey: false,
   }
 );
 
@@ -196,7 +188,7 @@ productSchema.pre("save", function (next) {
     this.isModified("discountType") ||
     this.isModified("discountValue")
   ) {
-    this.discountedPrice = this.calculatedDiscountPrice;
+    this.discountedPrice = this.get("calculatedDiscountPrice");
   }
   next();
 });
@@ -233,4 +225,4 @@ productSchema.methods.getTotalStock = function () {
 };
 
 export const ProductModel =
-  mongoose.models.Product ?? mongoose.model("Product", ProductSchema);
+  mongoose.models.Product ?? mongoose.model("Product", productSchema);
