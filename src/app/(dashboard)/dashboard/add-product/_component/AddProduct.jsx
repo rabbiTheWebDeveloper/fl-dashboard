@@ -78,7 +78,7 @@ const variantTypes = [
   },
 ];
 
-const AddProduct = ({ categories, userInfo: {} }) => {
+const AddProduct = ({ categories, userInfos }) => {
   // Main form state
   const [formData, setFormData] = useState({
     productName: "",
@@ -357,41 +357,44 @@ const AddProduct = ({ categories, userInfo: {} }) => {
     }
 
     try {
-      const formData = new FormData();
+      const submitFormData = new FormData();
 
-      formData.append("productName", formData.productName);
-      formData.append("productCode", formData.productCode);
-      formData.append("categoryId", formData.categoryName);
-      formData.append("availableQuantity", formData.availableQuantity || 0);
-      formData.append("shortDescription", formData.shortDescription);
-      formData.append("longDescription", formData.longDescription);
-      formData.append("regularPrice", formData.regularPrice || 0);
-      formData.append("discountType", formData.discountType);
-      formData.append("discountValue", formData.discountValue || 0);
-      formData.append("isActive", formData.isActive);
-      formData.append("isFeatured", formData.isFeatured);
-      formData.append("metaTitle", formData.metaTitle);
-      formData.append("metaDescription", formData.metaDescription);
-      formData.append("deliveryCharge", formData.deliveryCharge);
+      submitFormData.append("productName", formData.productName);
+      submitFormData.append("productCode", formData.productCode);
+      submitFormData.append("categoryId", formData.categoryName);
+      submitFormData.append(
+        "availableQuantity",
+        formData.availableQuantity || 0
+      );
+      submitFormData.append("shortDescription", formData.shortDescription);
+      submitFormData.append("longDescription", formData.longDescription);
+      submitFormData.append("regularPrice", formData.regularPrice || 0);
+      submitFormData.append("discountType", formData.discountType);
+      submitFormData.append("discountValue", formData.discountValue || 0);
+      submitFormData.append("isActive", formData.isActive);
+      submitFormData.append("isFeatured", formData.isFeatured);
+      submitFormData.append("metaTitle", formData.metaTitle);
+      submitFormData.append("metaDescription", formData.metaDescription);
+      submitFormData.append("deliveryCharge", formData.deliveryCharge);
       if (formData.deliveryCharge === "paid") {
-        formData.append(
+        submitFormData.append(
           "deliveryCharges",
           JSON.stringify(formData.deliveryCharges)
         );
       }
       if (formData.mainImage) {
-        formData.append("mainImage", formData.mainImage.file);
+        submitFormData.append("mainImage", formData.mainImage.file);
       }
-      formData.galleryImages.forEach((img, index) => {
-        formData.append(`galleryImage_${index}`, img.file);
+      formData.galleryImages?.forEach((img, index) => {
+        submitFormData.append(`galleryImages`, img.file);
       });
-      formData.append("variants", JSON.stringify(variants));
-      formData.append("shopId", userInfos.shopId);
-      formData.append("userId", userInfos.userId);
+      submitFormData.append("variants", JSON.stringify(variants));
+      submitFormData.append("shopId", userInfos.shopId);
+      submitFormData.append("userId", userInfos.userId);
 
       const response = await fetch(API_ENDPOINTS.BASE_URL + "/product/create", {
         method: "POST",
-        body: formData,
+        body: submitFormData,
       });
 
       if (!response.ok) {
