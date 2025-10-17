@@ -25,12 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +49,7 @@ import {
   MapPin,
   Calendar,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -154,8 +150,7 @@ export default function OrdersPage() {
     pending: orders.filter((o) => o.order_status === "pending").length,
     processing: orders.filter((o) => o.order_status === "processing").length,
     completed: orders.filter(
-      (o) =>
-        o.order_status === "completed" || o.order_status === "delivered"
+      (o) => o.order_status === "completed" || o.order_status === "delivered"
     ).length,
     totalRevenue: orders.reduce((sum, o) => sum + o.grand_total, 0),
   };
@@ -183,10 +178,12 @@ export default function OrdersPage() {
             View and manage all your shop orders.
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Order
-        </Button>
+        <Link href="/dashboard/order-now">
+          <button className="inline-flex items-center gap-2 rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+            <Plus className="h-4 w-4" />
+            New Order
+          </button>
+        </Link>
       </div>
 
       {/* Stats */}
@@ -329,16 +326,17 @@ export default function OrdersPage() {
                         {statusLabels[order.order_status]}
                       </Badge>
                       {order.fraud_info?.fraud_entry === "1" && (
-                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs mt-1">
+                        <Badge
+                          variant="outline"
+                          className="bg-red-50 text-red-700 border-red-200 text-xs mt-1"
+                        >
                           Suspected Fraud
                         </Badge>
                       )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {order.cod
-                          ? "Cash on Delivery"
-                          : "Online Payment"}
+                        {order.cod ? "Cash on Delivery" : "Online Payment"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
