@@ -4,9 +4,11 @@ import { ProductModel } from "@/model/product-model";
 async function getAllProductQuary({ shopId, userId }) {
   await dbConnect();
   try {
-    const categories = await ProductModel.find({ shopId, userId }).sort({
-      createdAt: -1,
-    });
+    const categories = await ProductModel.find({ shopId, userId })
+      .populate({ path: "categoryId", select: "name", as: "category" })
+      .sort({
+        createdAt: -1,
+      });
     return JSON.parse(JSON.stringify(categories));
   } catch (error) {
     throw new Error(error.message || "Failed to fetch categories");
