@@ -361,7 +361,7 @@ const AddProduct = ({ categories, userInfos }) => {
 
       submitFormData.append("productName", formData.productName);
       submitFormData.append("productCode", formData.productCode);
-      submitFormData.append("categoryId", formData.categoryName);
+      submitFormData.append("categoryId", formData.categoryId);
       submitFormData.append(
         "availableQuantity",
         formData.availableQuantity || 0
