@@ -189,6 +189,7 @@ const DashboardLayout = ({ children }) => {
     if (path.includes("category")) return "category";
     if (path.includes("products")) return "products";
     if (path.includes("orders")) return "orders";
+    if (path.includes("order-now")) return "orders";
     if (path.includes("analytics")) return "analytics";
     if (path.includes("billings")) return "billings";
     if (path.includes("team")) return "team";
