@@ -93,7 +93,7 @@ const ManageShopPage = () => {
         "Add and manage your social media links to improve engagement.",
       icon: Link2,
       color: "from-pink-500 to-pink-600",
-      href: "/dashboard/myshop/manage/social-link",
+      href: "/dashboard/myshop/manage/social-links",
     },
   ];
 
