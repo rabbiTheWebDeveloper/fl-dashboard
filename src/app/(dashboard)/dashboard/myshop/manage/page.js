@@ -21,7 +21,7 @@ const ManageShopPage = () => {
         "Customize your shop’s general configurations for a smooth experience.",
       icon: Settings,
       color: "from-blue-500 to-blue-600",
-      href: "/dashboard/myshop/manage/settings",
+      href: "/dashboard/myshop/manage/shop-settings",
     },
     {
       id: 2,
@@ -93,7 +93,7 @@ const ManageShopPage = () => {
         "Add and manage your social media links to improve engagement.",
       icon: Link2,
       color: "from-pink-500 to-pink-600",
-      href: "/dashboard/myshop/manage/social-links",
+      href: "/dashboard/myshop/manage/social-link",
     },
   ];
 
