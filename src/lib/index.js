@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
 
 export const userInfo = async () => {
+  const cookieStore = await cookies();
   // cookies().get("user") returns { name, value } | undefined
-  const userCookie = cookies().get("user");
+  const userCookie = cookieStore.get("user");
 
-  if (!userCookie?.value) return {};  // safe check
+  if (!userCookie?.value) return {}; // safe check
 
   let parsed;
   try {
