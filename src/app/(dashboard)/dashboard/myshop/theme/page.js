@@ -1,12 +1,14 @@
 import { userInfo } from "@/lib";
 import CustomizeTheme from "../_component/CustomizeTheme";
+import { getThemeQuery } from "@/queries/theme";
 
 const page = async () => {
   const user = await userInfo();
-  console.log("User info in theme page:", user);
+  const themeInfo = await getThemeQuery(user);
+  console.log("User info in theme page:", themeInfo);
   return (
     <>
-      <CustomizeTheme user={user} />
+      <CustomizeTheme user={user} themeInfo={themeInfo} />
     </>
   );
 };

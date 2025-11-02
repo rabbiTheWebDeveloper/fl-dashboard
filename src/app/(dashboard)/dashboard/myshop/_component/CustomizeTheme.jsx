@@ -8,17 +8,18 @@ import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { myshopThemeColorUpdateQuaryAction } from "@/app/actions/myshop";
+import { th } from "date-fns/locale";
 
-export default function CustomizeTheme({ user }) {
+export default function CustomizeTheme({ user, themeInfo }) {
   const [theme, setTheme] = useState({
-    primary: "#3b82f6",
-    secondary: "#f59e0b",
-    background: "#ffffff",
-    text: "#1f2937",
-    muted: "#6b7280",
-    accent: "#10b981",
-    banner: "#e2e8f0",
-    footer: "#1e293b",
+    primary: themeInfo?.data?.primary || "#3b82f6",
+    secondary: themeInfo?.data?.secondary || "#f59e0b",
+    background: themeInfo?.data?.background || "#ffffff",
+    text: themeInfo?.data?.text || "#1f2937",
+    muted: themeInfo?.data?.muted || "#6b7280",
+    accent: themeInfo?.data?.accent || "#10b981",
+    banner: themeInfo?.data?.banner || "#e2e8f0",
+    footer: themeInfo?.data?.footer || "#1e293b",
   });
 
   const handleColorChange = (key, value) => {

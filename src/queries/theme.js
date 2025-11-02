@@ -1,7 +1,7 @@
 import { ThemeModel } from "@/model/theme-model";
 import { dbConnect } from "@/service/mongo";
 
-export async function themeQuery(data) {
+async function themeQuery(data) {
   await dbConnect();
 
   const { userId, shopId, ...themeFields } = data;
@@ -29,4 +29,21 @@ export async function themeQuery(data) {
   };
 }
 
-export { themeQuery };
+async function getThemeQuery({ userId, shopId }) {
+  await dbConnect();
+  const theme = await ThemeModel.findOne({ userId, shopId }).lean();
+  if (!theme) {
+    return {
+      message: "Theme not found.",
+      status: 404,
+      data: null,
+    };
+  }
+  return {
+    message: "Theme retrieved successfully.",
+    status: 200,
+    data: JSON.parse(JSON.stringify(theme)),
+  };
+}
+
+export { themeQuery, getThemeQuery };
