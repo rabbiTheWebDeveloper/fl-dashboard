@@ -25,7 +25,7 @@ export async function themeQuery(data) {
   return {
     message: "Theme saved successfully.",
     status: 200,
-    data: result,
+    data: JSON.parse(JSON.stringify(result)),
   };
 }
 
