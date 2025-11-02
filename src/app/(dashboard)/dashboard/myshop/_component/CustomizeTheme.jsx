@@ -1,14 +1,10 @@
 "use client";
-
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { myshopThemeColorUpdateQuaryAction } from "@/app/actions/myshop";
-import { th } from "date-fns/locale";
 
 export default function CustomizeTheme({ user, themeInfo }) {
   const [theme, setTheme] = useState({
