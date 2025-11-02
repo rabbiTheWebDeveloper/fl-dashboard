@@ -72,8 +72,6 @@ export default async function actionBanner() {
 }
 
 export async function updateOnBoardingDetailsAction(id, updateData) {
- 
-
   try {
     const response = await updateOnBoardingDetailsQuery(id, updateData);
     revalidatePath(`/dashboard/on-boarding-report`);
@@ -88,8 +86,6 @@ export async function getOnBoardingBySpecificStatusAndDateAction(
   searchParam,
   creationDate
 ) {
-
-
   try {
     const response = await getOnBoardingBySpecificStatusAndDate(
       status,
@@ -108,8 +104,6 @@ export async function getAffiliationBySpecificStatusAndDateAction(
   searchParam,
   creationDate
 ) {
- 
-
   try {
     const response = await getAffiliationBySpecificStatusAndDate(
       status,
