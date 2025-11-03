@@ -28,7 +28,7 @@ export async function domainQuery(data) {
 
 async function getDomainQuery({ userId, shopId }) {
   await dbConnect();
-  const domain = await DomainModel.findOne({ userId, shopId },{domain_name: 1}).lean();
+  const domain = await DomainModel.findOne({ userId, shopId },{domain_name: 1 ,domain_status: 1 ,_id: 0}).lean();
   if (!domain) {
     return {
       message: "Domain not found.",
