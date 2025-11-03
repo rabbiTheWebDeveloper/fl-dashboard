@@ -1,5 +1,6 @@
 "use server";
 import { updateDeliveryQuery } from "@/queries/delivery";
+import { updateSocialLinkQuery } from "@/queries/socialLink";
 import { themeQuery } from "@/queries/theme";
 import { revalidatePath } from "next/cache";
 
@@ -16,6 +17,16 @@ export async function myshopThemeColorUpdateQuaryAction(data) {
 export async function myshopUpdateDeliveryQueryAction(data) {
   try {
     const response = await updateDeliveryQuery(data);
+    // revalidatePath(`/registration`);
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+export async function myshopUpdateSocialLinkQueryAction(data) {
+  try {
+    const response = await updateSocialLinkQuery(data);
     // revalidatePath(`/registration`);
     return response;
   } catch (error) {
