@@ -32,6 +32,7 @@ const Domain = ({ user, domainInfo }) => {
 
       if (response?.status) {
         toast.success("Shipping info updated successfully!");
+        setNewDomain(response?.data?.domain_name || "");
       } else {
         toast.error(response?.message || "Update failed.");
       }
