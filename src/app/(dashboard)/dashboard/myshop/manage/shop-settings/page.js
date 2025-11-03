@@ -1,10 +1,11 @@
-import React from "react";
 import ShopInfo from "../_component/ShopInfo";
+import { userInfo } from "@/lib";
 
-const page = () => {
+const page = async () => {
+  const user = await userInfo();
   return (
     <>
-      <ShopInfo />
+      <ShopInfo user={user} />
     </>
   );
 };

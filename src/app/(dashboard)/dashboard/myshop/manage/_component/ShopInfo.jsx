@@ -3,8 +3,9 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Image from "next/image";
+import { API_ENDPOINTS } from "@/config/ApiEndpoints";
 
-const ShopInfo = () => {
+const ShopInfo = ({ user }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
@@ -17,7 +18,6 @@ const ShopInfo = () => {
     phone: "09647443483",
     defaultDeliveryLocation: "",
     shopInfo: "",
-    shopId: "256344",
     metaDescription: "",
     websiteTitle: "Ideal bigshop",
     description: "",
@@ -52,10 +52,29 @@ const ShopInfo = () => {
     setLoading(true);
 
     try {
-      // Upload logic or API action here
-      // Example:
-      // const response = await updateShopInfoAction(formData);
+      const formDataToSend = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataToSend.append(key, value);
+      });
+      if (logoPreview) {
+        formDataToSend.append("companyLogo", logoPreview);
+      }
+      if (faviconPreview) {
+        formDataToSend.append("favicon", faviconPreview);
+      }
+      formDataToSend.append("userId", user.userId);
+      formDataToSend.append("shopId", user.shopId);
 
+      const response = await fetch(
+        API_ENDPOINTS.BASE_URL + "/clients/shopinfo-update",
+        {
+          method: "POST",
+          body: formDataToSend,
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
       toast.success("Shop information updated successfully!");
     } catch (error) {
       console.error("Error:", error);
@@ -70,7 +89,9 @@ const ShopInfo = () => {
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-indigo-100 p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-indigo-700">Shop Information</h2>
+          <h2 className="text-2xl font-bold text-indigo-700">
+            Shop Information
+          </h2>
           <button
             onClick={() => router.back()}
             className="px-4 py-2 text-sm font-medium text-indigo-700 border border-indigo-400 rounded-lg hover:bg-indigo-100 transition-all"
