@@ -1,9 +1,9 @@
-import { SettingsModel } from "@/model/shopInfo-model";
+import { ShopInfoModel } from "@/model/shopInfo-model";
 import { dbConnect } from "@/service/mongo";
 
 async function getSettingsQuery({ userId, shopId }) {
   await dbConnect();
-  const theme = await SettingsModel.findOne({ userId, shopId }).lean();
+  const theme = await ShopInfoModel.findOne({ userId, shopId }).lean();
   if (!theme) {
     return {
       message: "Settings not found.",
