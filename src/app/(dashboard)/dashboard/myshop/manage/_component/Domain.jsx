@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { myshopUpdateDomainQueryAction } from "@/app/actions/myshop";
 const vercelNameservers = ["ns1.vercel-dns.com", "ns2.vercel-dns.com"];
-const Domain = ({ user, settings }) => {
-  const [newDomain, setNewDomain] = useState(settings?.domain_name || "");
+const Domain = ({ user, domainInfo }) => {
+  const [newDomain, setNewDomain] = useState(domainInfo?.domain_name || "");
   const [copiedNameserver, setCopiedNameserver] = useState("");
   const [loading, setLoading] = useState(false);
   const handleBack = () => window.history.back();

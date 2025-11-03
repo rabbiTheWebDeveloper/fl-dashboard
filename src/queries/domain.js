@@ -6,8 +6,6 @@ export async function domainQuery(data) {
   await dbConnect();
 
   const { userId, shopId, ...otherFields } = data;
-
-  if (!domain_name) throw new Error("Domain name is required");
   if (!shopId) throw new Error("Shop ID is required");
 
   const result = await DomainModel.findOneAndUpdate(
@@ -24,8 +22,24 @@ export async function domainQuery(data) {
   return {
     message: "Domain saved successfully.",
     status: 200,
-    data: result,
+    data:JSON.parse(JSON.stringify(result)),
   };
 }
 
-export { domainQuery };
+async function getDomainQuery({ userId, shopId }) {
+  await dbConnect();
+  const domain = await DomainModel.findOne({ userId, shopId }).lean();
+  if (!domain) {
+    return {
+      message: "Domain not found.",
+      status: 404,
+      data: null,
+    };
+  }
+  return {
+    message: "Domain retrieved successfully.",
+    status: 200,
+    data: JSON.parse(JSON.stringify(domain)),
+  };
+}
+export { domainQuery, getDomainQuery };
