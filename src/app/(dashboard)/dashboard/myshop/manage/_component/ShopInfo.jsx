@@ -17,7 +17,6 @@ const ShopInfo = ({ user, settings }) => {
   );
 
   const [formData, setFormData] = useState({
-    shopName: settings?.shopName || "",
     shopAddress: settings?.shopAddress || "",
     phone: settings?.phone || "",
     defaultDeliveryLocation: settings?.defaultDeliveryLocation || "",
@@ -41,10 +40,18 @@ const ShopInfo = ({ user, settings }) => {
       toast.error("Invalid image format. Use png, jpg, or jpeg.");
       return;
     }
-
+    if (type !== "companyLogo" && type !== "favicon") {
+      toast.error("Invalid image type.");
+      return;
+    }
+    if (type === "companyLogo") {
+      setFormData({ ...formData, companyLogo: file });
+    } else if (type === "favicon") {
+      setFormData({ ...formData, favicon: file });
+    }
     const reader = new FileReader();
     reader.onloadend = () => {
-      if (type === "logo") setLogoPreview(reader.result);
+      if (type === "companyLogo") setLogoPreview(reader.result);
       else setFaviconPreview(reader.result);
     };
     reader.readAsDataURL(file);
@@ -60,12 +67,6 @@ const ShopInfo = ({ user, settings }) => {
       Object.entries(formData).forEach(([key, value]) => {
         formDataToSend.append(key, value);
       });
-      if (logoPreview) {
-        formDataToSend.append("companyLogo", logoPreview);
-      }
-      if (faviconPreview) {
-        formDataToSend.append("favicon", faviconPreview);
-      }
       formDataToSend.append("userId", user.userId);
       formDataToSend.append("shopId", user.shopId);
 
@@ -106,7 +107,7 @@ const ShopInfo = ({ user, settings }) => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Shop Name */}
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Shop Name
             </label>
@@ -119,7 +120,7 @@ const ShopInfo = ({ user, settings }) => {
               className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
               required
             />
-          </div>
+          </div> */}
 
           {/* Shop Address */}
           <div>
@@ -139,7 +140,7 @@ const ShopInfo = ({ user, settings }) => {
 
           {/* Email & Phone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Business Email
               </label>
@@ -152,7 +153,7 @@ const ShopInfo = ({ user, settings }) => {
                 className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
                 required
               />
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Phone
@@ -192,7 +193,7 @@ const ShopInfo = ({ user, settings }) => {
             <input
               type="file"
               accept="image/png, image/jpeg, image/jpg"
-              onChange={(e) => handleImageUpload(e, "logo")}
+              onChange={(e) => handleImageUpload(e, "companyLogo")}
               className="w-full border border-indigo-400 rounded-lg px-4 py-2 cursor-pointer"
             />
             {logoPreview && (
