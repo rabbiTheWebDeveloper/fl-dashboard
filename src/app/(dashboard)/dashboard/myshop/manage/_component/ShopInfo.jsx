@@ -4,17 +4,13 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import { API_ENDPOINTS } from "@/config/ApiEndpoints";
-import { se } from "date-fns/locale";
 
 const ShopInfo = ({ user, settings }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [logoPreview, setLogoPreview] = useState(
-    settings?.companyLogo?.url || null
-  );
-  const [faviconPreview, setFaviconPreview] = useState(
-    settings?.favicon?.url || null
-  );
+
+  const [logoPreview, setLogoPreview] = useState(settings?.companyLogo?.url || null);
+  const [faviconPreview, setFaviconPreview] = useState(settings?.favicon?.url || null);
 
   const [formData, setFormData] = useState({
     shopAddress: settings?.shopAddress || "",
@@ -24,6 +20,8 @@ const ShopInfo = ({ user, settings }) => {
     metaDescription: settings?.metaDescription || "",
     websiteTitle: settings?.websiteTitle || "",
     description: settings?.description || "",
+    companyLogo: null,
+    favicon: null,
   });
 
   // Handle Input Change
@@ -40,15 +38,13 @@ const ShopInfo = ({ user, settings }) => {
       toast.error("Invalid image format. Use png, jpg, or jpeg.");
       return;
     }
-    if (type !== "companyLogo" && type !== "favicon") {
-      toast.error("Invalid image type.");
-      return;
-    }
+
     if (type === "companyLogo") {
-      setFormData({ ...formData, companyLogo: file });
+      setFormData((prev) => ({ ...prev, companyLogo: file }));
     } else if (type === "favicon") {
-      setFormData({ ...formData, favicon: file });
+      setFormData((prev) => ({ ...prev, favicon: file }));
     }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       if (type === "companyLogo") setLogoPreview(reader.result);
@@ -57,7 +53,7 @@ const ShopInfo = ({ user, settings }) => {
     reader.readAsDataURL(file);
   };
 
-  // Submit Form
+  // Handle Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -65,25 +61,29 @@ const ShopInfo = ({ user, settings }) => {
     try {
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        formDataToSend.append(key, value);
+        if (value !== null) formDataToSend.append(key, value);
       });
+
+      // Include user and shop IDs
       formDataToSend.append("userId", user.userId);
       formDataToSend.append("shopId", user.shopId);
 
       const response = await fetch(
-        API_ENDPOINTS.BASE_URL + "/clients/shopinfo-update",
+        `${API_ENDPOINTS.BASE_URL}/clients/shopinfo-update`,
         {
           method: "POST",
           body: formDataToSend,
         }
       );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Failed to update");
+
       toast.success("Shop information updated successfully!");
+      router.refresh(); // refresh UI if data is server-rendered
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to update shop info!");
+      toast.error(" Failed to update shop info!");
     } finally {
       setLoading(false);
     }
@@ -94,9 +94,7 @@ const ShopInfo = ({ user, settings }) => {
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-indigo-100 p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-indigo-700">
-            Shop Information
-          </h2>
+          <h2 className="text-2xl font-bold text-indigo-700">Shop Information</h2>
           <button
             onClick={() => router.back()}
             className="px-4 py-2 text-sm font-medium text-indigo-700 border border-indigo-400 rounded-lg hover:bg-indigo-100 transition-all"
@@ -106,22 +104,6 @@ const ShopInfo = ({ user, settings }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Shop Name */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Shop Name
-            </label>
-            <input
-              name="shopName"
-              type="text"
-              value={formData.shopName}
-              onChange={handleChange}
-              placeholder="Enter your shop name"
-              className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div> */}
-
           {/* Shop Address */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -138,36 +120,20 @@ const ShopInfo = ({ user, settings }) => {
             />
           </div>
 
-          {/* Email & Phone */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Business Email
-              </label>
-              <input
-                name="businessEmail"
-                type="email"
-                value={formData.businessEmail}
-                onChange={handleChange}
-                placeholder="Enter business email"
-                className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
-                required
-              />
-            </div> */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone
-              </label>
-              <input
-                name="phone"
-                type="text"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="Enter phone number"
-                className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
-                required
-              />
-            </div>
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone
+            </label>
+            <input
+              name="phone"
+              type="text"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="Enter phone number"
+              className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            />
           </div>
 
           {/* Default Delivery Location */}
@@ -249,20 +215,6 @@ const ShopInfo = ({ user, settings }) => {
             ></textarea>
           </div>
 
-          {/* Shop ID */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Shop ID
-            </label>
-            <input
-              name="shopId"
-              type="text"
-              value={formData.shopId}
-              disabled
-              className="w-full border border-indigo-200 bg-gray-100 rounded-lg px-4 py-2 text-gray-600"
-            />
-          </div>
-
           {/* Meta Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -306,7 +258,7 @@ const ShopInfo = ({ user, settings }) => {
             ></textarea>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <div className="pt-4">
             <button
               type="submit"
