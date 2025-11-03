@@ -17,12 +17,6 @@ const SettingsSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    businessEmail: {
-      type: String,
-      required: true,
-      lowercase: true,
-      match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
-    },
     phone: {
       type: String,
       required: true,
@@ -35,8 +29,8 @@ const SettingsSchema = new mongoose.Schema(
       trim: true,
     },
     companyLogo: {
-      url: { type: String, default: "" }, // Store CDN / S3 URL
-      publicId: { type: String, default: "" }, // Optional for Cloudinary or S3
+      url: { type: String, default: "" },
+      publicId: { type: String, default: "" },
     },
     favicon: {
       url: { type: String, default: "" },
@@ -62,11 +56,7 @@ const SettingsSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
-    status: {
-      type: String,
-      enum: ["active", "inactive"],
-      default: "active",
-    },
+
     lastUpdatedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
