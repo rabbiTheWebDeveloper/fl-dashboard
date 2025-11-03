@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const SettingsSchema = new mongoose.Schema(
   {
@@ -65,5 +65,5 @@ const SettingsSchema = new mongoose.Schema(
   { timestamps: true, versionKey: false }
 );
 
-export const SettingsModel =
-  mongoose.models.Settings ?? mongoose.model("Settings", SettingsSchema);
+export const ShopInfoModel =
+  mongoose.models.ShopInfo ?? mongoose.model("ShopInfo", SettingsSchema);
