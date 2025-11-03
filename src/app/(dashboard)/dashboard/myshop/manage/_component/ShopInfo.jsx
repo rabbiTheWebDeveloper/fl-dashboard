@@ -4,23 +4,27 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import { API_ENDPOINTS } from "@/config/ApiEndpoints";
+import { se } from "date-fns/locale";
 
-const ShopInfo = ({ user }) => {
+const ShopInfo = ({ user, settings }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [logoPreview, setLogoPreview] = useState(null);
-  const [faviconPreview, setFaviconPreview] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(
+    settings?.companyLogo?.url || null
+  );
+  const [faviconPreview, setFaviconPreview] = useState(
+    settings?.favicon?.url || null
+  );
 
   const [formData, setFormData] = useState({
-    shopName: "Ideal Bigshop",
-    shopAddress: "Mirpur-1 Dhaka Bangladesh",
-    businessEmail: "bigmartideal@gmail.com",
-    phone: "09647443483",
-    defaultDeliveryLocation: "",
-    shopInfo: "",
-    metaDescription: "",
-    websiteTitle: "Ideal bigshop",
-    description: "",
+    shopName: settings?.shopName || "",
+    shopAddress: settings?.shopAddress || "",
+    phone: settings?.phone || "",
+    defaultDeliveryLocation: settings?.defaultDeliveryLocation || "",
+    shopInfo: settings?.shopInfo || "",
+    metaDescription: settings?.metaDescription || "",
+    websiteTitle: settings?.websiteTitle || "",
+    description: settings?.description || "",
   });
 
   // Handle Input Change

@@ -8,7 +8,7 @@ const page = async () => {
   console.log("settings data:", settings);
   return (
     <>
-      <ShopInfo user={user} settings={settings} />
+      <ShopInfo user={user} settings={settings?.data} />
     </>
   );
 };
