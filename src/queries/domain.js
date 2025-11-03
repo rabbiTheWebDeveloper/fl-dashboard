@@ -5,16 +5,22 @@ const { DomainModel } = require("@/model/domain-model");
 export async function domainQuery(data) {
   await dbConnect();
 
-  const { userId, shopId, domain_name } = data;
+  const { userId, shopId, ...otherFields } = data;
 
   if (!domain_name) throw new Error("Domain name is required");
+  if (!shopId) throw new Error("Shop ID is required");
 
   const result = await DomainModel.findOneAndUpdate(
-    { domain_name }, // find by domain name
-    { $set: { userId, shopId, domain_name } }, // update these fields
-    { new: true, upsert: true } // create if not exist (upsert)
+    { userId, shopId },
+    {
+      $set: {
+        userId,
+        shopId,
+        ...otherFields, // ✅ spread all  fields properly
+      },
+    },
+    { new: true, upsert: true }
   );
-
   return {
     message: "Domain saved successfully.",
     status: 200,
