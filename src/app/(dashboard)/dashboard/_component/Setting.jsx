@@ -383,17 +383,31 @@ const Setting = ({ user }) => {
                   {/* Update Button */}
                   <div className="flex justify-end pt-4">
                     <button
-                    //   loading={loading ? true : false}
                       type="submit"
                       disabled={
                         !passwordData.currentPassword ||
                         !passwordData.newPassword ||
-                        !passwordData.confirmPassword
+                        !passwordData.confirmPassword ||
+                        loading
                       }
-                      className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed relative"
                     >
-                      <Shield className="h-4 w-4" />
-                      Update Password
+                      {/* Loading Spinner */}
+                      {loading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-indigo-600 rounded-xl">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        </div>
+                      )}
+
+                      {/* Button Content */}
+                      <div
+                        className={`flex items-center gap-2 ${
+                          loading ? "opacity-0" : "opacity-100"
+                        }`}
+                      >
+                        <Shield className="h-4 w-4" />
+                        {loading ? "Updating..." : "Update Password"}
+                      </div>
                     </button>
                   </div>
                 </form>
