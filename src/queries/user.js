@@ -157,8 +157,7 @@ async function loginUserQuary(credentials) {
   const { email, password } = credentials;
 
   // 1️⃣ Find user
-    const user = await UserModel
-    .findOne({ email })
+  const user = await UserModel.findOne({ email })
     .populate("shops", "shopId shopName shopSlug") // only select necessary fields
     .lean();
   if (!user) {
@@ -182,7 +181,14 @@ async function loginUserQuary(credentials) {
     JWT_SECRET,
     { expiresIn: "7d" } // adjust expiry as needed
   );
-
+  const domain = await DomainModel.findOne(
+    { userId: user._id, shopId: user.shops[0]._id },
+    { domain_name: 1, domain_status: 1, _id: 0 }
+  ).lean();
+const shopInfo = await ShopInfoModel.findOne(
+    { userId: user._id, shopId: user.shops[0]._id },
+    { companyLogo: 1, _id: 0 }
+  ).lean();
   // 5️⃣ Return user info + token
   return JSON.parse(
     JSON.stringify({
@@ -196,6 +202,9 @@ async function loginUserQuary(credentials) {
         phone: user.phone,
         role: user.role,
         shops: user.shops[0],
+        domain: domain ? domain : null,
+        shopInfo: shopInfo ? shopInfo : null,
+
       },
     })
   );
