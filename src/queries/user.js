@@ -7,6 +7,8 @@ import { sendVerifyEmail, sendWelcomeEmail } from "@/utlis/mail";
 import bcrypt from "bcryptjs";
 import slugify from "slugify";
 import jwt from "jsonwebtoken";
+import { DomainModel } from "@/model/domain-model";
+import { ShopInfoModel } from "@/model/shopInfo-model";
 const JWT_SECRET = process.env.JWT_SECRET;
 function generateVerificationCode() {
   return Math.floor(1000 + Math.random() * 9000).toString(); // 1000-9999
@@ -202,8 +204,8 @@ const shopInfo = await ShopInfoModel.findOne(
         phone: user.phone,
         role: user.role,
         shops: user.shops[0],
-        domain: domain ? domain : null,
-        shopInfo: shopInfo ? shopInfo : null,
+        domain: domain ? domain?.domain_name : null,
+        shopInfo: shopInfo ? shopInfo?.companyLogo?.url : null,
 
       },
     })
