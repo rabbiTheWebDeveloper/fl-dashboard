@@ -1,17 +1,17 @@
 "use client";
 import React, { useState } from "react";
-import { 
-  Plus, 
-  User, 
-  Mail, 
-  Crown, 
-  Settings, 
-  UserCog, 
+import {
+  Plus,
+  User,
+  Mail,
+  Crown,
+  Settings,
+  UserCog,
   X,
   Shield,
   Users,
   Trash2,
-  MoreVertical
+  MoreVertical,
 } from "lucide-react";
 
 const ManageUsers = () => {
@@ -42,12 +42,16 @@ const ManageUsers = () => {
       alert("Please fill all fields");
       return;
     }
-    
+
     setUsers([
       ...users,
       {
         id: Date.now(),
-        name: newUser.email.split("@")[0].replace(/[^a-zA-Z]/g, " ").trim() || "New User",
+        name:
+          newUser.email
+            .split("@")[0]
+            .replace(/[^a-zA-Z]/g, " ")
+            .trim() || "New User",
         email: newUser.email,
         role: newUser.role,
         isYou: false,
@@ -60,7 +64,7 @@ const ManageUsers = () => {
 
   const handleRemoveUser = (userId) => {
     if (window.confirm("Are you sure you want to remove this user?")) {
-      setUsers(users.filter(user => user.id !== userId));
+      setUsers(users.filter((user) => user.id !== userId));
     }
   };
 
@@ -109,11 +113,12 @@ const ManageUsers = () => {
             </div>
           </div>
           <button
+            disabled
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-3 rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg group"
           >
             <Plus className="h-5 w-5 group-hover:scale-110 transition-transform" />
-            <span className="font-medium">Add User</span>
+            <span className="font-medium">Add User Coming Soon</span>
           </button>
         </div>
 
@@ -128,8 +133,8 @@ const ManageUsers = () => {
                 <div className="relative">
                   <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl text-indigo-700 font-semibold uppercase border-2 border-white shadow-sm">
                     {user.avatar ? (
-                      <img 
-                        src={user.avatar} 
+                      <img
+                        src={user.avatar}
                         alt={user.name}
                         className="w-full h-full rounded-2xl object-cover"
                       />
@@ -156,20 +161,26 @@ const ManageUsers = () => {
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <Mail className="h-3 w-3 text-gray-400" />
-                    <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {user.email}
+                    </p>
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${getRoleColor(user.role)}`}>
+                <div
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${getRoleColor(
+                    user.role
+                  )}`}
+                >
                   {getRoleIcon(user.role)}
                   <span className="text-sm font-medium">{user.role}</span>
                 </div>
-                
+
                 {!user.isYou ? (
                   <div className="flex items-center gap-2">
-                    <button 
+                    <button
                       onClick={() => handleRemoveUser(user.id)}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 group/remove"
                     >
@@ -198,7 +209,9 @@ const ManageUsers = () => {
                 <div className="p-2 bg-indigo-50 rounded-lg">
                   <UserCog className="h-5 w-5 text-indigo-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Add Team Member</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Add Team Member
+                </h3>
               </div>
               <button
                 onClick={() => setShowModal(false)}
