@@ -187,7 +187,7 @@ async function loginUserQuary(credentials) {
     { userId: user._id, shopId: user.shops[0]._id },
     { domain_name: 1, domain_status: 1, _id: 0 }
   ).lean();
-const shopInfo = await ShopInfoModel.findOne(
+  const shopInfo = await ShopInfoModel.findOne(
     { userId: user._id, shopId: user.shops[0]._id },
     { companyLogo: 1, _id: 0 }
   ).lean();
@@ -206,16 +206,42 @@ const shopInfo = await ShopInfoModel.findOne(
         shops: user.shops[0],
         domain: domain ? domain?.domain_name : null,
         shopLogo: shopInfo ? shopInfo?.companyLogo?.url : null,
-
       },
     })
   );
 }
+async function changePasswordQuery({ userId, oldPassword, newPassword }) {
+  await dbConnect();
 
+  // 1️⃣ Find user
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // 2️⃣ Verify old password
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+  if (!isMatch) {
+    throw new Error("Old password is incorrect");
+  }
+
+  // 3️⃣ Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // 4️⃣ Update password
+  user.password = hashedPassword;
+  await user.save();
+
+  return {
+    status: true,
+    message: "Password changed successfully",
+  };
+}
 export {
   registerUserAndShopQuery,
   getUser,
   verifyEmailQuary,
   resendVerificationEmailQuary,
   loginUserQuary,
+  changePasswordQuery,
 };
