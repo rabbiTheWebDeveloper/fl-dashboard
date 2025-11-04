@@ -14,14 +14,14 @@ import {
   Camera
 } from 'lucide-react';
 
-const Setting = () => {
+const Setting = ({user}) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [userData, setUserData] = useState({
-    fullName: "Tanmim Akther",
-    email: "rangulymart@gmail.com",
-    phone: "01750717926",
-    shopName: "রাংগুলি Mart",
-    shopId: "155473"
+    fullName: user?.fullName || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    shopName: user?.shops?.shopName || "",
+    shopId: user?.shops?.shopId || ""
   });
 
   const [passwordData, setPasswordData] = useState({
