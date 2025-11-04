@@ -406,7 +406,8 @@ const DashboardLayout = ({ children }) => {
               {/* Support & Logout */}
               <div className="mt-auto space-y-2 pt-4 border-t border-indigo-600">
                 <Link
-                  href="/"
+                  href={user?.domain ? `http://${user.domain}` : "/"}
+                  target="_blank"
                   className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-indigo-100 hover:bg-indigo-600 hover:text-white transition-all"
                 >
                   <FiHome className="h-5 w-5 mr-3" />
@@ -614,7 +615,8 @@ const DashboardLayout = ({ children }) => {
                 {/* Mobile Support & Logout */}
                 <div className="mt-8 space-y-2 pt-4 border-t border-indigo-600">
                   <Link
-                    href="/"
+                    href={user?.domain ? `http://${user.domain}` : "/"}
+                    target="_blank"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-indigo-100 hover:bg-indigo-600 hover:text-white transition-all"
                   >
