@@ -1,5 +1,4 @@
 import React from "react";
-import Link from "next/link";
 import {
   Settings,
   Truck,
@@ -10,93 +9,123 @@ import {
   FileText,
   BarChart3,
   Link2,
+  Image as ImageIcon,
+  Sliders,
+  Package,
 } from "lucide-react";
-
+import Link from "next/link";
+const shopSections = [
+  {
+    id: 1,
+    title: "Shop Settings",
+    description:
+      "Customize your shop’s general configurations for a smooth experience.",
+    icon: Settings,
+    color: "from-blue-500 to-blue-600",
+    href: "/dashboard/myshop/manage/shop-settings",
+  },
+  {
+    id: 2,
+    title: "Delivery Support",
+    description:
+      "Manage delivery options to ensure smooth and efficient fulfillment.",
+    icon: Truck,
+    color: "from-green-500 to-green-600",
+    href: "/dashboard/myshop/manage/delivery",
+  },
+  {
+    id: 3,
+    title: "SMS Support",
+    description:
+      "Enable SMS notifications and keep your customers informed in real-time.",
+    icon: MessageSquare,
+    color: "from-purple-500 to-purple-600",
+    href: "/dashboard/myshop/manage/sms-support",
+  },
+  {
+    id: 4,
+    title: "Shop Domain",
+    description:
+      "Configure and manage your shop’s domain and general settings.",
+    icon: Globe,
+    color: "from-indigo-500 to-indigo-600",
+    href: "/dashboard/myshop/manage/domain",
+  },
+  {
+    id: 5,
+    title: "Payment Gateway",
+    description:
+      "Integrate payment options to provide secure and flexible checkout.",
+    icon: CreditCard,
+    color: "from-emerald-500 to-emerald-600",
+    href: "/dashboard/myshop/manage/payment",
+  },
+  {
+    id: 6,
+    title: "Chat Support",
+    description:
+      "Offer instant help and communication with a chat support system.",
+    icon: MessageCircle,
+    color: "from-cyan-500 to-cyan-600",
+    href: "/dashboard/myshop/manage/chat-support",
+  },
+  {
+    id: 7,
+    title: "Shop Policy",
+    description:
+      "Set up refund, return, and customer service policies for your shop.",
+    icon: FileText,
+    color: "from-amber-500 to-amber-600",
+    href: "/dashboard/myshop/manage/policy",
+  },
+  {
+    id: 8,
+    title: "SEO & Marketing Integrations",
+    description:
+      "Connect SEO tools and marketing integrations to increase visibility.",
+    icon: BarChart3,
+    color: "from-orange-500 to-orange-600",
+    href: "/dashboard/myshop/manage/seo-marketing",
+  },
+  {
+    id: 9,
+    title: "Social Links",
+    description:
+      "Add and manage your social media links to improve engagement.",
+    icon: Link2,
+    color: "from-pink-500 to-pink-600",
+    href: "/dashboard/myshop/manage/social-links",
+  },
+  // 🆕 Added Sections Below
+  {
+    id: 10,
+    title: "Slider Management",
+    description:
+      "Create and manage homepage sliders to highlight offers and promotions.",
+    icon: Sliders,
+    color: "from-teal-500 to-teal-600",
+    href: "/dashboard/myshop/manage/slider",
+  },
+  {
+    id: 11,
+    title: "Banner Management",
+    description:
+      "Upload and manage banners to promote deals and new arrivals.",
+    icon: ImageIcon,
+    color: "from-violet-500 to-violet-600",
+    href: "/dashboard/myshop/manage/banner",
+  },
+  {
+    id: 12,
+    title: "Courier Setup",
+    description:
+      "Add and configure courier services for efficient order deliveries.",
+    icon: Package,
+    color: "from-lime-500 to-lime-600",
+    href: "/dashboard/myshop/manage/courier",
+  },
+];
 const ManageShopPage = () => {
-  const shopSections = [
-    {
-      id: 1,
-      title: "Shop Settings",
-      description:
-        "Customize your shop’s general configurations for a smooth experience.",
-      icon: Settings,
-      color: "from-blue-500 to-blue-600",
-      href: "/dashboard/myshop/manage/shop-settings",
-    },
-    {
-      id: 2,
-      title: "Delivery Support",
-      description:
-        "Manage delivery options to ensure smooth and efficient fulfillment.",
-      icon: Truck,
-      color: "from-green-500 to-green-600",
-      href: "/dashboard/myshop/manage/delivery",
-    },
-    {
-      id: 3,
-      title: "SMS Support",
-      description:
-        "Enable SMS notifications and keep your customers informed in real-time.",
-      icon: MessageSquare,
-      color: "from-purple-500 to-purple-600",
-      href: "/dashboard/myshop/manage/sms-support",
-    },
-    {
-      id: 4,
-      title: "Shop Domain",
-      description:
-        "Configure and manage your shop’s domain and general settings.",
-      icon: Globe,
-      color: "from-indigo-500 to-indigo-600",
-      href: "/dashboard/myshop/manage/domain",
-    },
-    {
-      id: 5,
-      title: "Payment Gateway",
-      description:
-        "Integrate payment options to provide secure and flexible checkout.",
-      icon: CreditCard,
-      color: "from-emerald-500 to-emerald-600",
-      href: "/dashboard/myshop/manage/payment",
-    },
-    {
-      id: 6,
-      title: "Chat Support",
-      description:
-        "Offer instant help and communication with a chat support system.",
-      icon: MessageCircle,
-      color: "from-cyan-500 to-cyan-600",
-      href: "/dashboard/myshop/manage/chat-support",
-    },
-    {
-      id: 7,
-      title: "Shop Policy",
-      description:
-        "Set up refund, return, and customer service policies for your shop.",
-      icon: FileText,
-      color: "from-amber-500 to-amber-600",
-      href: "/dashboard/myshop/manage/policy",
-    },
-    {
-      id: 8,
-      title: "SEO & Marketing Integrations",
-      description:
-        "Connect SEO tools and marketing integrations to increase visibility.",
-      icon: BarChart3,
-      color: "from-orange-500 to-orange-600",
-      href: "/dashboard/myshop/manage/seo-marketing",
-    },
-    {
-      id: 9,
-      title: "Social Links",
-      description:
-        "Add and manage your social media links to improve engagement.",
-      icon: Link2,
-      color: "from-pink-500 to-pink-600",
-      href: "/dashboard/myshop/manage/social-links",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
