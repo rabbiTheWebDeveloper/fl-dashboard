@@ -205,7 +205,7 @@ const shopInfo = await ShopInfoModel.findOne(
         role: user.role,
         shops: user.shops[0],
         domain: domain ? domain?.domain_name : null,
-        shopInfo: shopInfo ? shopInfo?.companyLogo?.url : null,
+        shopLogo: shopInfo ? shopInfo?.companyLogo?.url : null,
 
       },
     })

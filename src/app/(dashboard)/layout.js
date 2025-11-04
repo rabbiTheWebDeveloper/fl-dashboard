@@ -155,7 +155,7 @@ const DashboardLayout = ({ children }) => {
           setShowNotifications(false);
         }
       }
-      
+
       // Close mobile menu
       if (
         mobileMenuRef.current &&
@@ -165,7 +165,7 @@ const DashboardLayout = ({ children }) => {
           setMobileMenuOpen(false);
         }
       }
-      
+
       // Close desktop submenus when clicking outside
       if (
         desktopMenuRef.current &&
@@ -184,7 +184,7 @@ const DashboardLayout = ({ children }) => {
   // Get active tab and sub-tab
   const getActiveTab = () => {
     const path = pathname.toLowerCase();
-    
+
     // Check main tabs
     if (path.includes("category")) return "category";
     if (path.includes("products")) return "products";
@@ -195,13 +195,13 @@ const DashboardLayout = ({ children }) => {
     if (path.includes("team")) return "team";
     if (path.includes("theme") && !path.includes("myshop")) return "theme";
     if (path.includes("settings")) return "settings";
-    
+
     // Check myshop sub-tabs
     if (path.includes("myshop/manage")) return "manage";
     if (path.includes("myshop/theme")) return "customize-theme";
     if (path.includes("myshop/landing-pages")) return "landing-pages";
     if (path.includes("myshop/promo-codes")) return "promo-codes";
-    
+
     return "dashboard";
   };
 
@@ -212,11 +212,11 @@ const DashboardLayout = ({ children }) => {
     if (item.href) {
       return activeTab === item.tab;
     }
-    
+
     if (item.children) {
-      return item.children.some(child => activeTab === child.tab);
+      return item.children.some((child) => activeTab === child.tab);
     }
-    
+
     return false;
   };
 
@@ -263,7 +263,10 @@ const DashboardLayout = ({ children }) => {
     <Auth>
       <div className="flex h-screen bg-gray-50 relative">
         {/* Desktop Sidebar */}
-        <div className="hidden lg:flex lg:flex-shrink-0 relative" ref={desktopMenuRef}>
+        <div
+          className="hidden lg:flex lg:flex-shrink-0 relative"
+          ref={desktopMenuRef}
+        >
           <div className="flex flex-col w-64 bg-gradient-to-b from-indigo-700 to-indigo-800 text-white">
             {/* Sidebar Header */}
             <div className="flex flex-col px-4 py-4 bg-indigo-800">
@@ -293,8 +296,16 @@ const DashboardLayout = ({ children }) => {
 
               {/* User Profile */}
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-indigo-700/50 backdrop-blur-sm">
-                <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center">
-                  <FiUser className="h-6 w-6 text-indigo-600" />
+                <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {user?.shopLogo ? (
+                    <img
+                      src={user.shopLogo}
+                      alt="Shop Logo"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <FiUser className="h-6 w-6 text-indigo-600" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -343,13 +354,15 @@ const DashboardLayout = ({ children }) => {
                             <span className="mr-3">{item.icon}</span>
                             <span className="bangla-text">{item.label}</span>
                           </div>
-                          <FiChevronDown 
+                          <FiChevronDown
                             className={`h-4 w-4 transition-transform ${
-                              expandedDesktopMenu === item.tab ? "rotate-180" : ""
+                              expandedDesktopMenu === item.tab
+                                ? "rotate-180"
+                                : ""
                             }`}
                           />
                         </button>
-                        
+
                         {/* Submenu Items */}
                         {expandedDesktopMenu === item.tab && (
                           <div className="ml-4 mt-1 space-y-1 bg-indigo-600/30 rounded-lg p-2">
@@ -364,7 +377,9 @@ const DashboardLayout = ({ children }) => {
                                 }`}
                               >
                                 <span className="mr-2">{subItem.icon}</span>
-                                <span className="bangla-text">{subItem.label}</span>
+                                <span className="bangla-text">
+                                  {subItem.label}
+                                </span>
                               </Link>
                             ))}
                           </div>
@@ -548,7 +563,7 @@ const DashboardLayout = ({ children }) => {
                             <span className="mr-3">{item.icon}</span>
                             <span className="bangla-text">{item.label}</span>
                           </div>
-                          <FiChevronRight 
+                          <FiChevronRight
                             className={`h-4 w-4 transition-transform ${
                               expandedMenu === item.tab ? "rotate-90" : ""
                             }`}
@@ -570,7 +585,9 @@ const DashboardLayout = ({ children }) => {
                                 }`}
                               >
                                 <span className="mr-2">{subItem.icon}</span>
-                                <span className="bangla-text">{subItem.label}</span>
+                                <span className="bangla-text">
+                                  {subItem.label}
+                                </span>
                               </Link>
                             ))}
                           </div>
