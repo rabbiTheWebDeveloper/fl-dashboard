@@ -14,27 +14,10 @@ import {
   MoreVertical,
 } from "lucide-react";
 
-const ManageUsers = () => {
+const ManageUsers = ({ user }) => {
   const [showModal, setShowModal] = useState(false);
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "S M AL RABBI",
-      email: "xapoc91539@fogdiver.com",
-      role: "Shop Owner",
-      isYou: true,
-      avatar: null,
-    },
-    {
-      id: 2,
-      name: "John Manager",
-      email: "john@example.com",
-      role: "Shop Manager",
-      isYou: false,
-      avatar: null,
-    },
-  ]);
-
+  const [users, setUsers] = useState([user]);
+  console.log("ManageUsers User:", user);
   const [newUser, setNewUser] = useState({ email: "", role: "" });
 
   const handleAddUser = () => {
@@ -70,7 +53,7 @@ const ManageUsers = () => {
 
   const getRoleIcon = (role) => {
     switch (role) {
-      case "Shop Owner":
+      case "merchant":
         return <Crown className="h-4 w-4" />;
       case "Shop Manager":
         return <Settings className="h-4 w-4" />;
@@ -135,7 +118,7 @@ const ManageUsers = () => {
                     {user.avatar ? (
                       <img
                         src={user.avatar}
-                        alt={user.name}
+                        alt={user.fullName}
                         className="w-full h-full rounded-2xl object-cover"
                       />
                     ) : (
@@ -151,9 +134,9 @@ const ManageUsers = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-gray-900 truncate">
-                      {user.name}
+                      {user.fullName}
                     </p>
-                    {user.isYou && (
+                    {user.role === "merchant" && (
                       <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
                         You
                       </span>
@@ -175,13 +158,13 @@ const ManageUsers = () => {
                   )}`}
                 >
                   {getRoleIcon(user.role)}
-                  <span className="text-sm font-medium">{user.role}</span>
+                  <span className="text-sm font-medium">{user?.role === "merchant" ? "Shop Owner" : user?.role}</span>
                 </div>
 
-                {!user.isYou ? (
+                {!user.role === "merchant" ? (
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleRemoveUser(user.id)}
+                      onClick={() => handleRemoveUser(user?.id)}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 group/remove"
                     >
                       <Trash2 className="h-4 w-4 group-hover/remove:scale-110" />
