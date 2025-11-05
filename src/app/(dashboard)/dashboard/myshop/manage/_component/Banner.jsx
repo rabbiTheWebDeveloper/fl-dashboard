@@ -13,9 +13,6 @@ import { API_ENDPOINTS } from "@/config/ApiEndpoints";
 import { useRouter } from "next/navigation";
 
 const Banner = ({ user, banner }) => {
-  const [slider, setSlider] = useState({
-    ...banner,
-  });
   const [newImage, setNewImage] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -70,10 +67,10 @@ const Banner = ({ user, banner }) => {
           <div>
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-2">
               <ImageIcon className="h-4 w-4" />
-              Home Slider Management
+              Home Banner Management
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mt-2">
-              Slider Images
+              Banner Images
             </h1>
           </div>
           <button
@@ -109,24 +106,24 @@ const Banner = ({ user, banner }) => {
         {/* Current Images Grid */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Current Slider Images ({slider.images?.length || 0}/3)
+            Current Banner Images ({banner.images?.length || 0}/3)
           </h2>
 
           {loading ? (
             <div className="flex justify-center items-center h-32">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
             </div>
-          ) : slider.images?.length === 0 ? (
+          ) : banner.images?.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-gray-300">
               <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No slider images yet</p>
+              <p className="text-gray-500">No Banner images yet</p>
               <p className="text-sm text-gray-400 mt-1">
                 Upload your first image to get started
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {slider.images?.map((img, index) => (
+              {banner.images?.map((img, index) => (
                 <div
                   key={img._id}
                   className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all group"
@@ -134,7 +131,7 @@ const Banner = ({ user, banner }) => {
                   <div className="relative aspect-[1298/482] overflow-hidden">
                     <img
                       src={img.url}
-                      alt={`slider-${index + 1}`}
+                      alt={`banner-${index + 1}`}
                       className="w-full h-full object-cover transition-transform group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
@@ -205,7 +202,7 @@ const Banner = ({ user, banner }) => {
           <div className="flex justify-end mt-6">
             <button
               onClick={handleAddImage}
-              //   disabled={!newImage || uploading || slider.images?.length >= 3}
+              //   disabled={!newImage || uploading || banner.images?.length >= 3}
               className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] justify-center"
             >
               {uploading ? (
@@ -227,10 +224,10 @@ const Banner = ({ user, banner }) => {
           <div className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm">
             <div
               className={`w-2 h-2 rounded-full ${
-                slider.images?.length >= 3 ? "bg-red-500" : "bg-green-500"
+                banner.images?.length >= 3 ? "bg-red-500" : "bg-green-500"
               }`}
             />
-            {slider.images?.length || 0}/3 images uploaded
+            {banner.images?.length || 0}/3 images uploaded
           </div>
         </div>
       </div>

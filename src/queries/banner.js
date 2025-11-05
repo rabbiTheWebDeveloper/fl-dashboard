@@ -7,7 +7,7 @@ async function getBannerQuery({ userId, shopId }) {
     { userId, shopId },
     { images: 1, _id: 0 }
   ).lean();
-  if (!slider) {
+  if (!banner) {
     return {
       message: "Banner not found.",
       status: 404,
