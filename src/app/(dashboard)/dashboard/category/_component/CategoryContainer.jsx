@@ -202,9 +202,7 @@ const CategoryContainer = ({ category }) => {
                   Category
                 </th>
 
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Products
-                </th>
+         
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
@@ -237,12 +235,6 @@ const CategoryContainer = ({ category }) => {
                         </div>
                       </div>
                     </div>
-                  </td>
-
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {category.productsCount} products
-                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
