@@ -52,7 +52,7 @@ const CategoryContainer = ({ category }) => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.CATEGORY.DELETE_CATEGORY}/${categoryId}`,
+          `${API_ENDPOINTS.BASE_URL}/category/create-delete/${categoryId}`,
           { method: "DELETE" }
         );
 
