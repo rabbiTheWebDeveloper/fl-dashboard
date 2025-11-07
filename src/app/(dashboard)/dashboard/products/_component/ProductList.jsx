@@ -197,20 +197,8 @@ const ProductList = ({ productlist }) => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={exportProducts}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </button>
-            <button
-              onClick={importProducts}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              <Upload className="h-4 w-4" />
-              Import
-            </button>
+          
+       
             <Link href="/dashboard/add-product">
               <button className="inline-flex items-center gap-2 rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                 <Plus className="h-4 w-4" />
@@ -221,7 +209,7 @@ const ProductList = ({ productlist }) => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -269,24 +257,6 @@ const ProductList = ({ productlist }) => {
                 </div>
                 <div className="p-3 bg-red-100 rounded-lg">
                   <Package className="h-6 w-6 text-red-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Sales
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {products.reduce((sum, product) => sum + product.sales, 0)}
-                  </p>
-                </div>
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <Download className="h-6 w-6 text-purple-600" />
                 </div>
               </div>
             </CardContent>
