@@ -15,14 +15,13 @@ import {
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 
-const CategoryForm = () => {
+const CategoryForm = ({ user }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
     status: "active",
     image: null,
   });
@@ -134,29 +133,24 @@ const CategoryForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.name.trim()) {
       toast.error("Category name is required");
       return;
     }
-
     setIsLoading(true);
-    const userInfo = await getUser();
-
     try {
       const formPayload = new FormData();
       formPayload.append("name", formData.name.trim());
-      formPayload.append("description", formData.description.trim());
       formPayload.append("status", formData.status);
-      formPayload.append("userId", userInfo.id);
-      formPayload.append("shopId", userInfo.shops._id);
+      formPayload.append("userId", user.userId);
+      formPayload.append("shopId", user.shopId);
 
       if (formData.image) {
         formPayload.append("image", formData.image);
       }
 
       const response = await fetch(
-        API_ENDPOINTS.BASE_URL + API_ENDPOINTS.CATEGORY.CREATE_CATEGORY,
+        API_ENDPOINTS.BASE_URL + "/category/create",
         {
           method: "POST",
           body: formPayload,
@@ -357,26 +351,6 @@ const CategoryForm = () => {
                         placeholder="e.g., Electronics, Fashion, Home & Garden"
                       />
                     </div>
-
-                    {/* Description */}
-                    <div className="md:col-span-2">
-                      <label
-                        htmlFor="description"
-                        className="block text-sm font-semibold text-gray-900 mb-2"
-                      >
-                        Description
-                      </label>
-                      <textarea
-                        id="description"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                        rows={4}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white placeholder-gray-400 resize-none"
-                        placeholder="Describe this category and what products it contains..."
-                      />
-                    </div>
-
                     {/* Status */}
                     <div>
                       <label
