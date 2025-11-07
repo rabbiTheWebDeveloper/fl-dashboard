@@ -30,8 +30,7 @@ async function getShopCategoryByIDQuery(id) {
   const category = await Category.findById(id, {
     image: 1,
     name: 1,
-    status: 1,
-    _id: 0,
+    status: 1
   }).lean();
   if (!category) {
     return {

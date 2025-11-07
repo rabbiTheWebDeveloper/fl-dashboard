@@ -17,9 +17,9 @@ import {
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 
-const CategoryContainer = ({ category }) => {
-  const [categories, setCategories] = useState([...category]);
-  const [filteredCategories, setFilteredCategories] = useState([...category]);
+const CategoryContainer = ({ categoryList }) => {
+  const [categories, setCategories] = useState([...categoryList]);
+  const [filteredCategories, setFilteredCategories] = useState([...categoryList]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -47,30 +47,35 @@ const CategoryContainer = ({ category }) => {
     setStatusFilter(status);
   };
 
-  const handleDelete = async (categoryId) => {
-    if (window.confirm("Are you sure you want to delete this category?")) {
-      setIsLoading(true);
-      try {
-        const res = await fetch(
-          `${API_ENDPOINTS.BASE_URL}/category/create-delete/${categoryId}`,
-          { method: "DELETE" }
-        );
+  console.log(categories)
 
-        if (!res.ok) throw new Error("Failed to delete category");
+const handleDelete = async (categoryId) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this category?");
+  if (!confirmDelete) return;
 
-        setCategories(
-          (prev) => prev.filter((category) => category._id !== categoryId) // use _id (Mongo) not id
-        );
+  setIsLoading(true);
+  try {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}/category/create-delete/${categoryId}`, {
+      method: "DELETE",
+    });
 
-        toast.success("Category deleted successfully ✅");
-      } catch (error) {
-        console.error("Error deleting category:", error);
-        toast.error("Failed to delete category ❌");
-      } finally {
-        setIsLoading(false);
-      }
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || "Failed to delete category");
     }
-  };
+
+    // ✅ Remove deleted category from state
+    setCategories((prev) => prev.filter((c) => c._id !== categoryId));
+
+    toast.success("Category deleted successfully ✅");
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    toast.error(error.message || "Failed to delete category ❌");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const toggleStatus = async (category) => {
     setIsLoading(true);
@@ -92,7 +97,7 @@ const CategoryContainer = ({ category }) => {
       setIsLoading(false);
     }
   };
-
+console.log(categoryList)
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header Section */}

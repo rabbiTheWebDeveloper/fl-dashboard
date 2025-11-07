@@ -3,10 +3,12 @@ import { getAllCategoriesQuary } from "@/queries/categories";
 import { userInfo } from "@/lib";
 
 export default async function CategoryPage() {
-  const category = await getAllCategoriesQuary(await userInfo());
-  return (
-    <>
-      <CategoryContainer category={category} />;
-    </>
-  );
+  // ✅ Get user info
+  const user = await userInfo();
+
+  // ✅ Fetch categories for that user
+  const categoryList = await getAllCategoriesQuary(user);
+
+  // ✅ Return clean JSX (no extra semicolon or fragment needed)
+  return <CategoryContainer categoryList={categoryList} />;
 }
