@@ -21,33 +21,17 @@ const CategoryContainer = ({ category }) => {
   const [categories, setCategories] = useState([...category]);
   const [filteredCategories, setFilteredCategories] = useState([...category]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Form state
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    status: "active",
-    image: null,
-    parentCategory: "",
-    seoTitle: "",
-    seoDescription: "",
-  });
   useEffect(() => {
     let result = categories;
-
     // Search filter
     if (searchTerm) {
-      result = result.filter(
-        (category) =>
-          category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          category.description.toLowerCase().includes(searchTerm.toLowerCase())
+      result = result.filter((category) =>
+        category.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
     // Status filter
     if (statusFilter !== "all") {
       result = result.filter((category) => category.status === statusFilter);
@@ -59,94 +43,8 @@ const CategoryContainer = ({ category }) => {
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
-
   const handleStatusFilter = (status) => {
     setStatusFilter(status);
-  };
-
-  const openAddModal = () => {
-    setEditingCategory(null);
-    setFormData({
-      name: "",
-      description: "",
-      status: "active",
-      image: null,
-      parentCategory: "",
-      seoTitle: "",
-      seoDescription: "",
-    });
-    setShowModal(true);
-  };
-
-  const openEditModal = (category) => {
-    setEditingCategory(category);
-    setFormData({
-      name: category.name,
-      description: category.description,
-      status: category.status,
-      image: category.image,
-      parentCategory: "",
-      seoTitle: "",
-      seoDescription: "",
-    });
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setEditingCategory(null);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        image: URL.createObjectURL(file),
-      }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate API call
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      if (editingCategory) {
-        // Update existing category
-        setCategories((prev) =>
-          prev.map((cat) =>
-            cat.id === editingCategory.id ? { ...cat, ...formData } : cat
-          )
-        );
-      } else {
-        // Add new category
-        const newCategory = {
-          id: categories.length + 1,
-          ...formData,
-          productsCount: 0,
-          createdAt: new Date().toISOString().split("T")[0],
-        };
-        setCategories((prev) => [...prev, newCategory]);
-      }
-
-      closeModal();
-    } catch (error) {
-      console.error("Error saving category:", error);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleDelete = async (categoryId) => {
@@ -219,7 +117,7 @@ const CategoryContainer = ({ category }) => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <div className="flex justify-between items-center">
             <div>
@@ -258,20 +156,6 @@ const CategoryContainer = ({ category }) => {
             </div>
             <div className="p-2 bg-red-100 rounded-lg">
               <FiEyeOff className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-gray-600">Total Products</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {categories.reduce((sum, cat) => sum + cat.productsCount, 0)}
-              </p>
-            </div>
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <FiImage className="w-6 h-6 text-purple-600" />
             </div>
           </div>
         </div>
