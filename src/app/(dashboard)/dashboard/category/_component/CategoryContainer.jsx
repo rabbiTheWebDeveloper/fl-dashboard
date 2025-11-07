@@ -202,7 +202,6 @@ const CategoryContainer = ({ category }) => {
                   Category
                 </th>
 
-         
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
@@ -254,7 +253,7 @@ const CategoryContainer = ({ category }) => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
                       <Link
-                        href={`/dashboard/category/add?edit=${category._id}`}
+                        href={`/dashboard/category/update?id=${category._id}`}
                         className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 transition"
                       >
                         <FiEdit className="w-4 h-4" />
