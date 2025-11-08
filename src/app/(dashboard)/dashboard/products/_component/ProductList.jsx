@@ -166,7 +166,7 @@ const ProductList = ({ productlist }) => {
   };
 
   const handleEdit = (productId) => {
-    router.push(`/dashboard/products/update/${productId}`);
+    router.push(`/dashboard/products/update?id=${productId}`);
   };
 
   const handleView = (productId) => {

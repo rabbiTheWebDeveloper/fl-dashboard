@@ -1,6 +1,7 @@
 import { userInfo } from "@/lib";
 import UpdateProduct from "../_component/UpdateProduct";
 import { getShopProductByIDQuery } from "@/queries/product";
+import { getAllCategoriesUserQuary } from "@/queries/categories";
 
 const page = async ({ searchParams }) => {
   const { id } = await searchParams;
