@@ -10,7 +10,12 @@ const page = async ({ searchParams }) => {
   const categories = await getAllCategoriesUserQuary(user);
   return (
     <>
-      <UpdateProduct user={user} product={product} categories={categories} productId={id} />
+      <UpdateProduct
+        user={user}
+        product={product}
+        categories={categories}
+        productId={id}
+      />
     </>
   );
 };
