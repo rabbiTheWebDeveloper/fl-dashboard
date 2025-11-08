@@ -59,6 +59,7 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { DialogHeader } from "@/components/ui/dialog";
 import { DialogTitle } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { API_ENDPOINTS } from "@/config/ApiEndpoints";
 const categories = [
   "All",
   "Electronics",
@@ -81,13 +82,10 @@ const ProductList = ({ productlist }) => {
   const [productToDelete, setProductToDelete] = useState(null);
 
   // Mock data - replace with API call
-
   const statusOptions = ["All", "Active", "Inactive", "Out of Stock"];
-
   // Filter and search products
   useEffect(() => {
     let result = products;
-
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -98,21 +96,17 @@ const ProductList = ({ productlist }) => {
           product.category.toLowerCase().includes(term)
       );
     }
-
     // Category filter
     if (categoryFilter !== "all") {
       result = result.filter((product) => product.category === categoryFilter);
     }
-
     // Status filter
     if (statusFilter !== "all") {
       result = result.filter((product) => product.status === statusFilter);
     }
-
     setFilteredProducts(result);
     setCurrentPage(1);
   }, [searchTerm, categoryFilter, statusFilter, products]);
-
   // Pagination
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
@@ -121,9 +115,7 @@ const ProductList = ({ productlist }) => {
     indexOfLastProduct
   );
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
-
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
   const getStatusVariant = (status) => {
     switch (status) {
       case "Active":
@@ -136,16 +128,33 @@ const ProductList = ({ productlist }) => {
         return "outline";
     }
   };
-
   const getStockVariant = (stock) => {
     if (stock === 0) return "destructive";
     if (stock < 10) return "secondary";
     return "default";
   };
+  const handleDelete = async (productId) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${API_ENDPOINTS.BASE_URL}/product/delete/${productId}`,
+        { method: "DELETE" }
+      );
 
-  const handleDelete = (product) => {
-    setProductToDelete(product);
-    setDeleteDialogOpen(true);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to delete product");
+      }
+      // ✅ Remove deleted product from UI state
+      setProducts((prev) => prev.filter((p) => p._id !== productId));
+      toast.success("Product deleted successfully ✅");
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error(error.message || "Failed to delete product ❌");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const confirmDelete = () => {
@@ -164,16 +173,6 @@ const ProductList = ({ productlist }) => {
     router.push(`/dashboard/products/${productId}`);
   };
 
-  const exportProducts = () => {
-    // Simulate export functionality
-    alert("Export functionality would be implemented here");
-  };
-
-  const importProducts = () => {
-    // Simulate import functionality
-    alert("Import functionality would be implemented here");
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50/60 p-6 flex items-center justify-center">
@@ -184,7 +183,7 @@ const ProductList = ({ productlist }) => {
       </div>
     );
   }
-
+  // console.log(products)
   return (
     <div className="min-h-screen bg-gray-50/60 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -197,8 +196,6 @@ const ProductList = ({ productlist }) => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-          
-       
             <Link href="/dashboard/add-product">
               <button className="inline-flex items-center gap-2 rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                 <Plus className="h-4 w-4" />
@@ -368,7 +365,11 @@ const ProductList = ({ productlist }) => {
                         </TableCell>
                         <TableCell>${product?.regularPrice}</TableCell>
                         <TableCell>
-                          <Badge variant={getStockVariant(product?.availableQuantity)}>
+                          <Badge
+                            variant={getStockVariant(
+                              product?.availableQuantity
+                            )}
+                          >
                             {product.availableQuantity} units
                           </Badge>
                         </TableCell>
@@ -389,12 +390,12 @@ const ProductList = ({ productlist }) => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
+                              {/* <DropdownMenuItem
                                 onClick={() => handleView(product.id)}
                               >
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                               <DropdownMenuItem
                                 onClick={() => handleEdit(product.id)}
                               >
@@ -402,7 +403,7 @@ const ProductList = ({ productlist }) => {
                                 Edit Product
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleDelete(product)}
+                                onClick={() => handleDelete(product._id)}
                                 className="text-red-600 focus:text-red-600"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />

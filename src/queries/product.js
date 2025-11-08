@@ -28,4 +28,17 @@ async function getAllProductUserQuary({ shopId, userId }) {
   }
 }
 
-export { getAllProductQuary, getAllProductUserQuary };
+async function getShopProductByIDQuery(id) {
+  await dbConnect();
+  const products = await ProductModel.findById(id).lean();
+  if (!products) {
+    return {
+      message: "Product not found.",
+      status: 404,
+      data: null,
+    };
+  }
+
+  return JSON.parse(JSON.stringify(products));
+}
+export { getAllProductQuary, getAllProductUserQuary, getShopProductByIDQuery };
