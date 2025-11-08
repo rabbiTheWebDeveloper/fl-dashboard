@@ -52,7 +52,12 @@ async function registerUserAndShopQuery(data) {
   user.shops.push(shop._id);
   await user.save();
 
-  await sendVerifyEmail({ toEmail: email, fullName, code, expiry });
+  try {
+    await sendVerifyEmail({ toEmail: email, fullName, code, expiry });
+  } catch (error) {
+    console.error("Email send failed:", error.message);
+    // Optional: still continue user registration if you want
+  }
 
   return {
     message: "Please check your email for the verification code.",
