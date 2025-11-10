@@ -393,7 +393,7 @@ const UpdateProduct = ({ categories, product, user, productId }) => {
       submitFormData.append("userId", user.userId);
 
       const response = await fetch(
-        API_ENDPOINTS.BASE_URL + "/product/update" + productId,
+        API_ENDPOINTS.BASE_URL + "/product/update/" + productId,
         {
           method: "POST",
           body: submitFormData,
