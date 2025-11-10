@@ -459,7 +459,7 @@ const UpdateProduct = ({ categories, product, user, productId }) => {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  Adding...
+                  Updating...
                 </>
               ) : (
                 <>
@@ -477,7 +477,7 @@ const UpdateProduct = ({ categories, product, user, productId }) => {
                       d="M5 13l4 4L19 7"
                     ></path>
                   </svg>
-                  Add Product
+                  Update Product
                 </>
               )}
             </button>
