@@ -58,6 +58,7 @@ import {
 
 import { API_ENDPOINTS } from "@/config/ApiEndpoints";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 // Predefined variant types
 const variantTypes = [
@@ -79,6 +80,7 @@ const variantTypes = [
 ];
 
 const AddProduct = ({ categories, userInfos }) => {
+  const router = useRouter();
   // Main form state
   const [formData, setFormData] = useState({
     productName: "",
@@ -403,7 +405,7 @@ const AddProduct = ({ categories, userInfos }) => {
 
       const data = await response.json();
       toast.success("Product created successfully!");
-      // router.push("/dashboard/category");
+      router.push("/dashboard/products");
       // Reset form would go here
     } catch (error) {
       console.error("Error adding product:", error);
