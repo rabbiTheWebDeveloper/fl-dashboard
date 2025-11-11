@@ -10,6 +10,7 @@ const ShopInfoWithSeo = ({ user, settings = {} }) => {
   const [formData, setFormData] = useState({
     // SEO & Marketing
     gtmId: settings?.gtmId || "",
+    gtmAnalytics: settings?.gtmAnalytics || "",
     facebookPixelId: settings?.facebookPixelId || "",
     facebookPixelToken: settings?.facebookPixelToken || "",
     facebookTestEventId: settings?.facebookTestEventId || "",
@@ -70,7 +71,18 @@ const ShopInfoWithSeo = ({ user, settings = {} }) => {
                   className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Google Tag Manager Analytics
+                </label>
+                <input
+                  name="gtmAnalytics"
+                  value={formData.gtmAnalytics}
+                  onChange={handleChange}
+                  placeholder="e.g., GTM-XXXXXXX"
+                  className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Facebook Pixel ID

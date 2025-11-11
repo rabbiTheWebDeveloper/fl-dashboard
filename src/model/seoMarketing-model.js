@@ -15,6 +15,7 @@ const SeoMarketingSchema = new Schema(
 
     // Google Tag Manager
     gtmId: { type: String, default: "" },
+    gtmAnalytics: { type: String, default: "" },
 
     // Facebook Pixel
     facebookPixelId: { type: String, default: "" },
@@ -44,4 +45,6 @@ const SeoMarketingSchema = new Schema(
 );
 
 // Optional: prevent model overwrite error in Next.js
-export const SeoMarketingModel = mongoose.models.SeoMarketing ??  mongoose.model("SeoMarketing", SeoMarketingSchema);
+export const SeoMarketingModel =
+  mongoose.models.SeoMarketing ??
+  mongoose.model("SeoMarketing", SeoMarketingSchema);
