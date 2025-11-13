@@ -9,8 +9,12 @@ const ShopInfo = ({ user, settings }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const [logoPreview, setLogoPreview] = useState(settings?.companyLogo?.url || null);
-  const [faviconPreview, setFaviconPreview] = useState(settings?.favicon?.url || null);
+  const [logoPreview, setLogoPreview] = useState(
+    settings?.companyLogo?.url || null
+  );
+  const [faviconPreview, setFaviconPreview] = useState(
+    settings?.favicon?.url || null
+  );
 
   const [formData, setFormData] = useState({
     shopAddress: settings?.shopAddress || "",
@@ -22,6 +26,7 @@ const ShopInfo = ({ user, settings }) => {
     description: settings?.description || "",
     companyLogo: null,
     favicon: null,
+    domain_verify: settings?.domain_verify || "",
   });
 
   // Handle Input Change
@@ -94,7 +99,9 @@ const ShopInfo = ({ user, settings }) => {
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-indigo-100 p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-indigo-700">Shop Information</h2>
+          <h2 className="text-2xl font-bold text-indigo-700">
+            Shop Information
+          </h2>
           <button
             onClick={() => router.back()}
             className="px-4 py-2 text-sm font-medium text-indigo-700 border border-indigo-400 rounded-lg hover:bg-indigo-100 transition-all"
@@ -213,6 +220,20 @@ const ShopInfo = ({ user, settings }) => {
               placeholder="This will be displayed on your shop profile"
               className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 h-24"
             ></textarea>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Shop Domain Verify
+            </label>
+            <input
+              name="domain_verify"
+              type="text"
+              value={formData.domain_verify}
+              onChange={handleChange}
+              placeholder="domain verify Meta code"
+              className="w-full border border-indigo-400 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
 
           {/* Meta Description */}
