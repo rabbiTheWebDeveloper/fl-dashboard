@@ -1,4 +1,7 @@
-import { replaceMongoIdInObject } from "@/lib/convertData";
+import {
+  replaceMongoIdInArray,
+  replaceMongoIdInObject,
+} from "@/lib/convertData";
 import { CustomerModel } from "@/model/customer-model";
 import { OrderModel } from "@/model/order-model";
 import { ProductModel } from "@/model/product-model";
@@ -94,4 +97,40 @@ const getOrderDetailsQuary = async (id) => {
   return replaceMongoIdInObject(JSON.parse(JSON.stringify(orderDetails)));
 };
 
-export { orderQuery, getOrderDetailsQuary };
+async function getAllOrderUserQuary({ shopId, userId }) {
+  await dbConnect();
+
+  // 1️⃣ Fetch all orders with customer info
+  const orders = await OrderModel.find({ shopId, userId })
+    .populate("customer", "customerAddress customerPhone customerName")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (orders.length === 0) return [];
+
+  // 2️⃣ Collect all product IDs in ONE go
+  const productIds = [
+    ...new Set(orders.flatMap((o) => o.productId.map(String))),
+  ];
+
+  // 3️⃣ Fetch required product fields ONLY
+  const products = await ProductModel.find({ _id: { $in: productIds } })
+    .select(
+      "productName variants mainImage regularPrice discountType discountValue"
+    )
+    .lean();
+
+  // 4️⃣ Map products for O(1) lookup
+  const productMap = Object.fromEntries(
+    products.map((p) => [String(p._id), p])
+  );
+
+  // 5️⃣ Attach product details to each order (fast mapping)
+  const orderlist = orders.map((order) => ({
+    ...order,
+    products: order.productId.map((id) => productMap[String(id)] || null),
+  }));
+  return replaceMongoIdInArray(JSON.parse(JSON.stringify(orderlist)));
+}
+
+export { orderQuery, getOrderDetailsQuary, getAllOrderUserQuary };
