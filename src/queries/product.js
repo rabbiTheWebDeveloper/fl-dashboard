@@ -27,7 +27,18 @@ async function getAllProductUserQuary({ shopId, userId }) {
     throw new Error(error.message || "Failed to fetch categories");
   }
 }
-
+async function getAllProductOrderUserQuary({ shopId, userId }) {
+  await dbConnect();
+  try {
+    const categories = await ProductModel.find({ shopId, userId })
+      .sort({ createdAt: -1 })
+      .select("productName _id variants mainImage regularPrice discountType discountValue")
+      .lean();
+    return JSON.parse(JSON.stringify(categories));
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch categories");
+  }
+}
 async function getShopProductByIDQuery(id) {
   await dbConnect();
   const products = await ProductModel.findById(id).lean();
@@ -41,4 +52,9 @@ async function getShopProductByIDQuery(id) {
 
   return JSON.parse(JSON.stringify(products));
 }
-export { getAllProductQuary, getAllProductUserQuary, getShopProductByIDQuery };
+export {
+  getAllProductQuary,
+  getAllProductUserQuary,
+  getShopProductByIDQuery,
+  getAllProductOrderUserQuary,
+};

@@ -111,21 +111,26 @@ export default function Orders({ orderlist = [] }) {
   };
 
   const getProductDetails = (order) => {
-    return order.products.map((product, index) => {
-      const quantity = order.quantity[index] || 1;
-      const variantIndex = order.variationId[index] || 0;
-      const variant = product.variants && product.variants[variantIndex] 
-        ? product.variants[variantIndex].variant 
-        : "Default";
-      
-      return `${product.productName} (${variant}) × ${quantity}`;
-    }).join(", ");
+    return order.products
+      .map((product, index) => {
+        const quantity = order.quantity[index] || 1;
+        const variantIndex = order.variationId[index] || 0;
+        const variant =
+          product.variants && product.variants[variantIndex]
+            ? product.variants[variantIndex].variant
+            : "Default";
+
+        return `${product.productName} (${variant}) × ${quantity}`;
+      })
+      .join(", ");
   };
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.includes(searchTerm.toLowerCase()) ||
-      order.customer.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customer.customerName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       order.customer.customerPhone.includes(searchTerm);
 
     const matchesStatus =
@@ -167,8 +172,8 @@ export default function Orders({ orderlist = [] }) {
             View and manage all your shop orders.
           </p>
         </div>
-        <Link href="/dashboard/order-now">
-          <Button className="inline-flex items-center gap-2">
+        <Link href="/dashboard/orders/create-order">
+          <Button className="inline-flex items-center gap-2 bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg transition-all duration-200 font-medium">
             <Plus className="h-4 w-4" />
             New Order
           </Button>
@@ -331,8 +336,8 @@ export default function Orders({ orderlist = [] }) {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {order.deliveryLocation === "cash" 
-                            ? "Cash on Delivery" 
+                          {order.deliveryLocation === "cash"
+                            ? "Cash on Delivery"
                             : "Online Payment"}
                         </Badge>
                       </TableCell>
