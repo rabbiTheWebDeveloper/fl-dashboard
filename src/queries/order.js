@@ -179,8 +179,23 @@ async function updateMultipleOrderStatus({ orderId, status }) {
   };
 }
 
+async function getRecentOrderUserQuery({ shopId, userId }) {
+  await dbConnect();
+
+  // 1️⃣ Fetch all orders with customer info
+  const orders = await OrderModel.find({ shopId, userId })
+    .populate("customer", "customerAddress customerPhone customerName")
+    .sort({ createdAt: -1 }).select('_id customer status createdAt grand_total')
+    .limit(4)
+    .lean();
+
+  if (orders.length === 0) return [];
+
+  return replaceMongoIdInArray(JSON.parse(JSON.stringify(orders)));
+}
 export {
   orderQuery,
+  getRecentOrderUserQuery,
   getOrderDetailsQuary,
   getAllOrderUserQuary,
   updateMultipleOrderStatus,

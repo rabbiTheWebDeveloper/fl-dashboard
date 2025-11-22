@@ -27,7 +27,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-export default function Dashboard() {
+export default function Dashboard({ recentOrderList }) {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({});
   // Mock data with chart data
@@ -477,19 +477,21 @@ export default function Dashboard() {
               <h3 className="font-semibold text-gray-900">Recent Orders</h3>
             </div>
             <div className="divide-y divide-gray-200">
-              {dashboardData.recentOrders.map((order) => (
+              {recentOrderList.map((order) => (
                 <div
                   key={order.id}
                   className="p-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium">{order.customer}</p>
-                      <p className="text-sm text-gray-600">{order.date}</p>
+                      <p className="font-medium">
+                        {order?.customer?.customerName}
+                      </p>
+                      <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">
-                        ৳{order.amount.toLocaleString()}
+                        ৳{order?.grand_total?.toLocaleString()}
                       </p>
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
