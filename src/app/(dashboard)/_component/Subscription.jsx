@@ -84,26 +84,6 @@ const Subscription = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <div className="text-2xl font-bold text-gray-900">ZatiqEasy</div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="text-gray-600 hover:text-gray-900">
-                Dashboard
-              </button>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                My Account
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -305,7 +285,6 @@ const Subscription = () => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };
