@@ -2,7 +2,6 @@
 import { Auth } from "@/components/ui/auth";
 import "./style.css";
 import { getUser } from "@/lib/auth";
-import { pusherClient } from "@/lib/pusher-client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
@@ -21,6 +20,7 @@ import {
   FiChevronDown,
   FiChevronRight,
 } from "react-icons/fi";
+import { SubscriptIcon } from "lucide-react";
 
 const navItems = [
   {
@@ -89,6 +89,12 @@ const navItems = [
     icon: <FiCreditCard className="h-5 w-5" />,
     label: "Billings",
     tab: "billings",
+  },
+  {
+    href: "/subscription",
+    icon: <SubscriptIcon className="h-5 w-5" />,
+    label: "Subscription",
+    tab: "subscription",
   },
   {
     href: "/dashboard/team",
@@ -201,6 +207,7 @@ const DashboardLayout = ({ children }) => {
     if (path.includes("myshop/theme")) return "customize-theme";
     if (path.includes("myshop/landing-pages")) return "landing-pages";
     if (path.includes("myshop/promo-codes")) return "promo-codes";
+    if (path.includes("subscription")) return "subscription";
 
     return "dashboard";
   };
