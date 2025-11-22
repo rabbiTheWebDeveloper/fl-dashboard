@@ -153,7 +153,7 @@ async function updateOrderStatus({ orderId, status }) {
   return {
     message: "Order status updated successfully",
     status: 200,
-    data: replaceMongoIdInObject(updatedOrder),
+    data: replaceMongoIdInObject(JSON.parse(JSON.stringify(updatedOrder))),
   };
 }
 async function updateMultipleOrderStatus({ orderId, status }) {
@@ -175,7 +175,7 @@ async function updateMultipleOrderStatus({ orderId, status }) {
   return {
     message: "Order status updated successfully",
     status: 200,
-    data: replaceMongoIdInArray(updatedOrders),
+    data: replaceMongoIdInArray(JSON.parse(JSON.stringify(updatedOrders))),
   };
 }
 
