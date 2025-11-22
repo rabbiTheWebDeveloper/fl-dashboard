@@ -218,7 +218,7 @@ export default function CreateOrderPage() {
       grand_total: orderSummary.total
     };
 
-    console.log("Order Data:", orderData);
+  
     
     // Here you would typically send the data to your API
     // await fetch('/api/orders', {

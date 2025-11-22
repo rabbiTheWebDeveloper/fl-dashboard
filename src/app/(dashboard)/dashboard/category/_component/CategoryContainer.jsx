@@ -47,7 +47,6 @@ const CategoryContainer = ({ categoryList }) => {
     setStatusFilter(status);
   };
 
-  console.log(categories)
 
 const handleDelete = async (categoryId) => {
   const confirmDelete = window.confirm("Are you sure you want to delete this category?");
@@ -97,7 +96,7 @@ const handleDelete = async (categoryId) => {
       setIsLoading(false);
     }
   };
-console.log(categoryList)
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header Section */}

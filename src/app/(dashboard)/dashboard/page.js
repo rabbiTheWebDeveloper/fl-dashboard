@@ -21,28 +21,74 @@ import {
   FiShare2,
 } from "react-icons/fi";
 
+// Recharts components
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({});
 
-  // Mock data (replace with API data in real app)
+  // Mock data with chart data
   useEffect(() => {
     const mockData = {
       salesPerformance: {
         current: 125000,
         target: 150000,
         growth: 12.5,
+        chartData: [
+          { day: "Mon", sales: 18000, target: 20000 },
+          { day: "Tue", sales: 22000, target: 20000 },
+          { day: "Wed", sales: 19000, target: 20000 },
+          { day: "Thu", sales: 25000, target: 20000 },
+          { day: "Fri", sales: 21000, target: 20000 },
+          { day: "Sat", sales: 28000, target: 30000 },
+          { day: "Sun", sales: 12000, target: 20000 },
+        ],
       },
       orderSource: {
         landingPage: 25,
         website: 30,
         phoneCall: 20,
         socialMedia: 25,
+        chartData: [
+          { name: "Landing Page", value: 25, color: "#3b82f6" },
+          { name: "Website", value: 30, color: "#10b981" },
+          { name: "Phone Call", value: 20, color: "#8b5cf6" },
+          { name: "Social Media", value: 25, color: "#ec4899" },
+        ],
       },
       visitors: {
         total: 1245,
         unique: 890,
         landingPage: 567,
+        chartData: [
+          { hour: "9AM", visitors: 45, unique: 32 },
+          { hour: "10AM", visitors: 78, unique: 56 },
+          { hour: "11AM", visitors: 112, unique: 89 },
+          { hour: "12PM", visitors: 156, unique: 120 },
+          { hour: "1PM", visitors: 134, unique: 98 },
+          { hour: "2PM", visitors: 167, unique: 134 },
+          { hour: "3PM", visitors: 189, unique: 156 },
+          { hour: "4PM", visitors: 145, unique: 112 },
+          { hour: "5PM", visitors: 98, unique: 78 },
+          { hour: "6PM", visitors: 67, unique: 45 },
+        ],
       },
       orders: {
         total: 156,
@@ -117,6 +163,23 @@ export default function DashboardPage() {
     );
   }
 
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+          <p className="font-semibold text-gray-900">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color }}>
+              {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   // Small stat card
   const StatCard = ({ title, value, icon: Icon, color, change, prefix = "" }) => (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
@@ -144,58 +207,183 @@ export default function DashboardPage() {
     </div>
   );
 
-  // Progress bar
-  const ProgressCard = ({ title, current, target, color }) => {
-    const percentage = Math.min((current / target) * 100, 100);
-    return (
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold text-gray-900">{title}</h3>
-          <span className="text-2xl font-bold text-indigo-600">
-            {percentage.toFixed(1)}%
-          </span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div
-            className={`h-3 rounded-full ${color}`}
-            style={{ width: `${percentage}%` }}
-          ></div>
-        </div>
-        <div className="flex justify-between text-sm text-gray-600 mt-2">
-          <span>Current: ৳{current.toLocaleString()}</span>
-          <span>Target: ৳{target.toLocaleString()}</span>
+  // Sales Performance Chart
+  const SalesPerformanceChart = () => (
+    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-semibold text-gray-900">Sales Performance</h3>
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+            <span>Actual Sales</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+            <span>Target</span>
+          </div>
         </div>
       </div>
-    );
-  };
+      <div className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={dashboardData.salesPerformance.chartData}
+            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+            <XAxis 
+              dataKey="day" 
+              tick={{ fill: '#6b7280' }}
+              axisLine={{ stroke: '#e5e7eb' }}
+            />
+            <YAxis 
+              tick={{ fill: '#6b7280' }}
+              axisLine={{ stroke: '#e5e7eb' }}
+              tickFormatter={(value) => `৳${(value / 1000).toFixed(0)}k`}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Area
+              type="monotone"
+              dataKey="target"
+              stackId="1"
+              stroke="#9ca3af"
+              fill="#9ca3af"
+              fillOpacity={0.1}
+              name="Target"
+            />
+            <Area
+              type="monotone"
+              dataKey="sales"
+              stackId="2"
+              stroke="#3b82f6"
+              fill="#3b82f6"
+              fillOpacity={0.3}
+              name="Actual Sales"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
+        <span>Current: ৳{dashboardData.salesPerformance.current.toLocaleString()}</span>
+        <span>Target: ৳{dashboardData.salesPerformance.target.toLocaleString()}</span>
+        <span className="text-green-600 font-semibold">
+          +{dashboardData.salesPerformance.growth}% Growth
+        </span>
+      </div>
+    </div>
+  );
 
-  // Order source bar
-  const OrderSourceCard = () => (
+  // Visitors Today Chart
+  const VisitorsChart = () => (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-      <h3 className="font-semibold text-gray-900 mb-4">Order Source</h3>
-      <div className="space-y-4">
-        {[
-          { source: "Landing Page", value: dashboardData.orderSource.landingPage, icon: FiGlobe, color: "bg-blue-500" },
-          { source: "Website", value: dashboardData.orderSource.website, icon: FiGlobe, color: "bg-green-500" },
-          { source: "Phone Call", value: dashboardData.orderSource.phoneCall, icon: FiPhone, color: "bg-purple-500" },
-          { source: "Social Media", value: dashboardData.orderSource.socialMedia, icon: FiShare2, color: "bg-pink-500" },
-        ].map((item, index) => (
-          <div key={index}>
-            <div className="flex justify-between items-center mb-1">
-              <div className="flex items-center">
-                <item.icon className="w-4 h-4 text-gray-500 mr-2" />
-                <span className="text-sm">{item.source}</span>
-              </div>
-              <span className="font-semibold">{item.value}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full ${item.color}`}
-                style={{ width: `${item.value}%` }}
-              ></div>
-            </div>
+      <h3 className="font-semibold text-gray-900 mb-6">Visitors Today</h3>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={dashboardData.visitors.chartData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+            <XAxis 
+              dataKey="hour" 
+              tick={{ fill: '#6b7280' }}
+              axisLine={{ stroke: '#e5e7eb' }}
+            />
+            <YAxis 
+              tick={{ fill: '#6b7280' }}
+              axisLine={{ stroke: '#e5e7eb' }}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Bar 
+              dataKey="visitors" 
+              name="Total Visitors" 
+              fill="#8b5cf6" 
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar 
+              dataKey="unique" 
+              name="Unique Visitors" 
+              fill="#10b981" 
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="grid grid-cols-3 gap-4 mt-4 text-center">
+        <div>
+          <div className="text-lg font-bold text-purple-600">
+            {dashboardData.visitors.total}
           </div>
-        ))}
+          <div className="text-xs text-gray-600">Total Visitors</div>
+        </div>
+        <div>
+          <div className="text-lg font-bold text-green-600">
+            {dashboardData.visitors.unique}
+          </div>
+          <div className="text-xs text-gray-600">Unique Visitors</div>
+        </div>
+        <div>
+          <div className="text-lg font-bold text-blue-600">
+            {dashboardData.visitors.landingPage}
+          </div>
+          <div className="text-xs text-gray-600">Landing Page</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Order Source Chart
+  const OrderSourceChart = () => (
+    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <h3 className="font-semibold text-gray-900 mb-6">Order Source Distribution</h3>
+      <div className="flex flex-col lg:flex-row items-center gap-8">
+        <div className="h-64 w-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={dashboardData.orderSource.chartData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {dashboardData.orderSource.chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex-1 space-y-4">
+          {dashboardData.orderSource.chartData.map((item, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                ></div>
+                <span className="text-sm font-medium">{item.name}</span>
+              </div>
+              <div className="text-right">
+                <span className="font-semibold">{item.value}%</span>
+                <div className="w-20 bg-gray-200 rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full"
+                    style={{ 
+                      backgroundColor: item.color,
+                      width: `${item.value}%`
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -234,23 +422,15 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left side */}
         <div className="xl:col-span-2 space-y-6">
-          <ProgressCard
-            title="Sales Performance"
-            current={dashboardData.salesPerformance.current}
-            target={dashboardData.salesPerformance.target}
-            color="bg-gradient-to-r from-green-500 to-teal-500"
-          />
+          {/* Sales Performance Chart */}
+          <SalesPerformanceChart />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <OrderSourceCard />
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-4">Visitors Today</h3>
-              <div className="space-y-4">
-                <StatCard title="Total Visitors" value={dashboardData.visitors.total} icon={FiEye} color="text-purple-600" change={8.2} />
-                <StatCard title="Unique Visitors" value={dashboardData.visitors.unique} icon={FiUsers} color="text-blue-600" change={5.7} />
-                <StatCard title="Landing Page Visitors" value={dashboardData.visitors.landingPage} icon={FiTrendingUp} color="text-green-600" change={12.3} />
-              </div>
-            </div>
+            {/* Order Source Chart */}
+            <OrderSourceChart />
+            
+            {/* Visitors Chart */}
+            <VisitorsChart />
           </div>
 
           {/* Orders */}
@@ -302,7 +482,6 @@ export default function DashboardPage() {
             <div className="space-y-4">
               <StatCard title="Sales Amount" value={dashboardData.financials.salesAmount} icon={FiDollarSign} color="text-green-600" prefix="৳" change={15.2} />
               <StatCard title="Discount Amount" value={dashboardData.financials.discountAmount} icon={FiDollarSign} color="text-orange-600" prefix="৳" change={-3.4} />
-              <StatCard title="Courier Balance" value={dashboardData.financials.courierBalance} icon={FiTruck} color="text-blue-600" prefix="৳" change={7.8} />
             </div>
           </div>
 

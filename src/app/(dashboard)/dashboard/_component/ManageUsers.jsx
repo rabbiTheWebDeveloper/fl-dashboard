@@ -17,7 +17,6 @@ import {
 const ManageUsers = ({ user }) => {
   const [showModal, setShowModal] = useState(false);
   const [users, setUsers] = useState([user]);
-  console.log("ManageUsers User:", user);
   const [newUser, setNewUser] = useState({ email: "", role: "" });
 
   const handleAddUser = () => {

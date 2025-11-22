@@ -29,7 +29,6 @@ export default function CustomizeTheme({ user, themeInfo }) {
         ...theme,
       };
       const response = await myshopThemeColorUpdateQuaryAction(formData);
-      console.log("Login successful", response);
       if (response.status) {
         toast.success("Theme updated successfully!");
       }

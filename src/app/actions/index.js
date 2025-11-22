@@ -46,12 +46,7 @@ export async function userUpdateSetting(formData) {
   }
 }
 
-// export async function createProduct(formData) {
-//   // const user = Object.fromEntries(formData);
-//    await createProductDB(formData);
-//   console.log("product carete action", created);
-//   return created;
-// }
+
 
 export async function updateNote(formData) {
   try {
@@ -118,8 +113,6 @@ export async function getAffiliationBySpecificStatusAndDateAction(
 }
 
 export async function saveOnBoardingAction(data) {
-  // console.log("status action", status);
-
   try {
     const response = await saveOnBoardingQuery(data);
     revalidatePath(`/dashboard/on-boarding-report`);
@@ -140,7 +133,7 @@ export async function updateOnBoardingAction(id, data) {
 }
 
 export async function affiliationReportDashboardAction(id, data) {
-  // console.log("updateData action", id, data);
+
   try {
     const response = await getAffiliateReport(id, data);
     revalidatePath(`/affiliation-user`);

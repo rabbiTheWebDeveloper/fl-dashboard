@@ -215,8 +215,6 @@ export default function CreateOrder({productlist}) {
       status: "pending"
     };
 
-    console.log("Order Data to Submit:", orderData);
-
     try {
       // Here you would typically send the data to your API
       const response = await fetch('/api/orders', {

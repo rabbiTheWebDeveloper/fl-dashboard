@@ -26,8 +26,7 @@ export default function DetectDevToolsAndRedirect() {
 
       if (widthThreshold || heightThreshold) {
         if (!devtoolsOpen) {
-          devtoolsOpen = true;
-          console.log("⚠️ Developer Tools opened. Redirecting...");
+          devtoolsOpen = true;n
           router.push("/logout");
         }
       } else {

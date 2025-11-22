@@ -230,12 +230,10 @@ export default function Orders({ orderlist = [] }) {
         );
         setSelectedOrders([]);
         setBulkStatus("");
-        console.log("Bulk update successful:", response);
       } else {
         throw new Error("Failed to update orders");
       }
     } catch (error) {
-      console.error("Failed to update orders:", error);
       alert("Failed to update orders. Please try again.");
     } finally {
       setIsUpdating(false);
@@ -255,7 +253,6 @@ export default function Orders({ orderlist = [] }) {
             order.id === orderId ? { ...order, status } : order
           )
         );
-        console.log("Order status updated:", result);
       } else {
         throw new Error("Failed to update order status");
       }
@@ -298,17 +295,16 @@ export default function Orders({ orderlist = [] }) {
             View and manage all your shop orders.
           </p>
         </div>
-  <Link href="/dashboard/orders/create-order">
-  <button
-    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white 
+        <Link href="/dashboard/orders/create-order">
+          <button
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white 
                rounded-lg hover:bg-green-700 active:scale-95
                shadow-sm hover:shadow-md transition-all duration-200 font-medium"
-  >
-    <Plus className="h-4 w-4" />
-    New Order
-  </button>
-</Link>
-
+          >
+            <Plus className="h-4 w-4" />
+            New Order
+          </button>
+        </Link>
       </div>
 
       {/* Stats */}

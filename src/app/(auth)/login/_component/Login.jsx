@@ -57,7 +57,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       const response = await loginUserQuaryAction(formData);
-      console.log("Login successful", response);
+  
       if (response.status) {
         window.location.href = "/dashboard";
         // router.push('/dashboard');

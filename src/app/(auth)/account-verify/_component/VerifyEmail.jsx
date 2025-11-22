@@ -81,7 +81,7 @@ export default function VerifyEmail({ user }) {
     try {
       // Simulate API call
       const response = await verifyEmailAction(user.email, code.join(""));
-      console.log("Verification response:", response);
+  
 
       if (response.success) {
         toast.success("ইমেইল ভেরিফিকেশন সফল!");

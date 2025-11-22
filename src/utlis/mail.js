@@ -24,7 +24,6 @@ async function sendWelcomeEmail({ toEmail, fullName }) {
   };
 
   await transporter.sendMail(mailOptions);
-  console.log("Email sent to", toEmail);
 }
 
 async function sendVerifyEmail({ toEmail, fullName, code, expiry }) {

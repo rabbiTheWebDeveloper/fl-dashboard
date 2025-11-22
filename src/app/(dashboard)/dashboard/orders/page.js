@@ -4,7 +4,6 @@ import { userInfo } from "@/lib";
 
 const OrderPage = async () => {
   const orderlist = await getAllOrderUserQuary(await userInfo());
-  console.log(orderlist);
   return (
     <>
       <Orders orderlist={orderlist} />

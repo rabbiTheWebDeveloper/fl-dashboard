@@ -31,8 +31,7 @@ const Courier = () => {
         
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('Steadfast Data:', steadfastData);
-        
+  
         setIsLoading(false);
     };
 
@@ -42,7 +41,6 @@ const Courier = () => {
         
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('REDX Token:', redxData.token);
         
         setIsLoading(false);
     };
@@ -53,14 +51,13 @@ const Courier = () => {
         
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('Pathao Data:', pathaoData);
+
         
         setIsLoading(false);
     };
 
     const handleBackClick = () => {
-        // Handle back navigation - you can modify this based on your routing
-        console.log('Back button clicked');
+
         window.history.back(); // or use your router's back function
     };
 

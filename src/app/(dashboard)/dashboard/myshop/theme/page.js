@@ -5,7 +5,7 @@ import { getThemeQuery } from "@/queries/theme";
 const page = async () => {
   const user = await userInfo();
   const themeInfo = await getThemeQuery(user);
-  console.log("User info in theme page:", themeInfo);
+
   return (
     <>
       <CustomizeTheme user={user} themeInfo={themeInfo} />

@@ -42,7 +42,6 @@ const Setting = ({ user }) => {
   const handleProfileUpdate = (e) => {
     e.preventDefault();
     // Handle profile update logic here
-    console.log("Updating profile:", userData);
     alert("Profile updated successfully!");
   };
 

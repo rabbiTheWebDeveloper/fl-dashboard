@@ -93,9 +93,6 @@ export default function Register() {
     try {
       // In a real application, you would make an API call here
       const response = await registrationAction(formData);
-
-      // Mock successful registration
-      console.log("Registration successful", response);
       if (
         response.status === 200 &&
         response.data.email &&

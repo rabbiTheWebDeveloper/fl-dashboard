@@ -5,7 +5,6 @@ import { userInfo } from "@/lib";
 export default async function AddProductPage() {
   const userInfos = (await userInfo()) || {}; // fallback {}
   const categories = await getAllCategoriesUserQuary(userInfos);
-  console.log(categories)
   if (!userInfos) return;
 
   return (
