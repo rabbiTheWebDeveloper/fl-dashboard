@@ -17,10 +17,10 @@ import {
   FiDroplet,
   FiSettings,
   FiGrid,
+  FiStar,
   FiChevronDown,
   FiChevronRight,
 } from "react-icons/fi";
-import { SubscriptIcon } from "lucide-react";
 
 const navItems = [
   {
@@ -92,7 +92,7 @@ const navItems = [
   },
   {
     href: "/subscription",
-    icon: <SubscriptIcon className="h-5 w-5" />,
+    icon: <FiStar className="h-5 w-5" />,
     label: "Subscription",
     tab: "subscription",
   },
