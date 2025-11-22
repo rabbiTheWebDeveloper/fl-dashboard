@@ -9,7 +9,7 @@ const Subscription = () => {
     {
       id: "basic",
       name: "Basic",
-      price: { monthly: 29, yearly: 24 },
+      price: { monthly: 500, yearly: 450 },
       description: "Perfect for small businesses getting started",
       features: [
         "Up to 100 orders/month",
@@ -23,7 +23,7 @@ const Subscription = () => {
     {
       id: "premium",
       name: "Premium",
-      price: { monthly: 79, yearly: 65 },
+      price: { monthly: 1000, yearly: 850 },
       description: "Ideal for growing businesses",
       features: [
         "Up to 1000 orders/month",
@@ -38,7 +38,7 @@ const Subscription = () => {
     {
       id: "enterprise",
       name: "Enterprise",
-      price: { monthly: 199, yearly: 165 },
+      price: { monthly: 2000, yearly: 1800   },
       description: "For large-scale operations",
       features: [
         "Unlimited orders",
