@@ -51,9 +51,21 @@ import {
   updateOrderStatusAction,
 } from "@/app/actions/order";
 
+// Status tabs configuration
+const statusTabs = [
+  { id: "all", label: "All Orders", count: 0 },
+  { id: "pending", label: "Pending", count: 0 },
+  { id: "confirmed", label: "Confirmed", count: 0 },
+  { id: "processing", label: "Processing", count: 0 },
+  { id: "shipped", label: "Shipped", count: 0 },
+  { id: "delivered", label: "Delivered", count: 0 },
+  { id: "cancelled", label: "Cancelled", count: 0 },
+];
+
 export default function Orders({ orderlist = [] }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -102,6 +114,25 @@ export default function Orders({ orderlist = [] }) {
     confirmed: "Confirmed",
   };
 
+  // Calculate counts for each status tab
+  const statusCounts = useMemo(() => {
+    const counts = {
+      all: orders.length,
+      pending: orders.filter((o) => o.status === "pending").length,
+      confirmed: orders.filter((o) => o.status === "confirmed").length,
+      processing: orders.filter((o) => o.status === "processing").length,
+      shipped: orders.filter((o) => o.status === "shipped").length,
+      delivered: orders.filter((o) => o.status === "delivered").length,
+      cancelled: orders.filter((o) => o.status === "cancelled").length,
+    };
+
+    // Update tabs with counts
+    return statusTabs.map((tab) => ({
+      ...tab,
+      count: counts[tab.id] || 0,
+    }));
+  }, [orders]);
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-GB", {
@@ -144,12 +175,12 @@ export default function Orders({ orderlist = [] }) {
           .includes(searchTerm.toLowerCase()) ||
         order.customer.customerPhone.includes(searchTerm);
 
-      const matchesStatus =
-        statusFilter === "all" || order.status === statusFilter;
+      // Use activeTab for filtering instead of statusFilter
+      const matchesStatus = activeTab === "all" || order.status === activeTab;
 
       return matchesSearch && matchesStatus;
     });
-  }, [orders, searchTerm, statusFilter]);
+  }, [orders, searchTerm, activeTab]);
 
   // Check if all orders are selected
   const isAllSelected =
@@ -371,18 +402,78 @@ export default function Orders({ orderlist = [] }) {
         </Card>
       )}
 
-      {/* Filters */}
+      {/* Status Tabs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Order Status</CardTitle>
+          <CardDescription>
+            Quickly filter orders by their current status
+          </CardDescription>
+        </CardHeader>
+  <CardContent>
+  <div className="flex flex-wrap gap-3 items-center">
+    {statusCounts.map((tab) => {
+      const isActive = activeTab === tab.id;
+
+      return (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id)}
+          className={`
+            relative px-4 py-2 rounded-xl font-medium flex items-center gap-2
+            border transition-all duration-200 shadow-sm
+            ${isActive 
+              ? "bg-indigo-600 text-white border-indigo-600 shadow-md" 
+              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+            }
+          `}
+        >
+          {/* Label */}
+          {tab.label}
+
+          {/* Badge */}
+          {tab.count > 0 && (
+            <span
+              className={`
+                text-xs px-2 py-1 rounded-full font-semibold
+                ${isActive 
+                  ? "bg-white text-indigo-600 shadow-sm" 
+                  : "bg-indigo-100 text-indigo-700"
+                }
+              `}
+            >
+              {tab.count}
+            </span>
+          )}
+
+          {/* Active bottom indicator */}
+          {isActive && (
+            <span className="absolute left-0 right-0 -bottom-[6px] h-[3px] bg-indigo-600 rounded-full"></span>
+          )}
+        </button>
+      );
+    })}
+  </div>
+</CardContent>
+
+      </Card>
+
+      {/* Search and Additional Filters */}
       <Card>
         <CardHeader>
           <CardTitle>Order Filters</CardTitle>
-          <CardDescription>Search or filter orders easily</CardDescription>
+          <CardDescription>
+            Refine your search within {statusLabels[activeTab] || "All"} orders
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by order ID, customer name, or phone..."
+                placeholder={`Search ${
+                  statusLabels[activeTab]?.toLowerCase() || "all"
+                } orders by ID, customer name, or phone...`}
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -390,7 +481,7 @@ export default function Orders({ orderlist = [] }) {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="Additional Filter" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
@@ -409,7 +500,13 @@ export default function Orders({ orderlist = [] }) {
       {/* Orders Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Order List</CardTitle>
+          <CardTitle>
+            {statusLabels[activeTab] || "All"} Orders
+            {activeTab !== "all" &&
+              ` (${
+                statusCounts.find((tab) => tab.id === activeTab)?.count || 0
+              })`}
+          </CardTitle>
           <CardDescription>
             Showing {filteredOrders.length} order(s)
             {selectedOrders.length > 0 &&
@@ -451,7 +548,9 @@ export default function Orders({ orderlist = [] }) {
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
                       <div className="text-muted-foreground">
-                        No orders found
+                        No {statusLabels[activeTab]?.toLowerCase() || ""} orders
+                        found
+                        {searchTerm && ` matching "${searchTerm}"`}
                       </div>
                     </TableCell>
                   </TableRow>
