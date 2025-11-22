@@ -133,4 +133,56 @@ async function getAllOrderUserQuary({ shopId, userId }) {
   return replaceMongoIdInArray(JSON.parse(JSON.stringify(orderlist)));
 }
 
-export { orderQuery, getOrderDetailsQuary, getAllOrderUserQuary };
+async function updateOrderStatus({ orderId, status }) {
+  await dbConnect();
+
+  if (!orderId) throw new Error("Order ID is required");
+  if (!status) throw new Error("Status is required");
+
+  // Update order status
+  const updatedOrder = await OrderModel.findByIdAndUpdate(
+    orderId,
+    { status },
+    { new: true }
+  )
+    .populate("customer", "customerName customerPhone customerAddress")
+    .lean();
+
+  if (!updatedOrder) throw new Error("Order not found");
+
+  return {
+    message: "Order status updated successfully",
+    status: 200,
+    data: replaceMongoIdInObject(updatedOrder),
+  };
+}
+async function updateMultipleOrderStatus({ orderId, status }) {
+  await dbConnect();
+
+  if (!orderId || !Array.isArray(orderId) || orderId.length === 0)
+    throw new Error("Order IDs array is required");
+
+  if (!status) throw new Error("Status is required");
+
+  // Update multiple orders at once
+  await OrderModel.updateMany({ _id: { $in: orderId } }, { $set: { status } });
+
+  // Fetch updated orders (optional)
+  const updatedOrders = await OrderModel.find({ _id: { $in: orderId } })
+    .populate("customer", "customerName customerPhone customerAddress")
+    .lean();
+
+  return {
+    message: "Order status updated successfully",
+    status: 200,
+    data: replaceMongoIdInArray(updatedOrders),
+  };
+}
+
+export {
+  orderQuery,
+  getOrderDetailsQuary,
+  getAllOrderUserQuary,
+  updateMultipleOrderStatus,
+  updateOrderStatus,
+};

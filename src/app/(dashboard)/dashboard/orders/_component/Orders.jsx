@@ -46,6 +46,10 @@ import {
   MapPin,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  updateMultipleOrderStatusAction,
+  updateOrderStatusAction,
+} from "@/app/actions/order";
 
 export default function Orders({ orderlist = [] }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -148,16 +152,19 @@ export default function Orders({ orderlist = [] }) {
   }, [orders, searchTerm, statusFilter]);
 
   // Check if all orders are selected
-  const isAllSelected = filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length;
+  const isAllSelected =
+    filteredOrders.length > 0 &&
+    selectedOrders.length === filteredOrders.length;
 
   // Check if some orders are selected
-  const isIndeterminate = selectedOrders.length > 0 && selectedOrders.length < filteredOrders.length;
+  const isIndeterminate =
+    selectedOrders.length > 0 && selectedOrders.length < filteredOrders.length;
 
   // Handle individual checkbox selection
   const handleOrderSelect = (orderId) => {
-    setSelectedOrders(prev =>
+    setSelectedOrders((prev) =>
       prev.includes(orderId)
-        ? prev.filter(id => id !== orderId)
+        ? prev.filter((id) => id !== orderId)
         : [...prev, orderId]
     );
   };
@@ -167,7 +174,7 @@ export default function Orders({ orderlist = [] }) {
     if (selectedOrders.length === filteredOrders.length) {
       setSelectedOrders([]);
     } else {
-      setSelectedOrders(filteredOrders.map(order => order.id));
+      setSelectedOrders(filteredOrders.map((order) => order.id));
     }
   };
 
@@ -177,34 +184,22 @@ export default function Orders({ orderlist = [] }) {
 
     setIsUpdating(true);
     try {
-      const response = await fetch("/api/orders/bulk-update", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderIds: selectedOrders,
-          status: bulkStatus,
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        
-        // Update local state
-        setOrders(prevOrders =>
-          prevOrders.map(order =>
+      const payload = {
+        orderId: selectedOrders,
+        status: bulkStatus,
+      };
+      const response = await updateMultipleOrderStatusAction(payload);
+      if (response.data) {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
             selectedOrders.includes(order.id)
               ? { ...order, status: bulkStatus }
               : order
           )
         );
-        
-        // Clear selection and bulk status
         setSelectedOrders([]);
         setBulkStatus("");
-        
-        console.log("Bulk update successful:", result);
+        console.log("Bulk update successful:", response);
       } else {
         throw new Error("Failed to update orders");
       }
@@ -219,29 +214,16 @@ export default function Orders({ orderlist = [] }) {
   // Individual status update function
   const updateOrderStatus = async (orderId, status) => {
     try {
-      const response = await fetch("/api/orders/update-status", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderId,
-          status,
-        }),
-      });
+      const payload = { orderId, status };
+      const response = await updateOrderStatusAction(payload);
 
-      if (response.ok) {
-        const result = await response.json();
-        
-        // Update local state
-        setOrders(prevOrders =>
-          prevOrders.map(order =>
-            order.id === orderId
-              ? { ...order, status }
-              : order
+      if (response.data) {
+        const result = response.data;
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId ? { ...order, status } : order
           )
         );
-        
         console.log("Order status updated:", result);
       } else {
         throw new Error("Failed to update order status");
@@ -430,7 +412,8 @@ export default function Orders({ orderlist = [] }) {
           <CardTitle>Order List</CardTitle>
           <CardDescription>
             Showing {filteredOrders.length} order(s)
-            {selectedOrders.length > 0 && ` • ${selectedOrders.length} selected`}
+            {selectedOrders.length > 0 &&
+              ` • ${selectedOrders.length} selected`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -444,7 +427,7 @@ export default function Orders({ orderlist = [] }) {
                         type="checkbox"
                         className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                         checked={isAllSelected}
-                        ref={input => {
+                        ref={(input) => {
                           if (input) {
                             input.indeterminate = isIndeterminate;
                           }
@@ -544,24 +527,42 @@ export default function Orders({ orderlist = [] }) {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel>Update Status</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, "confirmed")}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateOrderStatus(order.id, "confirmed")
+                              }
+                            >
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Mark as Confirmed
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, "processing")}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateOrderStatus(order.id, "processing")
+                              }
+                            >
                               <Truck className="h-4 w-4 mr-2" />
                               Mark as Processing
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, "shipped")}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateOrderStatus(order.id, "shipped")
+                              }
+                            >
                               <Truck className="h-4 w-4 mr-2" />
                               Mark as Shipped
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, "delivered")}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateOrderStatus(order.id, "delivered")
+                              }
+                            >
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Mark as Delivered
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => updateOrderStatus(order.id, "cancelled")}
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateOrderStatus(order.id, "cancelled")
+                              }
                               className="text-red-600"
                             >
                               <XCircle className="h-4 w-4 mr-2" />
