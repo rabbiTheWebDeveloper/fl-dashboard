@@ -152,14 +152,14 @@ const Subscription = () => {
 
                 <div className="mb-6">
                   <span className="text-4xl font-bold text-gray-900">
-                    ${isYearly ? plan.price.yearly : plan.price.monthly}
+                    ৳{isYearly ? plan.price.yearly : plan.price.monthly}
                   </span>
                   <span className="text-gray-600">
                     /{isYearly ? "year" : "month"}
                   </span>
                   {isYearly && (
                     <div className="text-sm text-green-600 font-semibold mt-1">
-                      Save ${plan.price.monthly * 12 - plan.price.yearly * 12}{" "}
+                      Save ৳{plan.price.monthly * 12 - plan.price.yearly * 12}{" "}
                       per year
                     </div>
                   )}
