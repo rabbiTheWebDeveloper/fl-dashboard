@@ -185,7 +185,8 @@ async function getRecentOrderUserQuery({ shopId, userId }) {
   // 1️⃣ Fetch all orders with customer info
   const orders = await OrderModel.find({ shopId, userId })
     .populate("customer", "customerAddress customerPhone customerName")
-    .sort({ createdAt: -1 }).select('_id customer status createdAt grand_total')
+    .sort({ createdAt: -1 })
+    .select("_id customer status createdAt grand_total")
     .limit(4)
     .lean();
 
@@ -193,11 +194,106 @@ async function getRecentOrderUserQuery({ shopId, userId }) {
 
   return replaceMongoIdInArray(JSON.parse(JSON.stringify(orders)));
 }
+
+async function getTopSellingProducts({ shopId, userId }) {
+  await dbConnect();
+
+  const topProducts = await OrderModel.aggregate([
+    {
+      $match: { shopId, userId }
+    },
+    {
+      $unwind: "$productId"
+    },
+    {
+      $group: {
+        _id: "$productId",
+        saleCount: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { saleCount: -1 }
+    },
+    {
+      $limit: 5
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "productData"
+      }
+    },
+    {
+      $unwind: "$productData"
+    },
+    {
+      $project: {
+        _id: 1,
+        saleCount: 1,
+        productName: "$productData.productName",
+        mainImage: "$productData.mainImage",
+        regularPrice: "$productData.regularPrice",
+        discountType: "$productData.discountType",
+        discountValue: "$productData.discountValue"
+      }
+    }
+  ]);
+
+  return JSON.parse(JSON.stringify(topProducts));
+}
+
+async function getOrderDashboardStats({ shopId, userId }) {
+  await dbConnect();
+
+  const [stats] = await OrderModel.aggregate([
+    {
+      $match: { shopId, userId }
+    },
+    {
+      $facet: {
+        total: [{ $count: "count" }],
+        confirmed: [
+          { $match: { status: "confirmed" } },
+          { $count: "count" }
+        ],
+        pending: [
+          { $match: { status: "pending" } },
+          { $count: "count" }
+        ],
+        shipped: [
+          { $match: { status: "shipped" } },
+          { $count: "count" }
+        ],
+        cancelled: [
+          { $match: { status: "cancelled" } },
+          { $count: "count" }
+        ]
+      }
+    }
+  ]);
+
+  const total = stats.total[0]?.count ?? 0;
+
+  return {
+    totalOrders: total,
+    confirmed: stats.confirmed[0]?.count ?? 0,
+    pending: stats.pending[0]?.count ?? 0,
+    shipped: stats.shipped[0]?.count ?? 0,
+    cancelled: stats.cancelled[0]?.count ?? 0,
+  };
+}
+
+
+
 export {
   orderQuery,
   getRecentOrderUserQuery,
   getOrderDetailsQuary,
   getAllOrderUserQuary,
+  getOrderDashboardStats,
+  getTopSellingProducts,
   updateMultipleOrderStatus,
   updateOrderStatus,
 };

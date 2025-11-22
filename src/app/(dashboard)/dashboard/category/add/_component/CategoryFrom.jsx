@@ -67,7 +67,10 @@ const CategoryForm = ({ user }) => {
       if (imagePreview && imagePreview.startsWith("blob:")) {
         URL.revokeObjectURL(imagePreview);
       }
+
+      // Use URL.createObjectURL for better performance and reliability
       const objectUrl = URL.createObjectURL(file);
+
       setImagePreview(objectUrl);
     }
   };
