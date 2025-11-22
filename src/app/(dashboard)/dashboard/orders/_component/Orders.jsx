@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -52,6 +52,9 @@ export default function Orders({ orderlist = [] }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [bulkStatus, setBulkStatus] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     // Use the provided orderlist or fetch from API
@@ -82,6 +85,7 @@ export default function Orders({ orderlist = [] }) {
     completed: "bg-green-100 text-green-800 hover:bg-green-100",
     cancelled: "bg-red-100 text-red-800 hover:bg-red-100",
     delivered: "bg-green-100 text-green-800 hover:bg-green-100",
+    confirmed: "bg-blue-100 text-blue-800 hover:bg-blue-100",
   };
 
   const statusLabels = {
@@ -91,6 +95,7 @@ export default function Orders({ orderlist = [] }) {
     completed: "Completed",
     cancelled: "Cancelled",
     delivered: "Delivered",
+    confirmed: "Confirmed",
   };
 
   const formatDate = (dateString) => {
@@ -125,19 +130,127 @@ export default function Orders({ orderlist = [] }) {
       .join(", ");
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.id.includes(searchTerm.toLowerCase()) ||
-      order.customer.customerName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      order.customer.customerPhone.includes(searchTerm);
+  // Use useMemo to optimize filteredOrders calculation
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const matchesSearch =
+        order.id.includes(searchTerm.toLowerCase()) ||
+        order.customer.customerName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        order.customer.customerPhone.includes(searchTerm);
 
-    const matchesStatus =
-      statusFilter === "all" || order.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" || order.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchTerm, statusFilter]);
+
+  // Check if all orders are selected
+  const isAllSelected = filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length;
+
+  // Check if some orders are selected
+  const isIndeterminate = selectedOrders.length > 0 && selectedOrders.length < filteredOrders.length;
+
+  // Handle individual checkbox selection
+  const handleOrderSelect = (orderId) => {
+    setSelectedOrders(prev =>
+      prev.includes(orderId)
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  // Handle select all checkbox
+  const handleSelectAll = () => {
+    if (selectedOrders.length === filteredOrders.length) {
+      setSelectedOrders([]);
+    } else {
+      setSelectedOrders(filteredOrders.map(order => order.id));
+    }
+  };
+
+  // Bulk status update function
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatus || selectedOrders.length === 0) return;
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch("/api/orders/bulk-update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderIds: selectedOrders,
+          status: bulkStatus,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Update local state
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            selectedOrders.includes(order.id)
+              ? { ...order, status: bulkStatus }
+              : order
+          )
+        );
+        
+        // Clear selection and bulk status
+        setSelectedOrders([]);
+        setBulkStatus("");
+        
+        console.log("Bulk update successful:", result);
+      } else {
+        throw new Error("Failed to update orders");
+      }
+    } catch (error) {
+      console.error("Failed to update orders:", error);
+      alert("Failed to update orders. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Individual status update function
+  const updateOrderStatus = async (orderId, status) => {
+    try {
+      const response = await fetch("/api/orders/update-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId,
+          status,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Update local state
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.id === orderId
+              ? { ...order, status }
+              : order
+          )
+        );
+        
+        console.log("Order status updated:", result);
+      } else {
+        throw new Error("Failed to update order status");
+      }
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+      alert("Failed to update order status. Please try again.");
+    }
+  };
 
   const stats = {
     total: orders.length,
@@ -229,6 +342,53 @@ export default function Orders({ orderlist = [] }) {
         </Card>
       </div>
 
+      {/* Bulk Actions */}
+      {selectedOrders.length > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex-1">
+                <p className="font-medium text-blue-800">
+                  {selectedOrders.length} order(s) selected
+                </p>
+                <p className="text-sm text-blue-600">
+                  Choose a status to update all selected orders
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleBulkStatusUpdate}
+                  disabled={!bulkStatus || isUpdating}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isUpdating ? "Updating..." : "Update Status"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedOrders([])}
+                  disabled={isUpdating}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -253,9 +413,9 @@ export default function Orders({ orderlist = [] }) {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
                 <SelectItem value="processing">Processing</SelectItem>
                 <SelectItem value="shipped">Shipped</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
@@ -270,6 +430,7 @@ export default function Orders({ orderlist = [] }) {
           <CardTitle>Order List</CardTitle>
           <CardDescription>
             Showing {filteredOrders.length} order(s)
+            {selectedOrders.length > 0 && ` • ${selectedOrders.length} selected`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -277,6 +438,21 @@ export default function Orders({ orderlist = [] }) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        checked={isAllSelected}
+                        ref={input => {
+                          if (input) {
+                            input.indeterminate = isIndeterminate;
+                          }
+                        }}
+                        onChange={handleSelectAll}
+                      />
+                    </div>
+                  </TableHead>
                   <TableHead>Order ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Products</TableHead>
@@ -290,7 +466,7 @@ export default function Orders({ orderlist = [] }) {
               <TableBody>
                 {filteredOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <div className="text-muted-foreground">
                         No orders found
                       </div>
@@ -299,6 +475,14 @@ export default function Orders({ orderlist = [] }) {
                 ) : (
                   filteredOrders.map((order) => (
                     <TableRow key={order.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          checked={selectedOrders.includes(order.id)}
+                          onChange={() => handleOrderSelect(order.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">#{order.id.slice(-6)}</div>
                         <div className="text-xs text-muted-foreground">
@@ -359,15 +543,27 @@ export default function Orders({ orderlist = [] }) {
                               Edit Order
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                              <Truck className="h-4 w-4 mr-2" />
-                              Update Shipping
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, "confirmed")}>
                               <CheckCircle className="h-4 w-4 mr-2" />
-                              Mark as Completed
+                              Mark as Confirmed
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, "processing")}>
+                              <Truck className="h-4 w-4 mr-2" />
+                              Mark as Processing
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, "shipped")}>
+                              <Truck className="h-4 w-4 mr-2" />
+                              Mark as Shipped
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, "delivered")}>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Mark as Delivered
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => updateOrderStatus(order.id, "cancelled")}
+                              className="text-red-600"
+                            >
                               <XCircle className="h-4 w-4 mr-2" />
                               Cancel Order
                             </DropdownMenuItem>
