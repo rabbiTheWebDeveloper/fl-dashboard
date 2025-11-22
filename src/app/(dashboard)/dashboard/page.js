@@ -171,7 +171,10 @@ export default function DashboardPage() {
           <p className="font-semibold text-gray-900">{label}</p>
           {payload.map((entry, index) => (
             <p key={index} style={{ color: entry.color }}>
-              {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
+              {entry.name}:{" "}
+              {typeof entry.value === "number"
+                ? entry.value.toLocaleString()
+                : entry.value}
             </p>
           ))}
         </div>
@@ -181,7 +184,14 @@ export default function DashboardPage() {
   };
 
   // Small stat card
-  const StatCard = ({ title, value, icon: Icon, color, change, prefix = "" }) => (
+  const StatCard = ({
+    title,
+    value,
+    icon: Icon,
+    color,
+    change,
+    prefix = "",
+  }) => (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start">
         <div>
@@ -230,14 +240,14 @@ export default function DashboardPage() {
             margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-            <XAxis 
-              dataKey="day" 
-              tick={{ fill: '#6b7280' }}
-              axisLine={{ stroke: '#e5e7eb' }}
+            <XAxis
+              dataKey="day"
+              tick={{ fill: "#6b7280" }}
+              axisLine={{ stroke: "#e5e7eb" }}
             />
-            <YAxis 
-              tick={{ fill: '#6b7280' }}
-              axisLine={{ stroke: '#e5e7eb' }}
+            <YAxis
+              tick={{ fill: "#6b7280" }}
+              axisLine={{ stroke: "#e5e7eb" }}
               tickFormatter={(value) => `৳${(value / 1000).toFixed(0)}k`}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -264,8 +274,12 @@ export default function DashboardPage() {
         </ResponsiveContainer>
       </div>
       <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
-        <span>Current: ৳{dashboardData.salesPerformance.current.toLocaleString()}</span>
-        <span>Target: ৳{dashboardData.salesPerformance.target.toLocaleString()}</span>
+        <span>
+          Current: ৳{dashboardData.salesPerformance.current.toLocaleString()}
+        </span>
+        <span>
+          Target: ৳{dashboardData.salesPerformance.target.toLocaleString()}
+        </span>
         <span className="text-green-600 font-semibold">
           +{dashboardData.salesPerformance.growth}% Growth
         </span>
@@ -284,27 +298,27 @@ export default function DashboardPage() {
             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-            <XAxis 
-              dataKey="hour" 
-              tick={{ fill: '#6b7280' }}
-              axisLine={{ stroke: '#e5e7eb' }}
+            <XAxis
+              dataKey="hour"
+              tick={{ fill: "#6b7280" }}
+              axisLine={{ stroke: "#e5e7eb" }}
             />
-            <YAxis 
-              tick={{ fill: '#6b7280' }}
-              axisLine={{ stroke: '#e5e7eb' }}
+            <YAxis
+              tick={{ fill: "#6b7280" }}
+              axisLine={{ stroke: "#e5e7eb" }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
-            <Bar 
-              dataKey="visitors" 
-              name="Total Visitors" 
-              fill="#8b5cf6" 
+            <Bar
+              dataKey="visitors"
+              name="Total Visitors"
+              fill="#8b5cf6"
               radius={[4, 4, 0, 0]}
             />
-            <Bar 
-              dataKey="unique" 
-              name="Unique Visitors" 
-              fill="#10b981" 
+            <Bar
+              dataKey="unique"
+              name="Unique Visitors"
+              fill="#10b981"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>
@@ -336,7 +350,9 @@ export default function DashboardPage() {
   // Order Source Chart
   const OrderSourceChart = () => (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-      <h3 className="font-semibold text-gray-900 mb-6">Order Source Distribution</h3>
+      <h3 className="font-semibold text-gray-900 mb-6">
+        Order Source Distribution
+      </h3>
       <div className="flex flex-col lg:flex-row items-center gap-8">
         <div className="h-64 w-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -346,7 +362,9 @@ export default function DashboardPage() {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name}: ${(percent * 100).toFixed(0)}%`
+                }
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
@@ -355,7 +373,7 @@ export default function DashboardPage() {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+              <Tooltip formatter={(value) => [`${value}%`, "Percentage"]} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -374,9 +392,9 @@ export default function DashboardPage() {
                 <div className="w-20 bg-gray-200 rounded-full h-2">
                   <div
                     className="h-2 rounded-full"
-                    style={{ 
+                    style={{
                       backgroundColor: item.color,
-                      width: `${item.value}%`
+                      width: `${item.value}%`,
                     }}
                   ></div>
                 </div>
@@ -415,7 +433,9 @@ export default function DashboardPage() {
             Visit Website
           </Link>
         </h1>
-        <p className="text-gray-600">See your latest business stats and performance</p>
+        <p className="text-gray-600">
+          See your latest business stats and performance
+        </p>
       </div>
 
       {/* Main Grid */}
@@ -428,17 +448,41 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Order Source Chart */}
             <OrderSourceChart />
-            
+
             {/* Visitors Chart */}
             <VisitorsChart />
           </div>
 
           {/* Orders */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Total Orders" value={dashboardData.orders.total} icon={FiShoppingCart} color="text-blue-600" change={8.3} />
-            <StatCard title="Confirmed" value={dashboardData.orders.confirmed} icon={FiCheckCircle} color="text-green-600" change={12.1} />
-            <StatCard title="Pending" value={dashboardData.orders.pending} icon={FiClock} color="text-yellow-600" change={-2.4} />
-            <StatCard title="Cancelled" value={dashboardData.orders.cancelled} icon={FiXCircle} color="text-red-600" change={-5.2} />
+            <StatCard
+              title="Total Orders"
+              value={dashboardData.orders.total}
+              icon={FiShoppingCart}
+              color="text-blue-600"
+              change={8.3}
+            />
+            <StatCard
+              title="Confirmed"
+              value={dashboardData.orders.confirmed}
+              icon={FiCheckCircle}
+              color="text-green-600"
+              change={12.1}
+            />
+            <StatCard
+              title="Pending"
+              value={dashboardData.orders.pending}
+              icon={FiClock}
+              color="text-yellow-600"
+              change={-2.4}
+            />
+            <StatCard
+              title="Cancelled"
+              value={dashboardData.orders.cancelled}
+              icon={FiXCircle}
+              color="text-red-600"
+              change={-5.2}
+            />
           </div>
 
           {/* Recent Orders */}
@@ -448,14 +492,19 @@ export default function DashboardPage() {
             </div>
             <div className="divide-y divide-gray-200">
               {dashboardData.recentOrders.map((order) => (
-                <div key={order.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div
+                  key={order.id}
+                  className="p-4 hover:bg-gray-50 transition-colors"
+                >
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{order.customer}</p>
                       <p className="text-sm text-gray-600">{order.date}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">৳{order.amount.toLocaleString()}</p>
+                      <p className="font-semibold">
+                        ৳{order.amount.toLocaleString()}
+                      </p>
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
                           order.status === "confirmed"
@@ -478,43 +527,77 @@ export default function DashboardPage() {
         {/* Right side */}
         <div className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-4">Financial Summary</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">
+              Financial Summary
+            </h3>
             <div className="space-y-4">
-              <StatCard title="Sales Amount" value={dashboardData.financials.salesAmount} icon={FiDollarSign} color="text-green-600" prefix="৳" change={15.2} />
-              <StatCard title="Discount Amount" value={dashboardData.financials.discountAmount} icon={FiDollarSign} color="text-orange-600" prefix="৳" change={-3.4} />
+              <StatCard
+                title="Sales Amount"
+                value={dashboardData.financials.salesAmount}
+                icon={FiDollarSign}
+                color="text-green-600"
+                prefix="৳"
+                change={15.2}
+              />
+              <StatCard
+                title="Discount Amount"
+                value={dashboardData.financials.discountAmount}
+                icon={FiDollarSign}
+                color="text-orange-600"
+                prefix="৳"
+                change={-3.4}
+              />
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-4">Delivery Report</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">
+              Delivery Report
+            </h3>
             <div className="text-center space-y-4">
               <div>
-                <div className="text-3xl font-bold text-green-600">{dashboardData.delivery.delivered}</div>
+                <div className="text-3xl font-bold text-green-600">
+                  {dashboardData.delivery.delivered}
+                </div>
                 <p className="text-gray-600">Delivered</p>
               </div>
               <div>
-                <div className="text-2xl font-bold text-red-600">{dashboardData.delivery.returned}</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {dashboardData.delivery.returned}
+                </div>
                 <p className="text-gray-600">Returned</p>
               </div>
               <div>
-                <div className="text-xl font-bold text-blue-600">{dashboardData.delivery.ratio}%</div>
+                <div className="text-xl font-bold text-blue-600">
+                  {dashboardData.delivery.ratio}%
+                </div>
                 <p className="text-gray-600">Return Ratio</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <StatCard title="Advance Collection" value={dashboardData.advanceCollection} icon={FiDollarSign} color="text-purple-600" prefix="৳" change={9.3} />
+            <StatCard
+              title="Advance Collection"
+              value={dashboardData.advanceCollection}
+              icon={FiDollarSign}
+              color="text-purple-600"
+              prefix="৳"
+              change={9.3}
+            />
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
               <h3 className="font-semibold text-gray-900 mb-2">Sales Target</h3>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-indigo-600">৳{dashboardData.salesTarget.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-indigo-600">
+                  ৳{dashboardData.salesTarget.toLocaleString()}
+                </span>
                 <FiTarget className="w-8 h-8 text-indigo-400" />
               </div>
               <p className="text-sm text-gray-600 mt-2">
                 Target Achieved:{" "}
                 {(
-                  (dashboardData.salesPerformance.current / dashboardData.salesTarget) *
+                  (dashboardData.salesPerformance.current /
+                    dashboardData.salesTarget) *
                   100
                 ).toFixed(1)}
                 %
@@ -524,20 +607,32 @@ export default function DashboardPage() {
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900">Top Selling Products</h3>
+              <h3 className="font-semibold text-gray-900">
+                Top Selling Products
+              </h3>
             </div>
             <div className="divide-y divide-gray-200">
               {dashboardData.topProducts.map((product, index) => (
-                <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
+                <div
+                  key={index}
+                  className="p-4 hover:bg-gray-50 transition-colors"
+                >
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-gray-600">{product.sales} sales</p>
+                      <p className="text-sm text-gray-600">
+                        {product.sales} sales
+                      </p>
                     </div>
-                    <p className="font-semibold text-green-600">৳{product.revenue.toLocaleString()}</p>
+                    <p className="font-semibold text-green-600">
+                      ৳{product.revenue.toLocaleString()}
+                    </p>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
-                    <div className="bg-green-500 h-1 rounded-full" style={{ width: `${(product.sales / 50) * 100}%` }}></div>
+                    <div
+                      className="bg-green-500 h-1 rounded-full"
+                      style={{ width: `${(product.sales / 50) * 100}%` }}
+                    ></div>
                   </div>
                 </div>
               ))}
