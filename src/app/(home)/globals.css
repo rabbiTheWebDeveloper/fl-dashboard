@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 30% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 252 85% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 20% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 168 80% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 90%;
+    --input: 220 20% 90%;
+    --ring: 252 85% 60%;
+
+    --radius: 0.75rem;
+
+    /* Custom brand colors */
+    --brand-purple: 252 85% 60%;
+    --brand-purple-dark: 252 85% 50%;
+    --brand-teal: 168 80% 45%;
+    --brand-blue: 220 90% 56%;
+    --brand-pink: 330 80% 65%;
+    --brand-orange: 25 95% 55%;
+    --brand-green: 145 70% 45%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(252 85% 60%) 0%, hsl(330 80% 65%) 50%, hsl(25 95% 55%) 100%);
+    --gradient-cta: linear-gradient(135deg, hsl(252 85% 55%) 0%, hsl(220 90% 56%) 100%);
+    --gradient-blob-1: radial-gradient(circle, hsl(252 85% 90% / 0.6) 0%, transparent 70%);
+    --gradient-blob-2: radial-gradient(circle, hsl(168 80% 85% / 0.5) 0%, transparent 70%);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 252 85% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 20% 90%;
+    --sidebar-ring: 252 85% 60%;
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 0 0% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 252 85% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 30% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 222 30% 18%;
+    --muted-foreground: 220 15% 60%;
+    --accent: 168 80% 50%;
+    --accent-foreground: 0 0% 100%;
+    --border: 222 30% 20%;
+    --input: 222 30% 20%;
+    --ring: 252 85% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-cta {
+    background: var(--gradient-cta);
+  }
+
+  .blob-purple {
+    background: var(--gradient-blob-1);
+  }
+
+  .blob-teal {
+    background: var(--gradient-blob-2);
+  }
+
+  .glass-card {
+    background: hsl(0 0% 100% / 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid hsl(220 20% 90% / 0.5);
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -12px hsl(252 85% 60% / 0.15);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .icon-box {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+  }
+
+  .icon-box-purple {
+    background: hsl(252 85% 95%);
+    color: hsl(252 85% 60%);
+  }
+
+  .icon-box-teal {
+    background: hsl(168 80% 92%);
+    color: hsl(168 80% 40%);
+  }
+
+  .icon-box-orange {
+    background: hsl(25 95% 92%);
+    color: hsl(25 95% 50%);
+  }
+
+  .icon-box-pink {
+    background: hsl(330 80% 94%);
+    color: hsl(330 80% 55%);
+  }
+
+  .icon-box-blue {
+    background: hsl(220 90% 94%);
+    color: hsl(220 90% 50%);
+  }
+
+  .icon-box-green {
+    background: hsl(145 70% 92%);
+    color: hsl(145 70% 40%);
+  }
+}

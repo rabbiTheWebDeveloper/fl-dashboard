@@ -1,4 +1,4 @@
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import { Menu, Globe, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 

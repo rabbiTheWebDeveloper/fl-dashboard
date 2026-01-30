@@ -1,4 +1,4 @@
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import { Play, Zap, Users, Package, TrendingUp } from 'lucide-react';
 
 const stats = [
