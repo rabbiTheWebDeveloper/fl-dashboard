@@ -1,18 +1,20 @@
-import React from "react";
 import Dashboard from "./_component/Dashboard";
 import { userInfo } from "@/lib";
-import { getOrderDashboardStats, getRecentOrderUserQuery, getTopSellingProducts } from "@/queries/order";
+import { getDashboardData } from "@/queries/dashboardStats";
 
-const page = async () => {
+export const dynamic = "force-dynamic";
+
+const page = async ({ searchParams }) => {
+  const params = await searchParams;
   const user = await userInfo();
-  const recentOrderList = await getRecentOrderUserQuery(user);
-  const topSellingProducts = await getTopSellingProducts(user);
-  const orderDashboardStats = await getOrderDashboardStats(user);
-  return (
-    <>
-      <Dashboard recentOrderList={recentOrderList} topSellingProducts={topSellingProducts} orderDashboardStats={orderDashboardStats} />
-    </>
-  );
+
+  const data = await getDashboardData({
+    ...user,
+    dateFrom: params?.from  || null,
+    dateTo:   params?.to    || null,
+  });
+
+  return <Dashboard data={data} />;
 };
 
 export default page;
