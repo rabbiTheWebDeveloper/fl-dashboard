@@ -57,13 +57,13 @@ export async function getDashboardData({ shopId, userId, dateFrom, dateTo }) {
     getTotalCustomers(shopObjId, userObjId, dateMatch),
   ]);
 
-  return {
+  return JSON.parse(JSON.stringify({
     orderStats, revenueStats, recentOrders, topProducts,
     dailySales, ordersByType, ordersByLocation, ordersByStatus,
     totalProducts, lowStockProducts, totalCustomers,
     dateFrom: dateFrom || null,
     dateTo:   dateTo   || null,
-  };
+  }));
 }
 
 /* ─── Order Status Counts ─────────────────────────────────────────────────── */
@@ -118,7 +118,7 @@ async function getRecentOrders(shopId, userId, dateMatch) {
   const orders = await OrderModel.find({ shopId, userId, ...dateMatch })
     .populate("customer", "customerName customerPhone customerAddress")
     .sort({ createdAt: -1 })
-    .limit(10)
+    .limit(5)
     .select("customer status grand_total discount shipping_cost orderType deliveryLocation createdAt")
     .lean();
   return JSON.parse(JSON.stringify(orders));
