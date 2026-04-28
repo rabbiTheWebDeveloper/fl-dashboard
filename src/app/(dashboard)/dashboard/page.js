@@ -8,7 +8,6 @@ const page = async () => {
   const recentOrderList = await getRecentOrderUserQuery(user);
   const topSellingProducts = await getTopSellingProducts(user);
   const orderDashboardStats = await getOrderDashboardStats(user);
-  console.log("Recent Orders:", orderDashboardStats);
   return (
     <>
       <Dashboard recentOrderList={recentOrderList} topSellingProducts={topSellingProducts} orderDashboardStats={orderDashboardStats} />
