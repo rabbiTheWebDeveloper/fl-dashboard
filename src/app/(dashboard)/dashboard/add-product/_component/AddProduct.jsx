@@ -149,7 +149,7 @@ const AddProduct = ({ categories, userInfos }) => {
     } else if (type === "gallery") {
       const files = Array.from(e.target.files);
       if (formData.galleryImages.length + files.length > 5) {
-        alert("Maximum 5 gallery images allowed");
+        toast.warning("Maximum 5 gallery images allowed");
         return;
       }
 
@@ -348,12 +348,9 @@ const AddProduct = ({ categories, userInfos }) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (
-      !formData.productName ||
-      !formData.productCode ||
-      !formData.categoryId
-    ) {
-      alert("Please fill in all required fields");
+    if (!formData.productName || !formData.productCode || !formData.categoryId) {
+      toast.error("Please fill in all required fields (Name, Code, Category)");
+      setActiveTab("basic");
       setIsLoading(false);
       return;
     }
@@ -409,7 +406,7 @@ const AddProduct = ({ categories, userInfos }) => {
       // Reset form would go here
     } catch (error) {
       console.error("Error adding product:", error);
-      alert("Error adding product. Please try again.");
+      toast.error("Error adding product. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -432,6 +429,7 @@ const AddProduct = ({ categories, userInfos }) => {
           <div className="flex flex-col sm:flex-row gap-3 justify-end">
             <button
               type="button"
+              onClick={() => router.back()}
               className="order-2 sm:order-1 px-6 py-3 border border-indigo-600 text-indigo-600 bg-white rounded-lg font-semibold text-base hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 bangla-text"
             >
               Cancel
@@ -603,8 +601,53 @@ const AddProduct = ({ categories, userInfos }) => {
                     rows={6}
                   />
                 </div>
+
+                {/* Status Toggles */}
+                <Separator />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="isActiveBasic">Product Status</Label>
+                      <div className="text-sm text-muted-foreground">
+                        {formData.isActive ? "Visible to customers" : "Hidden from customers"}
+                      </div>
+                    </div>
+                    <Switch
+                      id="isActiveBasic"
+                      checked={formData.isActive}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, isActive: checked }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="isFeaturedBasic">Featured Product</Label>
+                      <div className="text-sm text-muted-foreground">
+                        {formData.isFeatured ? "Will be featured on homepage" : "Not featured"}
+                      </div>
+                    </div>
+                    <Switch
+                      id="isFeaturedBasic"
+                      checked={formData.isFeatured}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, isFeatured: checked }))
+                      }
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
+            {/* Tab Nav */}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setActiveTab("pricing")}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Next: Pricing →
+              </button>
+            </div>
           </TabsContent>
 
           {/* Pricing Tab */}
@@ -768,6 +811,23 @@ const AddProduct = ({ categories, userInfos }) => {
                 </div>
               </CardContent>
             </Card>
+            {/* Tab Nav */}
+            <div className="flex justify-between">
+              <button
+                type="button"
+                onClick={() => setActiveTab("basic")}
+                className="px-5 py-2 border border-indigo-600 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-colors"
+              >
+                ← Back: Basic Info
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("media")}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Next: Media →
+              </button>
+            </div>
           </TabsContent>
 
           {/* Media Tab */}
@@ -785,9 +845,19 @@ const AddProduct = ({ categories, userInfos }) => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, "main")}
+                    className="hidden"
+                    id="mainImageInput"
+                  />
+                  <div
+                    className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all"
+                    onClick={() => document.getElementById("mainImageInput")?.click()}
+                  >
                     {formData.mainImage ? (
-                      <div className="space-y-4">
+                      <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
                         <img
                           src={formData.mainImage.url}
                           alt="Main product"
@@ -796,10 +866,7 @@ const AddProduct = ({ categories, userInfos }) => {
                         <Button
                           variant="outline"
                           onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              mainImage: null,
-                            }))
+                            setFormData((prev) => ({ ...prev, mainImage: null }))
                           }
                           className="gap-2"
                         >
@@ -808,30 +875,12 @@ const AddProduct = ({ categories, userInfos }) => {
                         </Button>
                       </div>
                     ) : (
-                      <div className="space-y-3">
-                        <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            Click to upload main image
-                          </p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleFileUpload(e, "main")}
-                            className="hidden"
-                            id="mainImageInput"
-                          />
-                        </div>
-                        <Button
-                          variant="outline"
-                          className="gap-2"
-                          onClick={() =>
-                            document.getElementById("mainImageInput")?.click()
-                          }
-                        >
-                          <Upload className="h-4 w-4" />
-                          Upload Image
-                        </Button>
+                      <div className="space-y-3 pointer-events-none">
+                        <Upload className="h-12 w-12 text-indigo-400 mx-auto" />
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Click anywhere to upload main image
+                        </p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG, WEBP up to 5MB</p>
                       </div>
                     )}
                   </div>
@@ -850,59 +899,70 @@ const AddProduct = ({ categories, userInfos }) => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      {formData.galleryImages.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image.url}
-                            alt={`Gallery ${index + 1}`}
-                            className="h-20 w-full object-cover rounded-lg"
-                          />
-                          <Button
-                            size="icon"
-                            variant="destructive"
-                            className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeGalleryImage(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {formData.galleryImages.length < 5 && (
-                      <div className="text-center space-y-2">
-                        <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto" />
-                        <p className="text-sm text-muted-foreground">
-                          Add more images ({5 - formData.galleryImages.length}{" "}
-                          remaining)
-                        </p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={(e) => handleFileUpload(e, "gallery")}
-                          className="hidden"
-                          id="galleryImageInput"
-                        />
-                        <Button
-                          variant="outline"
-                          className="gap-2 w-full"
-                          onClick={() =>
-                            document
-                              .getElementById("galleryImageInput")
-                              ?.click()
-                          }
-                        >
-                          <Upload className="h-4 w-4" />
-                          Upload Images
-                        </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleFileUpload(e, "gallery")}
+                    className="hidden"
+                    id="galleryImageInput"
+                  />
+                  <div
+                    className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all"
+                    onClick={() => formData.galleryImages.length < 5 && document.getElementById("galleryImageInput")?.click()}
+                  >
+                    {formData.galleryImages.length > 0 && (
+                      <div className="grid grid-cols-2 gap-4 mb-4" onClick={(e) => e.stopPropagation()}>
+                        {formData.galleryImages.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={image.url}
+                              alt={`Gallery ${index + 1}`}
+                              className="h-20 w-full object-cover rounded-lg"
+                            />
+                            <Button
+                              size="icon"
+                              variant="destructive"
+                              className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeGalleryImage(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
                       </div>
+                    )}
+                    {formData.galleryImages.length < 5 ? (
+                      <div className="text-center space-y-2 pointer-events-none">
+                        <Upload className="h-8 w-8 text-indigo-400 mx-auto" />
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Click to add images ({5 - formData.galleryImages.length} remaining)
+                        </p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG, WEBP up to 5MB each</p>
+                      </div>
+                    ) : (
+                      <p className="text-center text-sm text-muted-foreground">Maximum 5 images reached</p>
                     )}
                   </div>
                 </CardContent>
               </Card>
+            </div>
+            {/* Tab Nav */}
+            <div className="flex justify-between">
+              <button
+                type="button"
+                onClick={() => setActiveTab("pricing")}
+                className="px-5 py-2 border border-indigo-600 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-colors"
+              >
+                ← Back: Pricing
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("variants")}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Next: Variants →
+              </button>
             </div>
           </TabsContent>
 
@@ -1282,6 +1342,23 @@ const AddProduct = ({ categories, userInfos }) => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            {/* Tab Nav */}
+            <div className="flex justify-between">
+              <button
+                type="button"
+                onClick={() => setActiveTab("media")}
+                className="px-5 py-2 border border-indigo-600 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-colors"
+              >
+                ← Back: Media
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("seo")}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Next: SEO →
+              </button>
+            </div>
           </TabsContent>
 
           {/* SEO Tab */}

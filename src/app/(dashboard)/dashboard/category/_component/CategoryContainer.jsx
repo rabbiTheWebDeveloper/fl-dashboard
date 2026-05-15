@@ -76,24 +76,39 @@ const handleDelete = async (categoryId) => {
 };
 
 
+  const [updatingId, setUpdatingId] = useState(null);
+
   const toggleStatus = async (category) => {
-    setIsLoading(true);
+    setUpdatingId(category._id);
+    const newStatus = category.status === "active" ? "inactive" : "active";
+    
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      const res = await fetch(`${API_ENDPOINTS.BASE_URL}/category/update/${category._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          name: category.name,
+          userId: category.userId,
+          shopId: category.shopId,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update status");
+
       setCategories((prev) =>
         prev.map((cat) =>
-          cat.id === category.id
-            ? {
-                ...cat,
-                status: cat.status === "active" ? "inactive" : "active",
-              }
-            : cat
+          cat._id === category._id ? { ...cat, status: newStatus } : cat
         )
       );
+      toast.success(`Category ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`);
     } catch (error) {
       console.error("Error updating status:", error);
+      toast.error("Failed to update category status");
     } finally {
-      setIsLoading(false);
+      setUpdatingId(null);
     }
   };
 
@@ -220,14 +235,14 @@ const handleDelete = async (categoryId) => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredCategories.map((category) => (
                 <tr
-                  key={category.id}
+                  key={category._id}
                   className="hover:bg-gray-50 transition-colors"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="h-10 w-10 flex-shrink-0">
                         <img
-                          className="h-10 w-10 rounded-lg object-cover"
+                          className="h-10 w-10 rounded-lg object-cover bg-gray-100"
                           src={category.image || "/images/placeholder.jpg"}
                           alt={category.name}
                         />
@@ -241,18 +256,30 @@ const handleDelete = async (categoryId) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
-                      onClick={() => toggleStatus(category)}
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer ${
+                      onClick={() => !updatingId && toggleStatus(category)}
+                      disabled={updatingId === category._id}
+                      className={`px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full cursor-pointer transition-all ${
                         category.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
+                          ? "bg-green-100 text-green-800 hover:bg-green-200"
+                          : "bg-red-100 text-red-800 hover:bg-red-200"
+                      } ${updatingId === category._id ? "opacity-50 cursor-wait" : ""}`}
                     >
-                      {category.status === "active" ? "Active" : "Inactive"}
+                      {updatingId === category._id ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5" />
+                          Updating...
+                        </>
+                      ) : (
+                        category.status === "active" ? "Active" : "Inactive"
+                      )}
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {category.createdAt}
+                    {category.createdAt ? new Date(category.createdAt).toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric'
+                    }) : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">

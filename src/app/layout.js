@@ -91,7 +91,17 @@ export default function RootLayout({ children }) {
         cz-shortcut-listen="true"
       >
         {children}
-        <ToastContainer position="top-right" autoClose={5000} hideProgressBar />
+        <ToastContainer
+          position="top-right"
+          autoClose={3500}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          pauseOnFocusLoss={false}
+          draggable
+          pauseOnHover
+          theme="light"
+        />
       </body>
     </html>
   );

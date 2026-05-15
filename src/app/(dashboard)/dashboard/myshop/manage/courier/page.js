@@ -1,12 +1,13 @@
-import React from "react";
+import { userInfo } from "@/lib";
+import { getCourierSettings } from "@/queries/courier";
 import Courier from "../_component/Courier";
 
-const page = async () => {
-  return (
-    <>
-      <Courier />
-    </>
-  );
-};
+export default async function CourierPage() {
+  const user = await userInfo();
+  const courierSettings = await getCourierSettings({
+    userId: user?.userId,
+    shopId: user?.shopId,
+  });
 
-export default page;
+  return <Courier user={user} courierSettings={courierSettings} />;
+}

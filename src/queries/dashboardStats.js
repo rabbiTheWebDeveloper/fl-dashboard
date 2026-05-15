@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { OrderModel } from "@/model/order-model";
 import { ProductModel } from "@/model/product-model";
+import { CustomerModel } from "@/model/customer-model";
 import { dbConnect } from "@/service/mongo";
 
 /**
@@ -113,16 +114,39 @@ async function getRevenueStats(shopId, userId, dateMatch) {
   };
 }
 
-/* ─── Recent Orders (latest 10) ──────────────────────────────────────────── */
+/* ─── Recent Orders (latest 5) ───────────────────────────────────────────── */
 async function getRecentOrders(shopId, userId, dateMatch) {
-  const orders = await OrderModel.find({ shopId, userId, ...dateMatch })
-    .populate("customer", "customerName customerPhone customerAddress")
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .select("customer status grand_total discount shipping_cost orderType deliveryLocation createdAt")
-    .lean();
+  const orders = await OrderModel.aggregate([
+    { $match: { shopId, userId, ...dateMatch } },
+    { $sort: { createdAt: -1 } },
+    { $limit: 5 },
+    {
+      $lookup: {
+        from: "customers",
+        localField: "customer",
+        foreignField: "_id",
+        as: "customer",
+      },
+    },
+    { $unwind: { path: "$customer", preserveNullAndEmpty: true } },
+    {
+      $project: {
+        status: 1,
+        grand_total: 1,
+        discount: 1,
+        shipping_cost: 1,
+        orderType: 1,
+        deliveryLocation: 1,
+        createdAt: 1,
+        "customer.customerName": 1,
+        "customer.customerPhone": 1,
+        "customer.customerAddress": 1,
+      },
+    },
+  ]);
   return JSON.parse(JSON.stringify(orders));
 }
+
 
 /* ─── Top Selling Products ────────────────────────────────────────────────── */
 async function getTopProducts(shopId, userId, dateMatch) {

@@ -1,15 +1,9 @@
-import React from "react";
-import CreateOrder from "../_component/CreateOrder";
-import { getAllProductOrderUserQuary } from "@/queries/product";
 import { userInfo } from "@/lib";
+import { getAllProductOrderUserQuary } from "@/queries/product";
+import CreateOrder from "../_component/CreateOrder";
 
-const page = async () => {
-  const productlist = await getAllProductOrderUserQuary(await userInfo());
-  return (
-    <>
-      <CreateOrder productlist={productlist} />
-    </>
-  );
-};
-
-export default page;
+export default async function CreateOrderPage() {
+  const user = await userInfo();
+  const productlist = await getAllProductOrderUserQuary(user);
+  return <CreateOrder productlist={productlist} user={user} />;
+}

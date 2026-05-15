@@ -4,6 +4,7 @@ import { domainQuery } from "@/queries/domain";
 import { seoMarketingQuery } from "@/queries/seoMarketing";
 import { updateSocialLinkQuery } from "@/queries/socialLink";
 import { themeQuery } from "@/queries/theme";
+import { upsertCourierSettings } from "@/queries/courier";
 import { revalidatePath } from "next/cache";
 
 export async function myshopThemeColorUpdateQuaryAction(data) {
@@ -49,9 +50,18 @@ export async function myshopUpdateDomainQueryAction(data) {
 export async function myshopUpdateSeoMarketingQueryAction(data) {
   try {
     const response = await seoMarketingQuery(data);
-    // revalidatePath(`/registration`);
     return response;
   } catch (error) {
     throw new Error(error);
   }
 }
+
+export async function saveCourierSettingsAction({ userId, shopId, courierType, data }) {
+  try {
+    const response = await upsertCourierSettings({ userId, shopId, courierType, data });
+    revalidatePath("/dashboard/myshop/manage/courier");
+    return { success: true, data: response };
+  } catch (error) {
+    throw new Error(error.message || "Failed to save courier settings");
+  }
+}
