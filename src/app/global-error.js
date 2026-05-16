@@ -1,68 +1,104 @@
-// components/global-error.jsx
-'use client'
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { AlertTriangle, RefreshCw, Home, Mail } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link";
+import { useEffect } from "react";
+import { siteConfig } from "@/lib/seo";
 
+/**
+ * Global error boundary for runtime errors (non-404).
+ * Must be a Client Component (Next.js requirement).
+ * noIndex is handled via the metadata export below (server-side concern
+ * falls back to root layout; the error page itself is not crawled in practice).
+ */
 export default function GlobalError({ error, reset }) {
+  useEffect(() => {
+    // Report to your error tracking service here (e.g. Sentry)
+    console.error("[GlobalError]", error);
+  }, [error]);
+
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md mx-auto shadow-lg border-0">
-          <CardHeader className="text-center space-y-4 pb-2">
-            <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-              <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
-            </div>
-            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-              Something went wrong!
-            </CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-300">
-              We encountered an unexpected error. This might be temporary, so please try again.
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="space-y-4 pt-2">
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-sm">
-              <p className="text-gray-600 dark:text-gray-300 break-words">
-                {error.message || "An unknown error occurred"}
-              </p>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                onClick={reset}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Try Again
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.href = '/'}
-                className="flex-1"
-              >
-                <Home className="mr-2 h-4 w-4" />
-                Go Home
-              </Button>
-            </div>
-            
-            <div className="text-center pt-2">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Need help?{" "}
-                <a 
-                  href="mailto:support@example.com" 
-                  className="inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                >
-                  <Mail className="mr-1 h-3 w-3" />
-                  Contact Support
-                </a>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  )
+    <html lang="bn">
+      <body
+        style={{
+          margin: 0,
+          minHeight: "100vh",
+          background: "#080514",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "system-ui, sans-serif",
+          padding: "1rem",
+        }}
+      >
+        <main style={{ textAlign: "center", maxWidth: 480 }}>
+          {/* Error icon */}
+          <div
+            aria-hidden="true"
+            style={{
+              fontSize: 72,
+              lineHeight: 1,
+              marginBottom: 16,
+              filter: "drop-shadow(0 0 24px rgba(124,58,237,0.4))",
+            }}
+          >
+            ⚠️
+          </div>
+
+          <h1
+            style={{
+              color: "#fff",
+              fontSize: "1.75rem",
+              fontWeight: 800,
+              marginBottom: 12,
+            }}
+          >
+            কিছু একটা ভুল হয়েছে
+          </h1>
+          <p style={{ color: "#94a3b8", marginBottom: 32, lineHeight: 1.6 }}>
+            একটি অপ্রত্যাশিত ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন অথবা
+            হোমপেজে ফিরে যান।
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              justifyContent: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              onClick={reset}
+              style={{
+                padding: "12px 24px",
+                borderRadius: 12,
+                background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
+                color: "#fff",
+                fontWeight: 700,
+                border: "none",
+                cursor: "pointer",
+                fontSize: "0.95rem",
+              }}
+            >
+              আবার চেষ্টা করুন
+            </button>
+            <Link
+              href="/"
+              style={{
+                padding: "12px 24px",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.15)",
+                color: "#cbd5e1",
+                fontWeight: 700,
+                textDecoration: "none",
+                fontSize: "0.95rem",
+              }}
+            >
+              হোমপেজে ফিরুন
+            </Link>
+          </div>
+        </main>
+      </body>
+    </html>
+  );
 }

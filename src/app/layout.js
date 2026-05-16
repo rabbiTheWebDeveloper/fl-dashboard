@@ -2,64 +2,67 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  siteConfig,
+  organizationSchema,
+  websiteSchema,
+  softwareApplicationSchema,
+} from "@/lib/seo";
+
+/* ─── Fonts — loaded once at the root ─── */
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap", // CLS improvement — avoids invisible text flash
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
+/* ─── Root Metadata ─── */
 export const metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
-    default: "AMARDokan - আপনার অনলাইন দোকান তৈরি করুন সহজেই",
-    template: "%s | AMARDokan",
+    default: `${siteConfig.name} — ${siteConfig.tagline}`,
+    template: `%s | ${siteConfig.name}`,
   },
-  description:
-    "AMARDokan দিয়ে শুরু করুন আপনার ই-কমার্স ব্যবসা। সম্পূর্ণ বাংলায় এবং সহজ ব্যবহারযোগ্য ইন্টারফেস। বাংলাদেশের জন্য তৈরি সম্পূর্ণ বাংলা ই-কমার্স সমাধান।",
-  keywords:
-    "ই-কমার্স, অনলাইন দোকান, বাংলাদেশ, বাংলা, ইকমার্স প্লাটফর্ম, AMARDokan, অনলাইন ব্যবসা, পণ্য বিক্রয়",
-  authors: [{ name: "AMARDokan Team" }],
-  creator: "AMARDokan",
-  publisher: "AMARDokan",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  metadataBase: new URL("https://amardokan-two.vercel.app/"),
+  description: siteConfig.description,
+  keywords: siteConfig.keywords.join(", "),
+  authors: [{ name: siteConfig.author }],
+  creator: siteConfig.name,
+  publisher: siteConfig.name,
+  formatDetection: { email: false, address: false, telephone: false },
   alternates: {
     canonical: "/",
-    languages: {
-      "bn-BD": "/bn-BD",
-    },
+    languages: { "bn-BD": "/" },
   },
   openGraph: {
-    title: "AMARDokan - আপনার অনলাইন দোকান তৈরি করুন সহজেই",
-    description:
-      "AMARDokan দিয়ে শুরু করুন আপনার ই-কমার্স ব্যবসা। সম্পূর্ণ বাংলায় এবং সহজ ব্যবহারযোগ্য ইন্টারফেস।",
-    url: "https://amardokan-two.vercel.app/",
-    siteName: "AMARDokan",
+    title: `${siteConfig.name} — ${siteConfig.tagline}`,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    siteName: siteConfig.name,
     images: [
       {
-        url: "/og-image.jpg",
+        url: siteConfig.images.og,
         width: 1200,
         height: 630,
-        alt: "AMARDokan - ই-কমার্স প্লাটফর্ম",
+        alt: `${siteConfig.name} — ই-কমার্স প্লাটফর্ম`,
+        type: "image/jpeg",
       },
     ],
-    locale: "bn_BD",
+    locale: siteConfig.locale,
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AMARDokan - আপনার অনলাইন দোকান তৈরি করুন সহজেই",
-    description:
-      "AMARDokan দিয়ে শুরু করুন আপনার ই-কমার্স ব্যবসা। সম্পূর্ণ বাংলায় এবং সহজ ব্যবহারযোগ্য ইন্টারফেস।",
-    images: ["/twitter-image.jpg"],
-    creator: "@amardokan",
+    title: `${siteConfig.name} — ${siteConfig.tagline}`,
+    description: siteConfig.description,
+    images: [siteConfig.images.twitter],
+    creator: siteConfig.twitter,
+    site: siteConfig.twitter,
   },
   robots: {
     index: true,
@@ -72,68 +75,32 @@ export const metadata = {
       "max-snippet": -1,
     },
   },
-  verification: {
-    // Add your verification codes here
-    // google: 'your-google-verification-code',
-    // yandex: 'your-yandex-verification-code',
-    // yahoo: 'your-yahoo-verification-code',
-  },
   category: "ecommerce",
+  // Add your verification token when available:
+  // verification: { google: "YOUR_TOKEN" },
 };
 
+/* ─── Root Layout ─── */
 export default function RootLayout({ children }) {
   return (
-    <html lang="bn" className="scroll-smooth">
+    <html lang="bn" className="scroll-smooth" suppressHydrationWarning>
       <head>
+        {/* Preconnect for performance */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+
+        {/* JSON-LD Structured Data — Organization, WebSite, Software */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify([
-              {
-                "@context": "https://schema.org",
-                "@type": "Organization",
-                "name": "AMARDokan",
-                "url": "https://amardokan-two.vercel.app/",
-                "logo": "https://amardokan-two.vercel.app/logo.png",
-                "description": "বাংলাদেশের জন্য তৈরি সম্পূর্ণ বাংলা ই-কমার্স সমাধান।",
-                "sameAs": [
-                  "https://facebook.com/amardokan",
-                  "https://twitter.com/amardokan"
-                ]
-              },
-              {
-                "@context": "https://schema.org",
-                "@type": "WebSite",
-                "name": "AMARDokan",
-                "url": "https://amardokan-two.vercel.app/",
-                "potentialAction": {
-                  "@type": "SearchAction",
-                  "target": "https://amardokan-two.vercel.app/search?q={search_term_string}",
-                  "query-input": "required name=search_term_string"
-                }
-              },
-              {
-                "@context": "https://schema.org",
-                "@type": "FAQPage",
-                "mainEntity": [
-                  {
-                    "@type": "Question",
-                    "name": "How long does setup take?",
-                    "acceptedAnswer": {
-                      "@type": "Answer",
-                      "text": "Setup takes less than 5 minutes. Simply connect your e-commerce platform and you're ready to go."
-                    }
-                  },
-                  {
-                    "@type": "Question",
-                    "name": "Is there a free trial available?",
-                    "acceptedAnswer": {
-                      "@type": "Answer",
-                      "text": "Yes! We offer a 14-day free trial for our Pro plan with no credit card required."
-                    }
-                  }
-                ]
-              }
+              organizationSchema(),
+              websiteSchema(),
+              softwareApplicationSchema(),
             ]),
           }}
         />
@@ -141,9 +108,18 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <main id="main-content">
+        {/* Skip-to-content link for keyboard/screen-reader users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-violet-600 focus:text-white focus:rounded-lg focus:font-semibold focus:outline-none focus:ring-2 focus:ring-white"
+        >
+          Skip to main content
+        </a>
+
+        <main id="main-content" tabIndex={-1}>
           {children}
         </main>
+
         <ToastContainer
           position="top-right"
           autoClose={3500}
@@ -154,6 +130,7 @@ export default function RootLayout({ children }) {
           draggable
           pauseOnHover
           theme="light"
+          aria-live="polite"
         />
       </body>
     </html>
