@@ -1,23 +1,132 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Menu, X, Globe, Zap, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Menu, X, Globe, ChevronRight, ChevronDown, Zap, Crown, Rocket, LogIn, UserPlus } from "lucide-react";
 
 const navLinks = [
   { name: "Problems", href: "#problems" },
   { name: "Features", href: "#features" },
-  { name: "Pricing", href: "#pricing" },
+  { name: "Pricing", href: "#pricing", hasDrop: true },
   { name: "Reviews", href: "#reviews" },
   { name: "FAQ", href: "#faq" },
 ];
 
+const plans = [
+  {
+    icon: Zap,
+    name: "Starter",
+    price: "৳499",
+    period: "/mo",
+    desc: "Perfect for solo sellers just getting started.",
+    color: "from-emerald-500 to-teal-500",
+    shadow: "shadow-emerald-500/20",
+    href: "#pricing",
+  },
+  {
+    icon: Rocket,
+    name: "Growth",
+    price: "৳999",
+    period: "/mo",
+    desc: "Scale your store with advanced automation.",
+    color: "from-violet-500 to-indigo-500",
+    shadow: "shadow-violet-500/20",
+    badge: "Popular",
+    href: "#pricing",
+  },
+  {
+    icon: Crown,
+    name: "Pro",
+    price: "৳1,999",
+    period: "/mo",
+    desc: "Full power for high-volume businesses.",
+    color: "from-amber-500 to-orange-500",
+    shadow: "shadow-amber-500/20",
+    href: "#pricing",
+  },
+];
+
+/* ── Pricing Dropdown ── */
+function PricingDrop({ onClose }) {
+  return (
+    <div
+      className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[520px] rounded-2xl border border-white/10 bg-[#0d0b20]/95 backdrop-blur-2xl shadow-2xl shadow-black/50 p-4 z-50"
+      style={{ animation: "dropIn 0.18s ease-out both" }}
+    >
+      <style>{`
+        @keyframes dropIn {
+          from { opacity: 0; transform: translate(-50%, -8px); }
+          to   { opacity: 1; transform: translate(-50%, 0); }
+        }
+      `}</style>
+
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-3 px-1">Choose a Plan</p>
+
+      <div className="grid grid-cols-3 gap-3">
+        {plans.map((plan) => {
+          const Icon = plan.icon;
+          return (
+            <a
+              key={plan.name}
+              href={plan.href}
+              onClick={onClose}
+              className="group relative flex flex-col gap-2 rounded-xl p-3.5 bg-white/[0.03] border border-white/8 hover:border-white/20 hover:bg-white/[0.07] transition-all duration-200"
+            >
+              {plan.badge && (
+                <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg">
+                  {plan.badge}
+                </span>
+              )}
+              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${plan.color} flex items-center justify-center shadow-lg ${plan.shadow}`}>
+                <Icon className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">{plan.name}</p>
+                <p className="text-slate-500 text-[11px] leading-relaxed">{plan.desc}</p>
+              </div>
+              <div className="flex items-baseline gap-0.5 mt-auto">
+                <span className="text-white font-black text-base">{plan.price}</span>
+                <span className="text-slate-500 text-xs">{plan.period}</span>
+              </div>
+              <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${plan.color} opacity-0 group-hover:opacity-5 transition-opacity duration-200`} />
+            </a>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
+        <p className="text-slate-500 text-xs">All plans include 14-day free trial · No credit card needed</p>
+        <a
+          href="#pricing"
+          onClick={onClose}
+          className="text-violet-400 hover:text-violet-300 text-xs font-semibold flex items-center gap-1 transition-colors"
+        >
+          Compare all <ChevronRight className="w-3 h-3" />
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const dropRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 30);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  /* Close dropdown on outside click */
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) {
+        setPricingOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   return (
@@ -49,31 +158,60 @@ export const Navbar = () => {
 
         {/* Desktop Nav */}
         <div className="hidden lg:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-200"
-            >
-              {link.name}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            link.hasDrop ? (
+              <div key={link.name} className="relative" ref={dropRef}>
+                <button
+                  onClick={() => setPricingOpen((v) => !v)}
+                  className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    pricingOpen
+                      ? "text-white bg-white/8"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {link.name}
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${pricingOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {pricingOpen && <PricingDrop onClose={() => setPricingOpen(false)} />}
+              </div>
+            ) : (
+              <a
+                key={link.name}
+                href={link.href}
+                className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-200"
+              >
+                {link.name}
+              </a>
+            )
+          )}
         </div>
 
         {/* Desktop CTA */}
-        <div className="hidden lg:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-3">
+          {/* Language toggle */}
           <button className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/5">
             <Globe className="w-4 h-4" />
             <span>বাংলা</span>
           </button>
+
+          {/* Login */}
           <a
-            href="#contact"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-105 transition-all duration-200 group"
+            href="/login"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:border-white/25 hover:bg-white/5 text-sm font-semibold transition-all duration-200"
           >
-            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current flex-shrink-0">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-            </svg>
-            Contact Us
+            <LogIn className="w-4 h-4" />
+            Login
+          </a>
+
+          {/* Register */}
+          <a
+            href="/register"
+            className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-105 transition-all duration-200 group"
+          >
+            <UserPlus className="w-4 h-4" />
+            Get Started
             <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </a>
         </div>
@@ -90,7 +228,7 @@ export const Navbar = () => {
       {/* Mobile Menu */}
       <div
         className={`lg:hidden transition-all duration-300 overflow-hidden ${
-          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          isOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="bg-[#0a0a1f]/95 backdrop-blur-2xl border-t border-white/5 px-6 py-6">
@@ -105,16 +243,51 @@ export const Navbar = () => {
                 {link.name}
               </a>
             ))}
-            <div className="pt-4 border-t border-white/5">
+
+            {/* Mobile Pricing plans */}
+            <div className="mt-2 p-3 rounded-xl bg-white/[0.03] border border-white/8">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-3">Choose a Plan</p>
+              <div className="flex flex-col gap-2">
+                {plans.map((plan) => {
+                  const Icon = plan.icon;
+                  return (
+                    <a
+                      key={plan.name}
+                      href={plan.href}
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-all"
+                    >
+                      <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${plan.color} flex items-center justify-center flex-shrink-0`}>
+                        <Icon className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold">{plan.name}</p>
+                        <p className="text-slate-500 text-xs truncate">{plan.desc}</p>
+                      </div>
+                      <span className="text-white font-bold text-sm shrink-0">{plan.price}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Mobile auth buttons */}
+            <div className="pt-4 border-t border-white/5 flex flex-col gap-3">
               <a
-                href="#contact"
+                href="/login"
+                className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl border border-white/10 text-slate-300 hover:text-white text-sm font-semibold transition-all"
+                onClick={() => setIsOpen(false)}
+              >
+                <LogIn className="w-4 h-4" />
+                Login
+              </a>
+              <a
+                href="/register"
                 className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold shadow-lg shadow-violet-500/25"
                 onClick={() => setIsOpen(false)}
               >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
-                Contact Us
+                <UserPlus className="w-4 h-4" />
+                Get Started Free
               </a>
             </div>
           </div>

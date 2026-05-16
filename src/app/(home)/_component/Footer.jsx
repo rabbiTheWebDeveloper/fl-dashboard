@@ -15,6 +15,53 @@ const socials = [
   { icon: Linkedin, href: "#", label: "LinkedIn", color: "hover:bg-blue-700" },
 ];
 
+/* ─── Pure-CSS scrolling marquee — no external deps ─── */
+const marqueeStyle = {
+  display: "flex",
+  width: "max-content",
+  alignItems: "baseline",
+  gap: "1rem",
+  color: "rgba(255,255,255,0.04)",
+  fontSize: "clamp(100px, 18vw, 260px)",
+  lineHeight: 0.9,
+  fontWeight: 700,
+  letterSpacing: "-0.02em",
+  userSelect: "none",
+  animation: "marqueeScroll 28s linear infinite",
+  willChange: "transform",
+};
+
+function FooterMarquee() {
+  const text = "AMARDokan";
+  const repeated = `${text} · ${text} · `;
+
+  return (
+    <>
+      <style>{`
+        @media (prefers-reduced-motion: no-preference) {
+          @keyframes marqueeScroll {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .footer-marquee-track { animation: none !important; }
+        }
+      `}</style>
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden"
+        aria-hidden="true"
+      >
+        <div className="footer-marquee-track" style={marqueeStyle}>
+          {/* Duplicate the string so the loop is seamless at -50% */}
+          <span>{repeated}</span>
+          <span>{repeated}</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export const Footer = () => {
   return (
     <footer className="relative bg-[#050310] overflow-hidden">
@@ -120,6 +167,9 @@ export const Footer = () => {
           </p>
         </div>
       </div>
+
+      {/* Scrolling brand marquee at the very bottom */}
+      <FooterMarquee />
     </footer>
   );
 };
