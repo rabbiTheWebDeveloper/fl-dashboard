@@ -4,8 +4,7 @@ import { Facebook, Youtube, Instagram, Linkedin, Mail, Phone, MapPin, ArrowRight
 const footerLinks = {
   Product: ["Features", "Pricing", "Integrations", "Changelog", "Roadmap"],
   Company: ["About Us", "Blog", "Careers", "Press Kit", "Contact"],
-  Legal: ["Privacy Policy", "Terms of Service", "Cookie Policy", "GDPR"],
-  Support: ["Documentation", "WhatsApp Support", "Video Tutorials", "Community", "Status Page"],
+  Legal: ["Privacy Policy", "Terms of Service", "Cookie Policy", "GDPR"]
 };
 
 const socials = [

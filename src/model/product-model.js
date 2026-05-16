@@ -183,7 +183,7 @@ productSchema.virtual("calculatedDiscountPrice").get(function () {
 });
 
 // Pre-save middleware to calculate discounted price
-productSchema.pre("save", function (next) {
+productSchema.pre("save", function () {
   if (
     this.isModified("regularPrice") ||
     this.isModified("discountType") ||
@@ -191,7 +191,6 @@ productSchema.pre("save", function (next) {
   ) {
     this.discountedPrice = this.get("calculatedDiscountPrice");
   }
-  next();
 });
 
 // Indexes for better query performance

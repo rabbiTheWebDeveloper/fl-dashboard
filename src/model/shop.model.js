@@ -27,12 +27,14 @@ const shopSchema = new Schema(
 );
 
 // Pre-save hook to generate slug
-shopSchema.pre("save", function (next) {
+shopSchema.pre("save", function () {
   if (this.isModified("shopName")) {
     this.shopSlug = slugify(this.shopName, { lower: true, strict: true });
   }
-  next();
 });
 
-const Shop = mongoose.models.Shop ?? mongoose.model("Shop", shopSchema);
+if (mongoose.models.Shop) {
+  delete mongoose.models.Shop;
+}
+const Shop = mongoose.model("Shop", shopSchema);
 export default Shop;

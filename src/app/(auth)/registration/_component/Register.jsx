@@ -98,7 +98,7 @@ export default function Register() {
         response.data.email &&
         response.data.emailVerified === false
       ) {
-        router.push(`/account-verify?email=${response.data.email} `);
+        router.push(`/account-verify?email=${response.data.email}`);
       }
     } catch (error) {
       toast.error(error.message);

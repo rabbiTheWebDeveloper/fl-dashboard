@@ -207,7 +207,7 @@ export const Navbar = () => {
 
           {/* Register */}
           <a
-            href="/register"
+            href="/registration"
             className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-105 transition-all duration-200 group"
           >
             <UserPlus className="w-4 h-4" />
