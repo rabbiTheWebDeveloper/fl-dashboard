@@ -230,7 +230,7 @@ export const Navbar = () => {
         >
           {isOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
         </button>
-      </div>
+      </nav>
 
       {/* Mobile Menu */}
       <div
@@ -289,7 +289,7 @@ export const Navbar = () => {
                 Login
               </a>
               <a
-                href="/register"
+                href="/registration"
                 className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold shadow-lg shadow-violet-500/25"
                 onClick={() => setIsOpen(false)}
               >
@@ -299,7 +299,6 @@ export const Navbar = () => {
             </div>
           </div>
         </div>
-      </div>
       </div>
     </header>
   );
