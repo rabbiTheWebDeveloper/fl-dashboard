@@ -130,14 +130,14 @@ export const Navbar = () => {
   }, []);
 
   return (
-    <nav
+    <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
           ? "bg-[#080514]/80 backdrop-blur-2xl border-b border-white/5 shadow-2xl shadow-black/30"
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-20">
+      <nav className="max-w-7xl mx-auto px-6 flex items-center justify-between h-20" aria-label="Main Navigation">
         {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="relative w-11 h-11">
@@ -163,6 +163,8 @@ export const Navbar = () => {
               <div key={link.name} className="relative" ref={dropRef}>
                 <button
                   onClick={() => setPricingOpen((v) => !v)}
+                  aria-expanded={pricingOpen}
+                  aria-haspopup="true"
                   className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                     pricingOpen
                       ? "text-white bg-white/8"
@@ -191,8 +193,11 @@ export const Navbar = () => {
         {/* Desktop CTA */}
         <div className="hidden lg:flex items-center gap-3">
           {/* Language toggle */}
-          <button className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/5">
-            <Globe className="w-4 h-4" />
+          <button 
+            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/5"
+            aria-label="Switch to Bengali"
+          >
+            <Globe className="w-4 h-4" aria-hidden="true" />
             <span>বাংলা</span>
           </button>
 
@@ -220,8 +225,10 @@ export const Navbar = () => {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="lg:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-all"
+          aria-label={isOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isOpen}
         >
-          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {isOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
         </button>
       </div>
 
@@ -293,6 +300,7 @@ export const Navbar = () => {
           </div>
         </div>
       </div>
-    </nav>
+      </div>
+    </header>
   );
 };

@@ -83,14 +83,67 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="bn" className="scroll-smooth">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                "name": "AMARDokan",
+                "url": "https://amardokan-two.vercel.app/",
+                "logo": "https://amardokan-two.vercel.app/logo.png",
+                "description": "বাংলাদেশের জন্য তৈরি সম্পূর্ণ বাংলা ই-কমার্স সমাধান।",
+                "sameAs": [
+                  "https://facebook.com/amardokan",
+                  "https://twitter.com/amardokan"
+                ]
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "AMARDokan",
+                "url": "https://amardokan-two.vercel.app/",
+                "potentialAction": {
+                  "@type": "SearchAction",
+                  "target": "https://amardokan-two.vercel.app/search?q={search_term_string}",
+                  "query-input": "required name=search_term_string"
+                }
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                "mainEntity": [
+                  {
+                    "@type": "Question",
+                    "name": "How long does setup take?",
+                    "acceptedAnswer": {
+                      "@type": "Answer",
+                      "text": "Setup takes less than 5 minutes. Simply connect your e-commerce platform and you're ready to go."
+                    }
+                  },
+                  {
+                    "@type": "Question",
+                    "name": "Is there a free trial available?",
+                    "acceptedAnswer": {
+                      "@type": "Answer",
+                      "text": "Yes! We offer a 14-day free trial for our Pro plan with no credit card required."
+                    }
+                  }
+                ]
+              }
+            ]),
+          }}
+        />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable}`}
-        data-new-gr-c-s-check-loaded="14.1254.0"
-        data-gr-ext-installed=""
-        cz-shortcut-listen="true"
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <main id="main-content">
+          {children}
+        </main>
         <ToastContainer
           position="top-right"
           autoClose={3500}
