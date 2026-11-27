@@ -761,33 +761,55 @@ export async function createBillingInvoiceAdminQuery({
   return serialize(created);
 }
 
-export async function updateBillingStatusAdminQuery(invoiceId, status) {
+export async function updateBillingStatusAdminQuery(
+  invoiceId,
+  status,
+  verificationNote = "",
+  adminId = null
+) {
   await dbConnect();
-  const allowed = ["paid", "unpaid", "overdue", "cancelled"];
+  const allowed = [
+    "paid",
+    "pending_verification",
+    "unpaid",
+    "overdue",
+    "rejected",
+    "cancelled",
+  ];
   if (!allowed.includes(status)) throw new Error("Invalid invoice status.");
 
-  const patch = { status };
+  const existing = await BillingModel.findById(invoiceId);
+  if (!existing) throw new Error("Invoice not found.");
+
+  existing.status = status;
+  if (verificationNote) existing.verificationNote = String(verificationNote).trim();
   if (status === "paid") {
-    patch.paidAt = new Date();
-    patch.paymentMethod = "Admin Verified";
+    existing.paidAt = new Date();
+    existing.verifiedAt = new Date();
+    if (adminId) existing.verifiedBy = adminId;
+    if (!existing.paymentMethod) existing.paymentMethod = "Admin Verified";
   }
-
-  const updated = await BillingModel.findByIdAndUpdate(invoiceId, patch, {
-    new: true,
-  }).lean();
-  if (!updated) throw new Error("Invoice not found.");
+  await existing.save();
 
   if (status === "paid") {
-    await UserModel.findByIdAndUpdate(updated.userId, {
+    const nextDate =
+      existing.billingPeriodEnd && new Date(existing.billingPeriodEnd) > new Date()
+        ? new Date(existing.billingPeriodEnd)
+        : new Date(Date.now() + BILLING_CYCLE_DAYS * 24 * 60 * 60 * 1000);
+    await UserModel.findByIdAndUpdate(existing.userId, {
       payment_status: "paid",
+      subscription_status: "active",
+      subscription_plan: existing.planName || "Basic",
+      next_payment_date: nextDate,
     });
-  } else if (status === "overdue" || status === "unpaid") {
-    await UserModel.findByIdAndUpdate(updated.userId, {
+  } else if (["overdue", "unpaid", "rejected"].includes(status)) {
+    await UserModel.findByIdAndUpdate(existing.userId, {
       payment_status: "unpaid",
+      subscription_status: "past_due",
     });
   }
 
-  return serialize(updated);
+  return serialize(existing);
 }
 
 /* ─── 8. Platform Analytics ─── */
@@ -925,6 +947,8 @@ export async function updatePlatformSettingsQuery(data = {}, adminId = null) {
     "bkashAccountType",
     "nagadMerchantNumber",
     "rocketMerchantNumber",
+    "upayMerchantNumber",
+    "gpayMerchantNumber",
     "bankName",
     "bankAccountName",
     "bankAccountNumber",
@@ -949,6 +973,8 @@ export async function updatePlatformSettingsQuery(data = {}, adminId = null) {
     "bkashEnabled",
     "nagadEnabled",
     "rocketEnabled",
+    "upayEnabled",
+    "gpayEnabled",
     "bankTransferEnabled",
     "sslcommerzEnabled",
     "allowRegistrations",
@@ -1091,6 +1117,8 @@ export async function getAdminPaymentListQuery() {
   let totalCollectedSaaS = 0;
   let thisMonthCollectedSaaS = 0;
   let pendingReceivables = 0;
+  let pendingVerificationCount = 0;
+  let pendingVerificationAmount = 0;
   let overdueAmount = 0;
   let overdueCount = 0;
   let paidTransactionsCount = 0;
@@ -1101,13 +1129,19 @@ export async function getAdminPaymentListQuery() {
     if (p.status === "paid") {
       totalCollectedSaaS += dueVal;
       paidTransactionsCount += 1;
-      const paidDate = p.paidAt ? new Date(p.paidAt) : new Date(p.updatedAt || p.createdAt);
+      const paidDate = p.paidAt
+        ? new Date(p.paidAt)
+        : new Date(p.updatedAt || p.createdAt);
       if (paidDate >= monthStart) {
         thisMonthCollectedSaaS += dueVal;
       }
       const mKey = String(p.paymentMethod || "Manual").trim() || "Manual";
       methodMap[mKey] = (methodMap[mKey] || 0) + dueVal;
-    } else if (p.status === "unpaid") {
+    } else if (p.status === "pending_verification") {
+      pendingVerificationCount += 1;
+      pendingVerificationAmount += dueVal;
+      pendingReceivables += dueVal;
+    } else if (p.status === "unpaid" || p.status === "rejected") {
       pendingReceivables += dueVal;
     } else if (p.status === "overdue") {
       pendingReceivables += dueVal;
@@ -1131,11 +1165,21 @@ export async function getAdminPaymentListQuery() {
     .map(([method, total]) => ({ method, total }))
     .sort((a, b) => b.total - a.total);
 
+  // Bubble `pending_verification` items to the top so admins can verify TrxIDs immediately
+  const sortedSaasPayments = [...saasPayments].sort((a, b) => {
+    const aPend = a.status === "pending_verification" ? 0 : 1;
+    const bPend = b.status === "pending_verification" ? 0 : 1;
+    if (aPend !== bPend) return aPend - bPend;
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+  });
+
   return serialize({
     kpis: {
       totalCollectedSaaS,
       thisMonthCollectedSaaS,
       pendingReceivables,
+      pendingVerificationCount,
+      pendingVerificationAmount,
       overdueAmount,
       overdueCount,
       paidTransactionsCount,
@@ -1144,7 +1188,7 @@ export async function getAdminPaymentListQuery() {
       storefrontPendingCod,
     },
     methodBreakdown,
-    saasPayments,
+    saasPayments: sortedSaasPayments,
     orderPayments,
     deposits,
     shops,
@@ -1159,44 +1203,71 @@ export async function recordAdminPaymentQuery({
   amount,
   includeVat = false,
   paymentMethod = "bKash",
+  senderNumber = "",
   transactionId = "",
   status = "paid",
+  verificationNote = "",
   notes = "",
+  verifiedBy = null,
 }) {
   await dbConnect();
 
-  const cleanMethod = String(paymentMethod || "Manual").trim();
-  const cleanTrx = String(transactionId || "").trim();
+  const cleanMethod = String(paymentMethod || "bKash").trim();
+  const cleanTrx = String(transactionId || "").trim().toUpperCase();
+  const cleanSender = String(senderNumber || "").trim();
   const cleanNotes = String(notes || "").trim();
-  const validStatus = ["paid", "unpaid", "overdue", "cancelled"].includes(status)
+  const cleanVerNote = String(verificationNote || "").trim();
+  const validStatus = [
+    "paid",
+    "pending_verification",
+    "unpaid",
+    "overdue",
+    "rejected",
+    "cancelled",
+  ].includes(status)
     ? status
     : "paid";
 
-  // Case A: Verify / settle an existing billing invoice
+  // Case A: Verify, reject, or update an existing billing invoice
   if (billingId) {
     const existing = await BillingModel.findById(billingId);
     if (!existing) throw new Error("Billing invoice not found.");
 
     existing.status = validStatus;
-    existing.paymentMethod = cleanMethod;
-    existing.transactionId = cleanTrx;
+    if (paymentMethod) existing.paymentMethod = cleanMethod;
+    if (cleanTrx) existing.transactionId = cleanTrx;
+    if (cleanSender) existing.senderNumber = cleanSender;
     if (cleanNotes) existing.notes = cleanNotes;
+    if (cleanVerNote) existing.verificationNote = cleanVerNote;
+
     if (validStatus === "paid") {
       existing.paidAt = new Date();
+      existing.verifiedAt = new Date();
+      if (verifiedBy) existing.verifiedBy = verifiedBy;
     }
 
     await existing.save();
 
     if (validStatus === "paid") {
-      const nextDate = new Date();
-      nextDate.setDate(nextDate.getDate() + BILLING_CYCLE_DAYS);
+      const nextDate =
+        existing.billingPeriodEnd && new Date(existing.billingPeriodEnd) > new Date()
+          ? new Date(existing.billingPeriodEnd)
+          : new Date(Date.now() + BILLING_CYCLE_DAYS * 24 * 60 * 60 * 1000);
+
       await UserModel.findByIdAndUpdate(existing.userId, {
         payment_status: "paid",
+        subscription_status: "active",
+        subscription_plan: existing.planName || "Basic",
         next_payment_date: nextDate,
       });
-    } else if (validStatus === "unpaid" || validStatus === "overdue") {
+    } else if (
+      validStatus === "unpaid" ||
+      validStatus === "overdue" ||
+      validStatus === "rejected"
+    ) {
       await UserModel.findByIdAndUpdate(existing.userId, {
         payment_status: "unpaid",
+        subscription_status: "past_due",
       });
     }
 

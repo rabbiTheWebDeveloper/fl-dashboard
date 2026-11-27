@@ -36,20 +36,23 @@ export async function createManualBillingAction({ userId, shopId, planName }) {
 export async function markBillingPaidAction({
   billingId,
   paymentMethod,
+  senderNumber,
   transactionId,
 }) {
   try {
     const result = await markBillingPaid({
       billingId,
       paymentMethod,
+      senderNumber,
       transactionId,
     });
     revalidatePath("/dashboard/billings");
     revalidatePath("/subscription");
     revalidatePath("/admin/payment-list");
+    revalidatePath("/admin/billing");
     return { success: true, data: result };
   } catch (error) {
-    throw new Error(error.message || "Failed to mark as paid");
+    throw new Error(error.message || "Failed to submit payment TrxID");
   }
 }
 

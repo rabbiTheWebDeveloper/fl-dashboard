@@ -99,14 +99,30 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
     billingCycleDays: initialSettings.billingCycleDays ?? 30,
     gracePeriodDays: initialSettings.gracePeriodDays ?? 7,
 
-    // Tab 3: Payment Gateways
+    // Tab 3: Payment Gateways (Default Send Money Number: 01726278251)
     bkashEnabled: initialSettings.bkashEnabled !== false,
-    bkashMerchantNumber: initialSettings.bkashMerchantNumber || "01700000000",
-    bkashAccountType: initialSettings.bkashAccountType || "Merchant",
+    bkashMerchantNumber:
+      initialSettings.bkashMerchantNumber &&
+      initialSettings.bkashMerchantNumber !== "01700000000"
+        ? initialSettings.bkashMerchantNumber
+        : "01726278251",
+    bkashAccountType: initialSettings.bkashAccountType || "Personal",
     nagadEnabled: initialSettings.nagadEnabled !== false,
-    nagadMerchantNumber: initialSettings.nagadMerchantNumber || "01700000000",
-    rocketEnabled: Boolean(initialSettings.rocketEnabled),
-    rocketMerchantNumber: initialSettings.rocketMerchantNumber || "",
+    nagadMerchantNumber:
+      initialSettings.nagadMerchantNumber &&
+      initialSettings.nagadMerchantNumber !== "01700000000"
+        ? initialSettings.nagadMerchantNumber
+        : "01726278251",
+    rocketEnabled: initialSettings.rocketEnabled !== false,
+    rocketMerchantNumber:
+      initialSettings.rocketMerchantNumber &&
+      initialSettings.rocketMerchantNumber !== "01700000000"
+        ? initialSettings.rocketMerchantNumber
+        : "01726278251",
+    upayEnabled: initialSettings.upayEnabled !== false,
+    upayMerchantNumber: initialSettings.upayMerchantNumber || "01726278251",
+    gpayEnabled: initialSettings.gpayEnabled !== false,
+    gpayMerchantNumber: initialSettings.gpayMerchantNumber || "01726278251",
     bankTransferEnabled: initialSettings.bankTransferEnabled !== false,
     bankName: initialSettings.bankName || "City Bank PLC",
     bankAccountName:
@@ -631,21 +647,21 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
         {/* ─── TAB 3: PAYMENT GATEWAYS ─── */}
         <TabsContent value="gateways">
           <form onSubmit={handleSavePlatform} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Mobile Financial Services */}
+            {/* Mobile Financial Services (5 Send Money Gateways) */}
             <Card className="border-slate-200/80 bg-white shadow-2xs">
               <CardHeader>
                 <CardTitle className="text-base font-extrabold">
-                  Mobile Banking Gateways (MFS)
+                  Send Money Gateways (bKash · Nagad · Rocket · Upay · GPay)
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Numbers displayed to merchants when paying subscription invoices via bKash, Nagad, or Rocket.
+                  Personal Send Money numbers displayed in the Payment Gateway for TrxID submission & verification (default: 01726278251).
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 rounded-2xl border border-pink-200 bg-pink-50/30 space-y-3">
+              <CardContent className="space-y-3.5">
+                <div className="p-3.5 rounded-2xl border border-pink-200 bg-pink-50/30 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-extrabold text-pink-700">
-                      bKash Payment
+                      1. bKash (Send Money)
                     </span>
                     <input
                       type="checkbox"
@@ -662,8 +678,8 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
                       onChange={(e) =>
                         setField("bkashMerchantNumber", e.target.value)
                       }
-                      placeholder="017XXXXXXXX"
-                      className="bg-white"
+                      placeholder="01726278251"
+                      className="bg-white font-mono"
                     />
                     <select
                       value={form.bkashAccountType}
@@ -672,16 +688,16 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
                       }
                       className="h-9 px-3 rounded-md border border-slate-200 text-xs font-bold bg-white"
                     >
-                      <option value="Merchant">Merchant Payment</option>
                       <option value="Personal">Send Money (Personal)</option>
+                      <option value="Merchant">Merchant Payment</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl border border-orange-200 bg-orange-50/30 space-y-3">
+                <div className="p-3.5 rounded-2xl border border-orange-200 bg-orange-50/30 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-extrabold text-orange-700">
-                      Nagad Payment
+                      2. Nagad (Send Money)
                     </span>
                     <input
                       type="checkbox"
@@ -697,15 +713,15 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
                     onChange={(e) =>
                       setField("nagadMerchantNumber", e.target.value)
                     }
-                    placeholder="Nagad Number (017XXXXXXXX)"
-                    className="bg-white"
+                    placeholder="01726278251"
+                    className="bg-white font-mono"
                   />
                 </div>
 
-                <div className="p-4 rounded-2xl border border-purple-200 bg-purple-50/30 space-y-3">
+                <div className="p-3.5 rounded-2xl border border-purple-200 bg-purple-50/30 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-extrabold text-purple-700">
-                      Rocket (DBBL)
+                      3. Rocket (Send Money)
                     </span>
                     <input
                       type="checkbox"
@@ -721,8 +737,56 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
                     onChange={(e) =>
                       setField("rocketMerchantNumber", e.target.value)
                     }
-                    placeholder="Rocket Account Number"
-                    className="bg-white"
+                    placeholder="01726278251"
+                    className="bg-white font-mono"
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-2xl border border-blue-200 bg-blue-50/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-extrabold text-blue-700">
+                      4. Upay (Send Money)
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={form.upayEnabled}
+                      onChange={(e) =>
+                        setField("upayEnabled", e.target.checked)
+                      }
+                      className="w-4 h-4 accent-blue-600 rounded"
+                    />
+                  </div>
+                  <Input
+                    value={form.upayMerchantNumber}
+                    onChange={(e) =>
+                      setField("upayMerchantNumber", e.target.value)
+                    }
+                    placeholder="01726278251"
+                    className="bg-white font-mono"
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-2xl border border-sky-200 bg-sky-50/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-extrabold text-sky-700">
+                      5. GPay (Send Money)
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={form.gpayEnabled}
+                      onChange={(e) =>
+                        setField("gpayEnabled", e.target.checked)
+                      }
+                      className="w-4 h-4 accent-sky-600 rounded"
+                    />
+                  </div>
+                  <Input
+                    value={form.gpayMerchantNumber}
+                    onChange={(e) =>
+                      setField("gpayMerchantNumber", e.target.value)
+                    }
+                    placeholder="01726278251"
+                    className="bg-white font-mono"
                   />
                 </div>
               </CardContent>

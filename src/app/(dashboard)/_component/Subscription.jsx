@@ -10,25 +10,20 @@ import {
   Boxes,
   CalendarClock,
   CheckCircle2,
-  Copy,
-  CreditCard,
+  Clock,
   Crown,
+  ExternalLink,
   FileText,
   HelpCircle,
-  Loader2,
   RefreshCw,
-  ShieldCheck,
   ShoppingCart,
   Sparkles,
-  Wallet,
   Zap,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import {
-  markBillingPaidAction,
-  subscribeMonthlyPlanAction,
-  updateSubscriptionPreferenceAction,
-} from "@/app/actions/billing";
+import { DEFAULT_GATEWAY_NUMBER } from "@/config/paymentGatewayConfig";
+import { updateSubscriptionPreferenceAction } from "@/app/actions/billing";
+import { SendMoneyGatewayDialog } from "@/components/payment/SendMoneyGateway";
 import {
   Accordion,
   AccordionContent,
@@ -45,15 +40,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -82,34 +68,36 @@ const DURATION_OPTIONS = [
 ];
 
 const STATUS_BADGE = {
-  active: "bg-emerald-500/15 text-emerald-700 border-emerald-200",
-  trial: "bg-cyan-500/15 text-cyan-700 border-cyan-200",
-  past_due: "bg-amber-500/15 text-amber-700 border-amber-200",
-  cancelled: "bg-rose-500/15 text-rose-700 border-rose-200",
+  active: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+  trial: "bg-cyan-500/15 text-cyan-300 border-cyan-400/30",
+  pending_verification:
+    "bg-amber-500/20 text-amber-200 border-amber-400/40",
+  past_due: "bg-rose-500/20 text-rose-200 border-rose-400/40",
+  cancelled: "bg-slate-500/20 text-slate-300 border-slate-400/30",
 };
 
 const BILL_BADGE = {
   paid: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
-  unpaid: "bg-amber-500/10 text-amber-700 border-amber-200",
+  pending_verification: "bg-amber-500/15 text-amber-800 border-amber-300",
+  unpaid: "bg-slate-100 text-slate-700 border-slate-200",
   overdue: "bg-rose-500/10 text-rose-700 border-rose-200",
+  rejected: "bg-rose-500/15 text-rose-700 border-rose-300",
   cancelled: "bg-slate-100 text-slate-500 border-slate-200",
 };
 
 const FAQS = [
   {
-    question: "How does monthly subscription billing work?",
-    answer:
-      "Each monthly subscription covers 30 full days from activation. If you renew early on your current plan, 30 extra days are added seamlessly onto your existing renewal date so you never lose a single day.",
+    question: "How does Send Money + TrxID subscription verification work?",
+    answer: `Select bKash, Nagad, Rocket, Upay, or GPay in the gateway, Send Money to ${DEFAULT_GATEWAY_NUMBER}, and submit your Sender Number + Transaction ID (TrxID). Admin verifies the TrxID and activates your 30-day cycle.`,
   },
   {
-    question: "Which payment methods are supported for monthly renewal?",
-    answer:
-      "You can pay instantly via bKash, Nagad, Rocket, Corporate Bank Transfer, or Card, and submit your Transaction ID (TrxID) for immediate activation.",
+    question: "Which mobile wallets are supported?",
+    answer: `All 5 major wallets are supported on personal Send Money number ${DEFAULT_GATEWAY_NUMBER}: bKash (*247#), Nagad (*167#), Rocket (*322#), Upay (*268#), and GPay (*777#).`,
   },
   {
     question: "Can I upgrade from Basic to Standard or Professional mid-month?",
     answer:
-      "Yes! Selecting a higher tier activates your upgraded product and order limits immediately and starts a fresh 30-day cycle.",
+      "Yes! Selecting a higher tier and submitting your Send Money TrxID unlocks higher product and order limits as soon as Admin approves the payment.",
   },
   {
     question: "What happens if Auto-Renew is turned on?",
@@ -123,19 +111,9 @@ export default function Subscription({ initialData = {} }) {
   const [data, setData] = useState(initialData);
   const [selectedMonths, setSelectedMonths] = useState(1);
 
-  // Checkout Modal State
+  // Gateway Modals
   const [checkoutPlan, setCheckoutPlan] = useState(null);
-  const [payMode, setPayMode] = useState("pay_now"); // "pay_now" | "invoice_later"
-  const [gateway, setGateway] = useState("bKash");
-  const [transactionId, setTransactionId] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  // Open Unpaid Invoice Quick Settle Modal
   const [settleBill, setSettleBill] = useState(null);
-  const [settleMethod, setSettleMethod] = useState("bKash");
-  const [settleTrx, setSettleTrx] = useState("");
-  const [settling, setSettling] = useState(false);
-
   const [togglingAutoRenew, setTogglingAutoRenew] = useState(false);
 
   const {
@@ -194,15 +172,6 @@ export default function Subscription({ initialData = {} }) {
     return computePlanPricing(checkoutPlan, selectedMonths);
   }, [checkoutPlan, selectedMonths, vatPercent]);
 
-  const handleCopy = async (text, label) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success(`Copied ${label}: ${text}`);
-    } catch {
-      toast.info(text);
-    }
-  };
-
   const handleOpenSubscribeModal = (plan) => {
     if (!authenticated || !userId || !shopId) {
       toast.info("Please sign in to your merchant dashboard to subscribe.");
@@ -210,50 +179,6 @@ export default function Subscription({ initialData = {} }) {
       return;
     }
     setCheckoutPlan(plan);
-    setPayMode("pay_now");
-    setTransactionId("");
-  };
-
-  const handleConfirmSubscription = async (e) => {
-    e.preventDefault();
-    if (!checkoutPlan) return;
-
-    const payNow = payMode === "pay_now";
-    if (payNow && !transactionId.trim()) {
-      toast.error("Please enter your payment Transaction ID (TrxID).");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const res = await subscribeMonthlyPlanAction({
-        userId,
-        shopId,
-        planName: checkoutPlan.id,
-        months: selectedMonths,
-        paymentMethod: gateway,
-        transactionId: transactionId.trim(),
-        payNow,
-      });
-
-      if (!res?.success) {
-        toast.error(res?.message || "Subscription failed.");
-        return;
-      }
-
-      toast.success(
-        payNow
-          ? `${checkoutPlan.name} monthly subscription activated!`
-          : `Monthly invoice created for ${checkoutPlan.name}.`
-      );
-      setCheckoutPlan(null);
-      setTransactionId("");
-      await refreshLiveState();
-    } catch (err) {
-      toast.error(err?.message || "Could not complete subscription.");
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   const handleToggleAutoRenew = async (checked) => {
@@ -285,39 +210,8 @@ export default function Subscription({ initialData = {} }) {
     }
   };
 
-  const handleSettleOpenInvoice = async (e) => {
-    e.preventDefault();
-    if (!settleBill || !settleTrx.trim()) {
-      toast.error("Please enter your Transaction ID.");
-      return;
-    }
-    setSettling(true);
-    try {
-      await markBillingPaidAction({
-        billingId: settleBill._id,
-        paymentMethod: settleMethod,
-        transactionId: settleTrx.trim(),
-      });
-      toast.success("Monthly invoice settled! Subscription active.");
-      setSettleBill(null);
-      setSettleTrx("");
-      await refreshLiveState();
-    } catch (err) {
-      toast.error(err?.message || "Failed to settle invoice.");
-    } finally {
-      setSettling(false);
-    }
-  };
-
   const activePlanObj =
     plans.find((p) => p.id === activePlanName) || plans[0] || null;
-
-  const gatewayAccountNumber = useMemo(() => {
-    if (gateway === "bKash") return gateways?.bkash?.number || "01700000000";
-    if (gateway === "Nagad") return gateways?.nagad?.number || "01700000000";
-    if (gateway === "Rocket") return gateways?.rocket?.number || "01700000000";
-    return "";
-  }, [gateway, gateways]);
 
   const productPct = Math.min(
     100,
@@ -354,7 +248,7 @@ export default function Subscription({ initialData = {} }) {
                     STATUS_BADGE[subscription.status] || STATUS_BADGE.active
                   }
                 >
-                  {String(subscription.status || "active").replace("_", " ")}
+                  {String(subscription.status || "active").replace(/_/g, " ")}
                 </Badge>
               </div>
 
@@ -399,19 +293,67 @@ export default function Subscription({ initialData = {} }) {
             </div>
           </div>
 
-          {/* Unpaid / Overdue Monthly Bill Alert */}
+          {/* Pending TrxID Verification Banner */}
+          {subscription.pendingInvoice && (
+            <div className="relative z-10 rounded-2xl bg-cyan-500/15 border border-cyan-400/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-cyan-300 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs sm:text-sm font-extrabold text-cyan-200">
+                    Pending Admin Verification:{" "}
+                    {subscription.pendingInvoice.invoiceNumber} (
+                    {tk(subscription.pendingInvoice.totalDue)})
+                  </p>
+                  <p className="text-xs text-cyan-100/85">
+                    {subscription.pendingInvoice.paymentMethod} Send Money to{" "}
+                    <strong>
+                      {subscription.pendingInvoice.receiverNumber ||
+                        DEFAULT_GATEWAY_NUMBER}
+                    </strong>{" "}
+                    · Sender:{" "}
+                    <span className="font-mono">
+                      {subscription.pendingInvoice.senderNumber || "—"}
+                    </span>{" "}
+                    · TrxID:{" "}
+                    <strong className="font-mono">
+                      {subscription.pendingInvoice.transactionId}
+                    </strong>
+                  </p>
+                </div>
+              </div>
+              <Button
+                asChild
+                size="sm"
+                className="bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold shrink-0"
+              >
+                <Link href={`/pay/${subscription.pendingInvoice._id}`}>
+                  View Status
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Link>
+              </Button>
+            </div>
+          )}
+
+          {/* Unpaid / Overdue / Rejected Monthly Bill Alert */}
           {subscription.openInvoice && (
             <div className="relative z-10 rounded-2xl bg-amber-500/15 border border-amber-400/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs sm:text-sm font-extrabold text-amber-200">
-                    Open Monthly Invoice:{" "}
+                    {subscription.openInvoice.status === "rejected"
+                      ? "TrxID Rejected — Resubmit Required: "
+                      : "Open Monthly Invoice: "}
                     {subscription.openInvoice.invoiceNumber} (
                     {tk(subscription.openInvoice.totalDue)})
                   </p>
                   <p className="text-xs text-amber-100/80">
-                    Due by {fmtDate(subscription.openInvoice.dueDate)} — submit your payment TrxID to keep your subscription active.
+                    {subscription.openInvoice.status === "rejected"
+                      ? subscription.openInvoice.verificationNote ||
+                        "Previous TrxID could not be verified. Please submit valid Send Money TrxID."
+                      : `Due by ${fmtDate(
+                          subscription.openInvoice.dueDate
+                        )} — Send Money to ${DEFAULT_GATEWAY_NUMBER} and submit TrxID.`}
                   </p>
                 </div>
               </div>
@@ -421,7 +363,9 @@ export default function Subscription({ initialData = {} }) {
                 onClick={() => setSettleBill(subscription.openInvoice)}
                 className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold shrink-0"
               >
-                Pay Monthly Bill Now
+                {subscription.openInvoice.status === "rejected"
+                  ? "Resubmit TrxID"
+                  : "Pay via Gateway"}
               </Button>
             </div>
           )}
@@ -431,7 +375,8 @@ export default function Subscription({ initialData = {} }) {
             <div className="rounded-2xl bg-white/[0.05] border border-white/10 p-4 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                  <Boxes className="w-4 h-4 text-violet-400" /> Active Catalog Products
+                  <Boxes className="w-4 h-4 text-violet-400" /> Active Catalog
+                  Products
                 </span>
                 <span className="font-extrabold text-white">
                   {usage.products || 0} /{" "}
@@ -455,7 +400,8 @@ export default function Subscription({ initialData = {} }) {
             <div className="rounded-2xl bg-white/[0.05] border border-white/10 p-4 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                  <ShoppingCart className="w-4 h-4 text-emerald-400" /> This Month&apos;s Orders
+                  <ShoppingCart className="w-4 h-4 text-emerald-400" /> This
+                  Month&apos;s Orders
                 </span>
                 <span className="font-extrabold text-white">
                   {usage.monthlyOrders || 0} /{" "}
@@ -483,16 +429,21 @@ export default function Subscription({ initialData = {} }) {
       <div className="text-center space-y-4 pt-2">
         <Badge className="bg-violet-500/10 text-violet-700 border-violet-200">
           <Sparkles className="w-3.5 h-3.5 mr-1" />
-          Monthly Merchant Plans
+          Monthly Merchant Plans · Send Money ({DEFAULT_GATEWAY_NUMBER})
         </Badge>
         <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
           Choose Your <span className="rgb-gradient-text">Monthly Plan</span>
         </h2>
         <p className="text-xs sm:text-sm text-slate-500 max-w-2xl mx-auto">
-          Simple {cycleDays}-day monthly billing with instant bKash, Nagad, Rocket, or Bank activation. Prepay multiple months anytime to unlock extra savings.
+          Simple {cycleDays}-day monthly billing via{" "}
+          <strong>bKash, Nagad, Rocket, Upay, or GPay</strong> Send Money (
+          <span className="font-mono font-bold text-slate-700">
+            {DEFAULT_GATEWAY_NUMBER}
+          </span>
+          ) + TrxID verification.
         </p>
 
-        {/* Duration Selector Pills (Default: 1 Month) */}
+        {/* Duration Selector Pills */}
         <div className="inline-flex flex-wrap items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
           {DURATION_OPTIONS.map((opt) => {
             const active = selectedMonths === opt.months;
@@ -581,7 +532,8 @@ export default function Subscription({ initialData = {} }) {
                   </p>
                   {calc.discount > 0 && (
                     <p className="text-xs font-bold text-emerald-600 mt-0.5">
-                      You save {tk(calc.discount)} on {selectedMonths}-month billing
+                      You save {tk(calc.discount)} on {selectedMonths}-month
+                      billing
                     </p>
                   )}
                 </div>
@@ -626,10 +578,10 @@ export default function Subscription({ initialData = {} }) {
             <div>
               <CardTitle className="text-base sm:text-lg font-extrabold flex items-center gap-2">
                 <CalendarClock className="w-5 h-5 text-violet-600" />
-                Monthly Subscription History
+                Monthly Subscription & TrxID History
               </CardTitle>
               <CardDescription className="text-xs">
-                Recent monthly plan renewals and invoices
+                Recent Send Money TrxID submissions and verified renewals
               </CardDescription>
             </div>
             <Link
@@ -647,79 +599,97 @@ export default function Subscription({ initialData = {} }) {
                   <TableHead className="font-bold">Invoice #</TableHead>
                   <TableHead className="font-bold">Plan & Cycle</TableHead>
                   <TableHead className="font-bold">Coverage Period</TableHead>
-                  <TableHead className="font-bold">Gateway</TableHead>
+                  <TableHead className="font-bold">
+                    Gateway · Sender · TrxID
+                  </TableHead>
                   <TableHead className="font-bold text-right">Total</TableHead>
                   <TableHead className="font-bold text-center">Status</TableHead>
                   <TableHead className="font-bold text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentInvoices.map((inv) => (
-                  <TableRow key={inv._id}>
-                    <TableCell className="font-mono font-bold text-xs text-violet-700">
-                      {inv.invoiceNumber}
-                    </TableCell>
-                    <TableCell>
-                      <p className="font-bold text-xs text-slate-900">
-                        {inv.planName || "Basic"}
-                      </p>
-                      <p className="text-[11px] text-slate-400 line-clamp-1">
-                        {inv.invoiceTitle}
-                      </p>
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-600">
-                      {fmtDate(inv.billingPeriodStart)} →{" "}
-                      {fmtDate(inv.billingPeriodEnd)}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {inv.paymentMethod ? (
-                        <div>
-                          <span className="font-bold text-slate-800">
-                            {inv.paymentMethod}
-                          </span>
-                          {inv.transactionId && (
-                            <p className="text-[10px] font-mono text-slate-400">
-                              {inv.transactionId}
-                            </p>
+                {recentInvoices.map((inv) => {
+                  const canPay = ["unpaid", "overdue", "rejected"].includes(
+                    inv.status
+                  );
+                  return (
+                    <TableRow key={inv._id}>
+                      <TableCell className="font-mono font-bold text-xs text-violet-700">
+                        {inv.invoiceNumber}
+                      </TableCell>
+                      <TableCell>
+                        <p className="font-bold text-xs text-slate-900">
+                          {inv.planName || "Basic"}
+                        </p>
+                        <p className="text-[11px] text-slate-400 line-clamp-1">
+                          {inv.invoiceTitle}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600">
+                        {fmtDate(inv.billingPeriodStart)} →{" "}
+                        {fmtDate(inv.billingPeriodEnd)}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {inv.paymentMethod ? (
+                          <div>
+                            <span className="font-extrabold text-slate-800">
+                              {inv.paymentMethod}
+                            </span>
+                            {inv.senderNumber && (
+                              <span className="text-[11px] text-slate-500 font-mono ml-1.5">
+                                ({inv.senderNumber})
+                              </span>
+                            )}
+                            {inv.transactionId && (
+                              <p className="text-[11px] font-mono text-violet-700 font-bold">
+                                TrxID: {inv.transactionId}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">Awaiting Payment</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-extrabold text-slate-900">
+                        {tk(inv.totalDue)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge
+                          variant="outline"
+                          className={
+                            BILL_BADGE[inv.status] || BILL_BADGE.unpaid
+                          }
+                        >
+                          {String(inv.status || "").replace(/_/g, " ")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex items-center gap-2">
+                          {canPay && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="gradient"
+                              className="h-7 text-xs"
+                              onClick={() => setSettleBill(inv)}
+                            >
+                              {inv.status === "rejected"
+                                ? "Resubmit"
+                                : "Pay Now"}
+                            </Button>
                           )}
+                          <Link
+                            href={`/pay/${inv._id}`}
+                            className="text-xs font-bold text-slate-500 hover:text-violet-600 inline-flex items-center gap-1"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            {canPay ? "Gateway" : "Status"}
+                          </Link>
                         </div>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right font-extrabold text-slate-900">
-                      {tk(inv.totalDue)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        variant="outline"
-                        className={BILL_BADGE[inv.status] || BILL_BADGE.unpaid}
-                      >
-                        {inv.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {inv.status === "unpaid" || inv.status === "overdue" ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="gradient"
-                          className="h-7 text-xs"
-                          onClick={() => setSettleBill(inv)}
-                        >
-                          Pay Now
-                        </Button>
-                      ) : (
-                        <Link
-                          href="/dashboard/billings"
-                          className="text-xs font-bold text-slate-500 hover:text-violet-600 inline-flex items-center gap-1"
-                        >
-                          <FileText className="w-3.5 h-3.5" /> Receipt
-                        </Link>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -733,10 +703,11 @@ export default function Subscription({ initialData = {} }) {
             <HelpCircle className="w-5 h-5" />
           </div>
           <CardTitle className="text-xl font-bold text-slate-900">
-            Monthly Subscription FAQs
+            Monthly Subscription & Gateway FAQs
           </CardTitle>
           <CardDescription>
-            How monthly renewals, upgrades, and payments work on AMARDokan
+            How Send Money ({DEFAULT_GATEWAY_NUMBER}) and TrxID verification
+            work on AMARDokan
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -755,273 +726,58 @@ export default function Subscription({ initialData = {} }) {
         </CardContent>
       </Card>
 
-      {/* ─── Modal A: Monthly Subscription Checkout Dialog ─── */}
-      <Dialog
-        open={Boolean(checkoutPlan)}
+      {/* ─── Modal A: New Monthly Subscription Send Money Gateway ─── */}
+      <SendMoneyGatewayDialog
+        open={Boolean(checkoutPlan && checkoutSummary)}
         onOpenChange={(open) => {
           if (!open) setCheckoutPlan(null);
         }}
-      >
-        <DialogContent className="sm:max-w-lg rounded-3xl bg-white max-h-[92vh] overflow-y-auto">
-          {checkoutPlan && checkoutSummary && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                  <Wallet className="w-5 h-5 text-violet-600" />
-                  {checkoutPlan.name} —{" "}
-                  {selectedMonths === 1
-                    ? "Monthly Subscription"
-                    : `${selectedMonths}-Month Subscription`}
-                </DialogTitle>
-                <DialogDescription className="text-xs text-slate-500">
-                  Activates {cycleDays * selectedMonths} days of full{" "}
-                  <strong>{checkoutPlan.name}</strong> access for your store.
-                </DialogDescription>
-              </DialogHeader>
-
-              <form onSubmit={handleConfirmSubscription} className="space-y-4 pt-1">
-                {/* Summary Box */}
-                <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-1.5 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>
-                      {checkoutPlan.name} ({selectedMonths}{" "}
-                      {selectedMonths === 1 ? "month" : "months"})
-                    </span>
-                    <span className="font-bold text-slate-900">
-                      {tk(checkoutSummary.gross)}
-                    </span>
-                  </div>
-                  {checkoutSummary.discount > 0 && (
-                    <div className="flex justify-between text-emerald-600 font-semibold">
-                      <span>Multi-Month Discount</span>
-                      <span>-{tk(checkoutSummary.discount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-slate-600">
-                    <span>Platform VAT ({vatPercent}%)</span>
-                    <span className="font-bold text-slate-900">
-                      +{tk(checkoutSummary.vat)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-slate-200 text-sm">
-                    <span className="font-extrabold text-slate-900">
-                      Total Payable
-                    </span>
-                    <span className="font-extrabold text-violet-600 text-base">
-                      {tk(checkoutSummary.total)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Mode Toggle */}
-                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setPayMode("pay_now")}
-                    className={`py-2 rounded-lg text-xs font-extrabold transition ${
-                      payMode === "pay_now"
-                        ? "bg-white text-slate-900 shadow-2xs"
-                        : "text-slate-500"
-                    }`}
-                  >
-                    Pay & Activate Now
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPayMode("invoice_later")}
-                    className={`py-2 rounded-lg text-xs font-extrabold transition ${
-                      payMode === "invoice_later"
-                        ? "bg-white text-slate-900 shadow-2xs"
-                        : "text-slate-500"
-                    }`}
-                  >
-                    Generate Monthly Bill
-                  </button>
-                </div>
-
-                {payMode === "pay_now" ? (
-                  <div className="space-y-3.5">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">
-                        Select Payment Gateway
-                      </Label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {["bKash", "Nagad", "Rocket", "Bank Transfer"].map(
-                          (m) => (
-                            <button
-                              key={m}
-                              type="button"
-                              onClick={() => setGateway(m)}
-                              className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold transition ${
-                                gateway === m
-                                  ? "border-violet-600 bg-violet-50 text-violet-700"
-                                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
-                            >
-                              {m}
-                            </button>
-                          )
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Gateway Payment Instructions */}
-                    {gateway === "Bank Transfer" ? (
-                      <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-3.5 text-xs space-y-1">
-                        <p className="font-extrabold text-blue-900">
-                          Bank Transfer Details:
-                        </p>
-                        <p className="text-blue-800">
-                          Bank: <strong>{gateways?.bank_transfer?.bankName || "City Bank PLC"}</strong>
-                        </p>
-                        <p className="text-blue-800">
-                          A/C Name:{" "}
-                          <strong>
-                            {gateways?.bank_transfer?.accountName ||
-                              "AMARDokan Technologies"}
-                          </strong>
-                        </p>
-                        {gateways?.bank_transfer?.accountNumber && (
-                          <p className="text-blue-800 font-mono">
-                            A/C No: {gateways.bank_transfer.accountNumber}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border border-violet-200 bg-violet-50/50 p-3.5 flex items-center justify-between gap-3 text-xs">
-                        <div>
-                          <p className="font-extrabold text-slate-900">
-                            Send {tk(checkoutSummary.total)} via {gateway}
-                          </p>
-                          <p className="text-slate-600 font-mono mt-0.5">
-                            Account: <strong>{gatewayAccountNumber}</strong>
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleCopy(gatewayAccountNumber, `${gateway} Number`)
-                          }
-                          className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1 shrink-0"
-                        >
-                          <Copy className="w-3.5 h-3.5" /> Copy
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">
-                        Transaction ID (TrxID / Bank Ref) *
-                      </Label>
-                      <Input
-                        required
-                        value={transactionId}
-                        onChange={(e) => setTransactionId(e.target.value)}
-                        placeholder="e.g. BKS94M72X1"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5 text-xs text-amber-900 space-y-1">
-                    <p className="font-extrabold">Pay within 7-Day Grace Period</p>
-                    <p>
-                      An official monthly invoice for{" "}
-                      <strong>{tk(checkoutSummary.total)}</strong> will be added to your{" "}
-                      <strong>Billing & Invoices</strong> ledger so you can settle it anytime within 7 days.
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCheckoutPlan(null)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" variant="gradient" disabled={submitting}>
-                    {submitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <ShieldCheck className="w-4 h-4" />
-                    )}
-                    {payMode === "pay_now"
-                      ? `Confirm & Activate (${tk(checkoutSummary.total)})`
-                      : "Generate Monthly Invoice"}
-                  </Button>
-                </div>
-              </form>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* ─── Modal B: Settle Open Monthly Bill ─── */}
-      <Dialog
-        open={Boolean(settleBill)}
-        onOpenChange={(o) => {
-          if (!o) setSettleBill(null);
+        dialogTitle={
+          checkoutPlan
+            ? `${checkoutPlan.name} — ${
+                selectedMonths === 1
+                  ? "Monthly Subscription"
+                  : `${selectedMonths}-Month Subscription`
+              }`
+            : "Monthly Subscription Gateway"
+        }
+        dialogDescription={`Send Money to ${DEFAULT_GATEWAY_NUMBER} via bKash, Nagad, Rocket, Upay, or GPay and submit your TrxID.`}
+        mode="subscription"
+        allowInvoiceLater
+        gateways={gateways}
+        subscriptionPayload={
+          checkoutPlan && checkoutSummary
+            ? {
+                userId,
+                shopId,
+                planName: checkoutPlan.id,
+                months: selectedMonths,
+                cycleDays,
+                vatPercent,
+                summary: checkoutSummary,
+              }
+            : null
+        }
+        onSuccess={() => {
+          refreshLiveState();
         }}
-      >
-        <DialogContent className="sm:max-w-md rounded-3xl bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-extrabold flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-violet-600" />
-              Settle Monthly Invoice
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Invoice <strong>{settleBill?.invoiceNumber}</strong> — Total Due:{" "}
-              <strong>{tk(settleBill?.totalDue)}</strong>
-            </DialogDescription>
-          </DialogHeader>
+      />
 
-          <form onSubmit={handleSettleOpenInvoice} className="space-y-4 pt-1">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold">Payment Method</Label>
-              <select
-                value={settleMethod}
-                onChange={(e) => setSettleMethod(e.target.value)}
-                className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white font-semibold"
-              >
-                <option value="bKash">bKash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="Rocket">Rocket</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Card">Card</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold">Transaction ID (TrxID) *</Label>
-              <Input
-                required
-                value={settleTrx}
-                onChange={(e) => setSettleTrx(e.target.value)}
-                placeholder="Enter TrxID"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-1">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSettleBill(null)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" variant="gradient" disabled={settling}>
-                {settling ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                Submit Payment
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* ─── Modal B: Settle Open / Rejected Invoice via Send Money Gateway ─── */}
+      <SendMoneyGatewayDialog
+        open={Boolean(settleBill)}
+        onOpenChange={(open) => {
+          if (!open) setSettleBill(null);
+        }}
+        dialogTitle={`Pay Invoice ${settleBill?.invoiceNumber || ""}`}
+        dialogDescription={`Send Money to ${DEFAULT_GATEWAY_NUMBER} via bKash, Nagad, Rocket, Upay, or GPay and submit your TrxID.`}
+        mode="invoice"
+        invoice={settleBill}
+        gateways={gateways}
+        onSuccess={() => {
+          refreshLiveState();
+        }}
+      />
     </div>
   );
 }

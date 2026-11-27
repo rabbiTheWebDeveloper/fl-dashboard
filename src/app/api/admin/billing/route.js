@@ -105,7 +105,9 @@ export async function PATCH(request) {
 
     const updated = await updateBillingStatusAdminQuery(
       body.invoiceId,
-      body.status
+      body.status,
+      body.verificationNote || "",
+      auth.admin.id
     );
     revalidatePath("/admin/billing");
     revalidatePath("/admin");

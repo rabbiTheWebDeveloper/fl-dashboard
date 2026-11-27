@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { BillingModel } from "@/model/billing-model";
 import { UserModel } from "@/model/user-model";
+import Shop from "@/model/shop.model";
 import { ProductModel } from "@/model/product-model";
 import { OrderModel } from "@/model/order-model";
 import { PlatformSettingModel } from "@/model/admin-user-model";
@@ -11,6 +12,13 @@ import {
   PLANS,
   VAT_PERCENT,
 } from "@/config/billingConfig";
+import {
+  DEFAULT_GATEWAY_NUMBER,
+  SEND_MONEY_GATEWAYS,
+  TRX_ID_REGEX,
+  normalizeSenderPhone,
+  normalizeTrxId,
+} from "@/config/paymentGatewayConfig";
 
 export { PLANS };
 
@@ -81,13 +89,22 @@ function genInvoiceNumber(userId, prefix = "INV") {
   return `${prefix}-${ym}-${rand}${seq}`;
 }
 
-async function resolveDynamicPlatformPricing() {
+function resolveNumber(val) {
+  const clean = String(val || "").trim();
+  if (!clean || clean === "01700000000") return DEFAULT_GATEWAY_NUMBER;
+  return clean;
+}
+
+export async function resolveDynamicPlatformPricing() {
+  await dbConnect();
   const settings = await PlatformSettingModel.findOne({
     singletonKey: "global",
   }).lean();
 
   const vatPercent =
-    settings?.vatPercent !== undefined ? Number(settings.vatPercent) : VAT_PERCENT;
+    settings?.vatPercent !== undefined
+      ? Number(settings.vatPercent)
+      : VAT_PERCENT;
   const cycleDays =
     settings?.billingCycleDays !== undefined
       ? Number(settings.billingCycleDays)
@@ -117,23 +134,28 @@ async function resolveDynamicPlatformPricing() {
   const gateways = {
     bkash: {
       enabled: settings?.bkashEnabled !== false,
-      number: settings?.bkashMerchantNumber || "01700000000",
-      accountType: settings?.bkashAccountType || "Merchant",
+      number: resolveNumber(settings?.bkashMerchantNumber),
+      mode: "Send Money",
     },
     nagad: {
       enabled: settings?.nagadEnabled !== false,
-      number: settings?.nagadMerchantNumber || "01700000000",
+      number: resolveNumber(settings?.nagadMerchantNumber),
+      mode: "Send Money",
     },
     rocket: {
-      enabled: Boolean(settings?.rocketEnabled),
-      number: settings?.rocketMerchantNumber || "",
+      enabled: settings?.rocketEnabled !== false,
+      number: resolveNumber(settings?.rocketMerchantNumber),
+      mode: "Send Money",
     },
-    bank_transfer: {
-      enabled: settings?.bankTransferEnabled !== false,
-      bankName: settings?.bankName || "City Bank PLC",
-      accountName: settings?.bankAccountName || "AMARDokan Technologies",
-      accountNumber: settings?.bankAccountNumber || "",
-      branch: settings?.bankBranch || "Gulshan Branch, Dhaka",
+    upay: {
+      enabled: settings?.upayEnabled !== false,
+      number: resolveNumber(settings?.upayMerchantNumber),
+      mode: "Send Money",
+    },
+    gpay: {
+      enabled: settings?.gpayEnabled !== false,
+      number: resolveNumber(settings?.gpayMerchantNumber),
+      mode: "Send Money",
     },
   };
 
@@ -182,6 +204,7 @@ export async function createBillingForShop({
     totalDue,
     planName: validPlan,
     planPrice: basePrice,
+    receiverNumber: DEFAULT_GATEWAY_NUMBER,
     status: "unpaid",
   });
 
@@ -241,7 +264,6 @@ export async function generateMonthlyBillings() {
   return { created: created.length, errors };
 }
 
-// ── Get all billings for a shop ────────────────────────────────────────────────
 export async function getBillingsForShop({ userId, shopId }) {
   await dbConnect();
   if (!userId || !shopId) return [];
@@ -251,45 +273,68 @@ export async function getBillingsForShop({ userId, shopId }) {
   return JSON.parse(JSON.stringify(bills));
 }
 
-// ── Mark a bill paid & extend monthly subscription ────────────────────────────
+/**
+ * Submit Send-Money TrxID + Sender Number for an existing invoice -> `pending_verification`
+ * (Admin verifies in `/admin/payment-list` or `/admin/billing` to mark `paid`).
+ */
 export async function markBillingPaid({
   billingId,
-  paymentMethod,
-  transactionId,
+  paymentMethod = "bKash",
+  senderNumber = "",
+  transactionId = "",
 }) {
   await dbConnect();
-  const { cycleDays } = await resolveDynamicPlatformPricing();
+
+  const cleanTrx = normalizeTrxId(transactionId);
+  if (!cleanTrx || !TRX_ID_REGEX.test(cleanTrx)) {
+    throw new Error(
+      "Please enter a valid Transaction ID (5–32 alphanumeric characters)."
+    );
+  }
+
+  const cleanSender = senderNumber ? normalizeSenderPhone(senderNumber) : "";
+  if (senderNumber && !cleanSender) {
+    throw new Error(
+      "Please enter a valid 11-digit Bangladesh sender mobile number (01XXXXXXXXX)."
+    );
+  }
+
+  // Prevent duplicate TrxID reuse across active/paid invoices
+  const duplicateTrx = await BillingModel.findOne({
+    _id: { $ne: billingId },
+    transactionId: cleanTrx,
+    status: { $in: ["paid", "pending_verification"] },
+  }).lean();
+
+  if (duplicateTrx) {
+    throw new Error(
+      `Transaction ID "${cleanTrx}" has already been submitted on another invoice.`
+    );
+  }
+
+  const { gateways } = await resolveDynamicPlatformPricing();
+  const gwKey = String(paymentMethod || "bkash").toLowerCase();
+  const receiverNum = gateways[gwKey]?.number || DEFAULT_GATEWAY_NUMBER;
 
   const updated = await BillingModel.findByIdAndUpdate(
     billingId,
     {
-      status: "paid",
-      paidAt: new Date(),
+      status: "pending_verification",
+      submittedAt: new Date(),
       paymentMethod: paymentMethod || "bKash",
-      transactionId: transactionId || "",
+      senderNumber: cleanSender,
+      receiverNumber: receiverNum,
+      transactionId: cleanTrx,
+      verificationNote: "",
     },
     { new: true }
   ).lean();
 
-  if (!updated) throw new Error("Billing not found");
-
-  const nextRenewal = updated.billingPeriodEnd
-    ? new Date(updated.billingPeriodEnd)
-    : new Date(Date.now() + cycleDays * 24 * 60 * 60 * 1000);
-
-  await UserModel.findByIdAndUpdate(updated.userId, {
-    payment_status: "paid",
-    subscription_status: "active",
-    subscription_plan: PLAN_LIMITS[updated.planName]
-      ? updated.planName
-      : "Basic",
-    next_payment_date: nextRenewal,
-  });
+  if (!updated) throw new Error("Billing invoice not found.");
 
   return JSON.parse(JSON.stringify(updated));
 }
 
-// ── Mark overdue bills ─────────────────────────────────────────────────────────
 export async function markOverdueBillings() {
   await dbConnect();
   const result = await BillingModel.updateMany(
@@ -299,11 +344,17 @@ export async function markOverdueBillings() {
   return result.modifiedCount;
 }
 
-// ── Summary stats ──────────────────────────────────────────────────────────────
 export async function getBillingSummary({ userId, shopId }) {
   await dbConnect();
   if (!userId || !shopId) {
-    return { total: 0, paid: 0, unpaid: 0, overdue: 0, totalPaid: 0 };
+    return {
+      total: 0,
+      paid: 0,
+      pendingVerification: 0,
+      unpaid: 0,
+      overdue: 0,
+      totalPaid: 0,
+    };
   }
 
   const uid = new mongoose.Types.ObjectId(userId);
@@ -317,7 +368,16 @@ export async function getBillingSummary({ userId, shopId }) {
           _id: null,
           total: { $sum: 1 },
           paid: { $sum: { $cond: [{ $eq: ["$status", "paid"] }, 1, 0] } },
-          unpaid: { $sum: { $cond: [{ $eq: ["$status", "unpaid"] }, 1, 0] } },
+          pendingVerification: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "pending_verification"] }, 1, 0],
+            },
+          },
+          unpaid: {
+            $sum: {
+              $cond: [{ $in: ["$status", ["unpaid", "rejected"]] }, 1, 0],
+            },
+          },
           overdue: { $sum: { $cond: [{ $eq: ["$status", "overdue"] }, 1, 0] } },
         },
       },
@@ -332,13 +392,13 @@ export async function getBillingSummary({ userId, shopId }) {
   return {
     total: c.total || 0,
     paid: c.paid || 0,
+    pendingVerification: c.pendingVerification || 0,
     unpaid: c.unpaid || 0,
     overdue: c.overdue || 0,
     totalPaid: paidAgg[0]?.total || 0,
   };
 }
 
-/* ─── Monthly Subscription Dashboard & Upgrade/Renewal Queries (`/subscription`) ─── */
 export async function getMerchantSubscriptionOverviewQuery({ userId, shopId }) {
   await dbConnect();
   const pricing = await resolveDynamicPlatformPricing();
@@ -393,7 +453,7 @@ export async function getMerchantSubscriptionOverviewQuery({ userId, shopId }) {
       shopId
         ? BillingModel.find({ userId, shopId })
             .sort({ createdAt: -1 })
-            .limit(8)
+            .limit(10)
             .lean()
         : [],
     ]);
@@ -418,7 +478,6 @@ export async function getMerchantSubscriptionOverviewQuery({ userId, shopId }) {
     ? userDoc.subscription_plan
     : "Basic";
 
-  // Compute next renewal date (if null, fallback to createdAt + trialDays)
   const fallbackTrialEnd = new Date(userDoc.createdAt || now);
   fallbackTrialEnd.setDate(fallbackTrialEnd.getDate() + pricing.trialDays);
   const nextRenewalDate = userDoc.next_payment_date
@@ -429,9 +488,12 @@ export async function getMerchantSubscriptionOverviewQuery({ userId, shopId }) {
   const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
   const isTrial = !userDoc.next_payment_date && recentInvoices.length === 0;
 
+  const pendingInvoice =
+    recentInvoices.find((inv) => inv.status === "pending_verification") || null;
+
   const openInvoice =
-    recentInvoices.find(
-      (inv) => inv.status === "unpaid" || inv.status === "overdue"
+    recentInvoices.find((inv) =>
+      ["unpaid", "overdue", "rejected"].includes(inv.status)
     ) || null;
 
   return JSON.parse(
@@ -447,7 +509,9 @@ export async function getMerchantSubscriptionOverviewQuery({ userId, shopId }) {
       subscription: {
         planName: activePlanKey,
         billingCycle: userDoc.subscription_cycle || "monthly",
-        status: isTrial
+        status: pendingInvoice
+          ? "pending_verification"
+          : isTrial
           ? "trial"
           : openInvoice
           ? "past_due"
@@ -458,6 +522,7 @@ export async function getMerchantSubscriptionOverviewQuery({ userId, shopId }) {
         nextRenewalDate,
         daysRemaining,
         isExpired: diffMs < 0,
+        pendingInvoice,
         openInvoice,
       },
       usage: {
@@ -472,7 +537,10 @@ export async function getMerchantSubscriptionOverviewQuery({ userId, shopId }) {
 }
 
 /**
- * Subscribe to or renew a monthly plan (`months`: 1, 3, 6, or 12).
+ * Subscribe to a monthly plan:
+ * - When `payNow === true`, validates `senderNumber` + unique `transactionId` sent to `01726278251`
+ *   and creates a `pending_verification` invoice awaiting Admin TrxID verification.
+ * - When `payNow === false`, generates an `unpaid` monthly invoice.
  */
 export async function subscribeMerchantMonthlyPlanQuery({
   userId,
@@ -480,6 +548,7 @@ export async function subscribeMerchantMonthlyPlanQuery({
   planName = "Standard",
   months = 1,
   paymentMethod = "bKash",
+  senderNumber = "",
   transactionId = "",
   payNow = true,
 }) {
@@ -493,21 +562,50 @@ export async function subscribeMerchantMonthlyPlanQuery({
     ? Number(months)
     : 1;
 
-  if (payNow && !String(transactionId || "").trim()) {
-    throw new Error(
-      "Please enter your payment Transaction ID (TrxID) to activate immediately, or choose 'Generate Invoice (Pay Later)'."
-    );
+  let cleanTrx = "";
+  let cleanSender = "";
+
+  if (payNow) {
+    cleanSender = normalizeSenderPhone(senderNumber);
+    if (!cleanSender) {
+      throw new Error(
+        "Please enter the 11-digit mobile number you sent money from (e.g. 017XXXXXXXX)."
+      );
+    }
+
+    cleanTrx = normalizeTrxId(transactionId);
+    if (!cleanTrx || !TRX_ID_REGEX.test(cleanTrx)) {
+      throw new Error(
+        "Please enter a valid Transaction ID (TrxID) from your Send Money SMS."
+      );
+    }
+
+    const dup = await BillingModel.findOne({
+      transactionId: cleanTrx,
+      status: { $in: ["paid", "pending_verification"] },
+    }).lean();
+    if (dup) {
+      throw new Error(
+        `Transaction ID "${cleanTrx}" has already been submitted.`
+      );
+    }
   }
 
   const userDoc = await UserModel.findById(userId);
   if (!userDoc) throw new Error("Merchant account not found.");
 
-  const { prices, vatPercent, cycleDays, graceDays } =
+  const { prices, vatPercent, cycleDays, graceDays, gateways } =
     await resolveDynamicPlatformPricing();
 
   const unitMonthly = prices[validPlan] ?? 299;
   const discountRate =
-    cleanMonths === 12 ? 0.15 : cleanMonths === 6 ? 0.1 : cleanMonths === 3 ? 0.05 : 0;
+    cleanMonths === 12
+      ? 0.15
+      : cleanMonths === 6
+      ? 0.1
+      : cleanMonths === 3
+      ? 0.05
+      : 0;
 
   const grossAmount = unitMonthly * cleanMonths;
   const discountAmount = Math.round(grossAmount * discountRate);
@@ -516,7 +614,6 @@ export async function subscribeMerchantMonthlyPlanQuery({
   const totalDue = netSubtotal + tax;
 
   const now = new Date();
-  // If renewing the same active plan before expiration, extend seamlessly from current next_payment_date
   const baseStart =
     userDoc.subscription_plan === validPlan &&
     userDoc.next_payment_date &&
@@ -529,6 +626,9 @@ export async function subscribeMerchantMonthlyPlanQuery({
 
   const dueDate = new Date(now);
   dueDate.setDate(dueDate.getDate() + graceDays);
+
+  const gwKey = String(paymentMethod || "bkash").toLowerCase();
+  const receiverNum = gateways[gwKey]?.number || DEFAULT_GATEWAY_NUMBER;
 
   const cycleLabel =
     cleanMonths === 1 ? "Monthly (30 Days)" : `${cleanMonths}-Month`;
@@ -547,31 +647,26 @@ export async function subscribeMerchantMonthlyPlanQuery({
     totalDue,
     planName: validPlan,
     planPrice: unitMonthly,
-    status: payNow ? "paid" : "unpaid",
-    paidAt: payNow ? now : null,
+    status: payNow ? "pending_verification" : "unpaid",
+    submittedAt: payNow ? now : null,
     paymentMethod: payNow ? String(paymentMethod || "bKash").trim() : "",
-    transactionId: String(transactionId || "").trim(),
+    senderNumber: cleanSender,
+    receiverNumber: receiverNum,
+    transactionId: cleanTrx,
     notes: payNow
-      ? `Merchant self-service ${cycleLabel} subscription payment`
-      : `Merchant generated ${cycleLabel} subscription invoice`,
+      ? `Send Money via ${paymentMethod} from ${cleanSender} to ${receiverNum} (TrxID: ${cleanTrx})`
+      : `Generated ${cycleLabel} invoice`,
   });
 
-  userDoc.subscription_plan = validPlan;
   userDoc.subscription_cycle = cleanMonths === 12 ? "yearly" : "monthly";
-  userDoc.subscription_status = payNow ? "active" : "past_due";
-  userDoc.payment_status = payNow ? "paid" : "unpaid";
-  userDoc.next_payment_date = payNow ? periodEnd : dueDate;
-  if (!userDoc.subscription_started_at) {
-    userDoc.subscription_started_at = now;
-  }
   await userDoc.save();
 
   return JSON.parse(
     JSON.stringify({
       invoice: createdInvoice,
-      nextRenewalDate: userDoc.next_payment_date,
+      nextRenewalDate: periodEnd,
       planName: validPlan,
-      status: userDoc.subscription_status,
+      status: createdInvoice.status,
     })
   );
 }
@@ -604,6 +699,41 @@ export async function updateMerchantSubscriptionPreferencesQuery({
     JSON.stringify({
       autoRenew: userDoc.auto_renew,
       status: userDoc.subscription_status,
+    })
+  );
+}
+
+/**
+ * Load an invoice by ID or invoiceNumber + live 5-gateway (`01726278251`) config for `/pay/[invoiceId]`.
+ */
+export async function getInvoiceForGatewayCheckoutQuery(invoiceIdOrNo) {
+  await dbConnect();
+  const { gateways } = await resolveDynamicPlatformPricing();
+
+  const gatewayList = SEND_MONEY_GATEWAYS.map((g) => ({
+    ...g,
+    number: gateways[g.key]?.number || DEFAULT_GATEWAY_NUMBER,
+    enabled: gateways[g.key]?.enabled !== false,
+  })).filter((g) => g.enabled);
+
+  if (!invoiceIdOrNo) {
+    return JSON.parse(JSON.stringify({ invoice: null, gateways: gatewayList }));
+  }
+
+  const raw = String(invoiceIdOrNo).trim();
+  const isObjId = mongoose.Types.ObjectId.isValid(raw);
+
+  const invoice = await BillingModel.findOne(
+    isObjId ? { $or: [{ _id: raw }, { invoiceNumber: raw }] } : { invoiceNumber: raw }
+  )
+    .populate({ path: "shopId", model: Shop, select: "shopName shopSlug shopId" })
+    .populate({ path: "userId", model: UserModel, select: "fullName email phone" })
+    .lean();
+
+  return JSON.parse(
+    JSON.stringify({
+      invoice: invoice || null,
+      gateways: gatewayList,
     })
   );
 }

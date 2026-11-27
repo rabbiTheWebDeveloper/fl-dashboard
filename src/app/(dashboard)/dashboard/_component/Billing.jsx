@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
@@ -8,19 +9,22 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  ExternalLink,
   FileText,
   Info,
   Plus,
   Printer,
   RefreshCw,
   Sparkles,
+  Wallet,
 } from "lucide-react";
 import {
   createManualBillingAction,
-  markBillingPaidAction,
   generateMonthlyBillingsAction,
 } from "@/app/actions/billing";
 import { PLANS } from "@/config/billingConfig";
+import { DEFAULT_GATEWAY_NUMBER } from "@/config/paymentGatewayConfig";
+import { SendMoneyGatewayDialog } from "@/components/payment/SendMoneyGateway";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,15 +42,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -68,8 +63,10 @@ const fmtDate = (d) =>
 
 const STATUS_STYLE = {
   paid: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
+  pending_verification: "bg-cyan-500/15 text-cyan-800 border-cyan-300",
   unpaid: "bg-amber-500/10 text-amber-700 border-amber-200",
   overdue: "bg-rose-500/10 text-rose-700 border-rose-200",
+  rejected: "bg-rose-500/15 text-rose-700 border-rose-300",
   cancelled: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
@@ -103,7 +100,9 @@ function InvoiceDialog({ bill, onClose }) {
         <div style="text-align:right">
           <h1>INVOICE</h1>
           <p style="margin:0;font-size:13px;color:#64748b">${bill.invoiceNumber}</p>
-          <span class="badge">${String(bill.status || "").toUpperCase()}</span>
+          <span class="badge">${String(bill.status || "")
+            .replace(/_/g, " ")
+            .toUpperCase()}</span>
         </div>
       </div>
       <div class="info-grid">
@@ -112,8 +111,8 @@ function InvoiceDialog({ bill, onClose }) {
         <div class="info-block"><label>Billing Period</label><p>${fmtDate(bill.billingPeriodStart)} – ${fmtDate(bill.billingPeriodEnd)}</p></div>
         <div class="info-block"><label>Plan</label><p>${bill.planName}</p></div>
         ${
-          bill.status === "paid"
-            ? `<div class="info-block"><label>Paid On</label><p>${fmtDate(bill.paidAt)}</p></div><div class="info-block"><label>Payment Method</label><p>${bill.paymentMethod || "—"}</p></div>`
+          bill.paymentMethod
+            ? `<div class="info-block"><label>Gateway</label><p>${bill.paymentMethod} (${bill.receiverNumber || DEFAULT_GATEWAY_NUMBER})</p></div><div class="info-block"><label>Sender Phone</label><p>${bill.senderNumber || "—"}</p></div>`
             : ""
         }
       </div>
@@ -126,7 +125,7 @@ function InvoiceDialog({ bill, onClose }) {
           <tr class="total-row"><td colspan="2">Total Due</td><td style="text-align:right">৳${bill.totalDue}</td></tr>
         </tbody>
       </table>
-      ${bill.transactionId ? `<p style="font-size:13px;color:#64748b">Transaction ID: <strong>${bill.transactionId}</strong></p>` : ""}
+      ${bill.transactionId ? `<p style="font-size:13px;color:#64748b">Transaction ID (TrxID): <strong>${bill.transactionId}</strong></p>` : ""}
       <div class="footer"><p>Thank you for choosing AMARDokan!</p></div>
       </body></html>`);
     w.document.close();
@@ -144,7 +143,7 @@ function InvoiceDialog({ bill, onClose }) {
             Billing summary for {bill.planName} plan
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-4 py-2 text-sm">
+        <div className="grid grid-cols-2 gap-3 py-2 text-sm">
           {[
             ["Invoice #", bill.invoiceNumber],
             ["Plan", bill.planName],
@@ -155,16 +154,23 @@ function InvoiceDialog({ bill, onClose }) {
               )}`,
             ],
             ["Due Date", fmtDate(bill.dueDate)],
-            ["Subtotal", tk(bill.amount)],
-            ["VAT (5%)", tk(bill.tax)],
+            ["Gateway", bill.paymentMethod || "—"],
+            ["Sender Phone", bill.senderNumber || "—"],
+            ["TrxID", bill.transactionId || "—"],
+            [
+              "Status",
+              String(bill.status || "")
+                .replace(/_/g, " ")
+                .toUpperCase(),
+            ],
+            ["Subtotal + VAT", `${tk(bill.amount)} + ${tk(bill.tax)}`],
             ["Total Due", tk(bill.totalDue)],
-            ["Status", String(bill.status || "").toUpperCase()],
           ].map(([k, v]) => (
             <div key={k} className="rounded-xl bg-slate-50 p-3">
               <p className="text-[11px] text-slate-400 uppercase font-semibold">
                 {k}
               </p>
-              <p className="font-bold text-slate-900 mt-0.5">{v}</p>
+              <p className="font-bold text-slate-900 mt-0.5 truncate">{v}</p>
             </div>
           ))}
         </div>
@@ -175,90 +181,6 @@ function InvoiceDialog({ bill, onClose }) {
           <Button variant="gradient" onClick={handlePrint}>
             <Printer className="w-4 h-4" />
             Print Invoice
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function PayDialog({ bill, onClose, onDone }) {
-  const [method, setMethod] = useState("bkash");
-  const [txnId, setTxnId] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  if (!bill) return null;
-
-  const handlePay = async () => {
-    if (!txnId.trim()) {
-      toast.error("Please enter a transaction ID");
-      return;
-    }
-    setLoading(true);
-    try {
-      await markBillingPaidAction({
-        billingId: bill._id,
-        paymentMethod: method,
-        transactionId: txnId.trim(),
-      });
-      toast.success("Invoice marked as paid!");
-      onDone();
-    } catch (e) {
-      toast.error(e?.message || "Failed to update payment");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={Boolean(bill)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="rounded-2xl max-w-md">
-        <DialogHeader>
-          <DialogTitle>Record Invoice Payment</DialogTitle>
-          <DialogDescription>
-            Invoice <strong>{bill.invoiceNumber}</strong> — Total Due:{" "}
-            <strong>{tk(bill.totalDue)}</strong>
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label>Payment Method</Label>
-            <Select value={method} onValueChange={setMethod}>
-              <SelectTrigger className="bg-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["bkash", "nagad", "rocket", "bank_transfer", "cash", "card"].map(
-                  (m) => (
-                    <SelectItem key={m} value={m}>
-                      {m
-                        .replace("_", " ")
-                        .replace(/\b\w/g, (c) => c.toUpperCase())}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>
-              Transaction ID <span className="text-rose-500">*</span>
-            </Label>
-            <Input
-              value={txnId}
-              onChange={(e) => setTxnId(e.target.value)}
-              placeholder="e.g. TRX123456789"
-              className="bg-white"
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button variant="gradient" onClick={handlePay} disabled={loading}>
-            {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
-            Confirm Payment
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -316,11 +238,6 @@ export default function BillingPage({
     }
   };
 
-  const handlePayDone = () => {
-    setPayBill(null);
-    router.refresh();
-  };
-
   const stats = [
     {
       label: "Total Invoices",
@@ -330,14 +247,21 @@ export default function BillingPage({
       iconBg: "from-violet-600 to-indigo-600",
     },
     {
-      label: "Paid",
+      label: "Verified Paid",
       value: summary.paid || 0,
       icon: CheckCircle2,
       bar: "from-emerald-500 to-teal-500",
       iconBg: "from-emerald-500 to-teal-600",
     },
     {
-      label: "Unpaid",
+      label: "Pending Verify",
+      value: summary.pendingVerification || 0,
+      icon: Wallet,
+      bar: "from-cyan-500 to-blue-500",
+      iconBg: "from-cyan-500 to-blue-600",
+    },
+    {
+      label: "Unpaid / Rejected",
       value: summary.unpaid || 0,
       icon: Clock,
       bar: "from-amber-500 to-orange-500",
@@ -354,18 +278,27 @@ export default function BillingPage({
       label: "Total Paid",
       value: tk(summary.totalPaid || 0),
       icon: CreditCard,
-      bar: "from-cyan-500 to-blue-500",
-      iconBg: "from-cyan-500 to-blue-600",
+      bar: "from-fuchsia-500 to-purple-500",
+      iconBg: "from-fuchsia-500 to-purple-600",
     },
   ];
 
   return (
     <div className="space-y-6">
       <InvoiceDialog bill={viewBill} onClose={() => setViewBill(null)} />
-      <PayDialog
-        bill={payBill}
-        onClose={() => setPayBill(null)}
-        onDone={handlePayDone}
+
+      <SendMoneyGatewayDialog
+        open={Boolean(payBill)}
+        onOpenChange={(open) => {
+          if (!open) setPayBill(null);
+        }}
+        dialogTitle={`Pay Invoice ${payBill?.invoiceNumber || ""}`}
+        dialogDescription={`Send Money to ${DEFAULT_GATEWAY_NUMBER} via bKash, Nagad, Rocket, Upay, or GPay and submit your TrxID.`}
+        mode="invoice"
+        invoice={payBill}
+        onSuccess={() => {
+          router.refresh();
+        }}
       />
 
       {/* Header */}
@@ -375,7 +308,8 @@ export default function BillingPage({
             Billing & <span className="rgb-gradient-text">Invoices</span>
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Monthly platform billing · Auto-generated every 30 days
+            Send Money Gateway ({DEFAULT_GATEWAY_NUMBER}) · bKash, Nagad,
+            Rocket, Upay & GPay
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -405,7 +339,7 @@ export default function BillingPage({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         {stats.map((s) => {
           const Icon = s.icon;
           return (
@@ -413,18 +347,20 @@ export default function BillingPage({
               key={s.label}
               className="relative overflow-hidden py-4 border-slate-200/80 bg-white/95"
             >
-              <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${s.bar}`} />
-              <CardContent className="px-5 flex items-start justify-between gap-2">
+              <div
+                className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${s.bar}`}
+              />
+              <CardContent className="px-4 flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     {s.label}
                   </p>
-                  <p className="text-2xl font-extrabold text-slate-900 mt-1">
+                  <p className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">
                     {s.value}
                   </p>
                 </div>
                 <div
-                  className={`w-9 h-9 rounded-xl bg-gradient-to-br ${s.iconBg} text-white flex items-center justify-center shadow-md shrink-0`}
+                  className={`w-8 h-8 rounded-xl bg-gradient-to-br ${s.iconBg} text-white flex items-center justify-center shadow-md shrink-0`}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
@@ -434,16 +370,25 @@ export default function BillingPage({
         })}
       </div>
 
-      {/* Info Banner */}
-      <div className="rounded-2xl border border-violet-200/80 bg-gradient-to-r from-violet-50/90 via-indigo-50/80 to-cyan-50/90 p-4 flex items-start gap-3">
-        <Info className="w-5 h-5 text-violet-600 mt-0.5 shrink-0" />
-        <div>
-          <p className="text-sm font-bold text-slate-900">Auto-Billing Active</p>
-          <p className="text-xs text-slate-600 mt-0.5">
-            Invoices are generated automatically every 30 days with a 7-day grace
-            period. Active plan: <strong>Basic — ৳299/month</strong> + 5% VAT.
-          </p>
+      {/* Send Money Gateway Banner */}
+      <div className="rounded-2xl border border-violet-200/80 bg-gradient-to-r from-violet-50/90 via-indigo-50/80 to-cyan-50/90 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-violet-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-extrabold text-slate-900">
+              Send Money Payment Gateway: {DEFAULT_GATEWAY_NUMBER}
+            </p>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Pay any open invoice via{" "}
+              <strong>bKash, Nagad, Rocket, Upay, or GPay</strong> Send Money to{" "}
+              <strong className="font-mono">{DEFAULT_GATEWAY_NUMBER}</strong>{" "}
+              and submit your Sender Number + TrxID for verification.
+            </p>
+          </div>
         </div>
+        <Button asChild size="sm" variant="outline" className="shrink-0 bg-white">
+          <Link href="/subscription">Manage Plan</Link>
+        </Button>
       </div>
 
       {/* Invoices Table */}
@@ -458,15 +403,22 @@ export default function BillingPage({
             </CardDescription>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hidden sm:flex-wrap -mx-1 px-1">
-            {["all", "unpaid", "paid", "overdue"].map((f) => (
+            {[
+              ["all", `All (${billings.length})`],
+              ["pending_verification", "Pending Verify"],
+              ["unpaid", "Unpaid"],
+              ["paid", "Paid"],
+              ["overdue", "Overdue"],
+              ["rejected", "Rejected"],
+            ].map(([f, label]) => (
               <Button
                 key={f}
                 size="sm"
                 variant={filter === f ? "gradient" : "outline"}
                 onClick={() => setFilter(f)}
-                className="h-8 text-xs capitalize rounded-full sm:rounded-lg shrink-0"
+                className="h-8 text-xs rounded-full sm:rounded-lg shrink-0"
               >
-                {f === "all" ? `All (${billings.length})` : f}
+                {label}
               </Button>
             ))}
           </div>
@@ -483,62 +435,87 @@ export default function BillingPage({
                 </p>
               </div>
             ) : (
-              filtered.map((bill) => (
-                <div
-                  key={bill._id}
-                  className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-mono text-xs font-extrabold text-violet-700">
-                        {bill.invoiceNumber}
-                      </p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Issued {fmtDate(bill.createdAt)} · Due {fmtDate(bill.dueDate)}
-                      </p>
+              filtered.map((bill) => {
+                const canPay = ["unpaid", "overdue", "rejected"].includes(
+                  bill.status
+                );
+                return (
+                  <div
+                    key={bill._id}
+                    className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-mono text-xs font-extrabold text-violet-700">
+                          {bill.invoiceNumber}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Issued {fmtDate(bill.createdAt)} · Due{" "}
+                          {fmtDate(bill.dueDate)}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={`capitalize ${
+                          STATUS_STYLE[bill.status] || STATUS_STYLE.unpaid
+                        }`}
+                      >
+                        {String(bill.status || "").replace(/_/g, " ")}
+                      </Badge>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={`capitalize ${
-                        STATUS_STYLE[bill.status] || STATUS_STYLE.unpaid
-                      }`}
-                    >
-                      {bill.status}
-                    </Badge>
-                  </div>
 
-                  <div className="flex items-center justify-between rounded-xl bg-slate-50/80 px-3 py-2.5">
-                    <span className="text-xs text-slate-500">
-                      {fmtDate(bill.billingPeriodStart)} – {fmtDate(bill.billingPeriodEnd)}
-                    </span>
-                    <span className="text-base font-extrabold text-slate-900">
-                      {tk(bill.totalDue)}
-                    </span>
-                  </div>
+                    {bill.transactionId && (
+                      <div className="text-xs rounded-xl bg-slate-50 px-3 py-2 font-mono text-slate-700">
+                        {bill.paymentMethod}: {bill.transactionId}
+                        {bill.senderNumber ? ` (${bill.senderNumber})` : ""}
+                      </div>
+                    )}
 
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs flex-1"
-                      onClick={() => setViewBill(bill)}
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                      Invoice
-                    </Button>
-                    {(bill.status === "unpaid" || bill.status === "overdue") && (
+                    <div className="flex items-center justify-between rounded-xl bg-slate-50/80 px-3 py-2.5">
+                      <span className="text-xs text-slate-500">
+                        {fmtDate(bill.billingPeriodStart)} –{" "}
+                        {fmtDate(bill.billingPeriodEnd)}
+                      </span>
+                      <span className="text-base font-extrabold text-slate-900">
+                        {tk(bill.totalDue)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <Button
                         size="sm"
-                        variant="gradient"
+                        variant="outline"
                         className="h-8 text-xs flex-1"
-                        onClick={() => setPayBill(bill)}
+                        onClick={() => setViewBill(bill)}
                       >
-                        Mark Paid
+                        <Printer className="w-3.5 h-3.5" />
+                        Invoice
                       </Button>
-                    )}
+                      {canPay ? (
+                        <Button
+                          size="sm"
+                          variant="gradient"
+                          className="h-8 text-xs flex-1"
+                          onClick={() => setPayBill(bill)}
+                        >
+                          {bill.status === "rejected"
+                            ? "Resubmit TrxID"
+                            : "Pay Now"}
+                        </Button>
+                      ) : (
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs flex-1"
+                        >
+                          <Link href={`/pay/${bill._id}`}>Status</Link>
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -548,8 +525,8 @@ export default function BillingPage({
               <TableHeader className="bg-slate-50/80">
                 <TableRow>
                   <TableHead className="pl-4">Invoice #</TableHead>
-                  <TableHead>Issue Date</TableHead>
                   <TableHead>Period</TableHead>
+                  <TableHead>Gateway & TrxID</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Due Date</TableHead>
@@ -567,60 +544,102 @@ export default function BillingPage({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((bill) => (
-                    <TableRow key={bill._id} className="hover:bg-slate-50/70">
-                      <TableCell className="pl-4 font-mono text-xs font-bold text-violet-700">
-                        {bill.invoiceNumber}
-                      </TableCell>
-                      <TableCell className="text-xs text-slate-600">
-                        {fmtDate(bill.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-xs text-slate-500">
-                        {fmtDate(bill.billingPeriodStart)} –{" "}
-                        {fmtDate(bill.billingPeriodEnd)}
-                      </TableCell>
-                      <TableCell className="font-bold text-slate-900">
-                        {tk(bill.totalDue)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={`capitalize ${
-                            STATUS_STYLE[bill.status] || STATUS_STYLE.unpaid
-                          }`}
-                        >
-                          {bill.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs font-medium text-slate-600">
-                        {fmtDate(bill.dueDate)}
-                      </TableCell>
-                      <TableCell className="text-right pr-4">
-                        <div className="inline-flex items-center gap-2">
-                          <Button
-                            size="sm"
+                  filtered.map((bill) => {
+                    const canPay = ["unpaid", "overdue", "rejected"].includes(
+                      bill.status
+                    );
+                    return (
+                      <TableRow key={bill._id} className="hover:bg-slate-50/70">
+                        <TableCell className="pl-4">
+                          <p className="font-mono text-xs font-bold text-violet-700">
+                            {bill.invoiceNumber}
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            {bill.planName || "Basic"}
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-xs text-slate-500">
+                          {fmtDate(bill.billingPeriodStart)} –{" "}
+                          {fmtDate(bill.billingPeriodEnd)}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {bill.paymentMethod ? (
+                            <div>
+                              <span className="font-extrabold text-slate-800">
+                                {bill.paymentMethod}
+                              </span>
+                              {bill.senderNumber && (
+                                <span className="text-[11px] font-mono text-slate-500 ml-1">
+                                  ({bill.senderNumber})
+                                </span>
+                              )}
+                              {bill.transactionId && (
+                                <p className="text-[11px] font-mono font-bold text-violet-700">
+                                  TrxID: {bill.transactionId}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-bold text-slate-900">
+                          {tk(bill.totalDue)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
                             variant="outline"
-                            className="h-8 text-xs"
-                            onClick={() => setViewBill(bill)}
+                            className={`capitalize ${
+                              STATUS_STYLE[bill.status] || STATUS_STYLE.unpaid
+                            }`}
                           >
-                            <Printer className="w-3.5 h-3.5" />
-                            Print
-                          </Button>
-                          {(bill.status === "unpaid" ||
-                            bill.status === "overdue") && (
+                            {String(bill.status || "").replace(/_/g, " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs font-medium text-slate-600">
+                          {fmtDate(bill.dueDate)}
+                        </TableCell>
+                        <TableCell className="text-right pr-4">
+                          <div className="inline-flex items-center gap-1.5">
                             <Button
                               size="sm"
-                              variant="gradient"
+                              variant="outline"
                               className="h-8 text-xs"
-                              onClick={() => setPayBill(bill)}
+                              onClick={() => setViewBill(bill)}
                             >
-                              Mark Paid
+                              <Printer className="w-3.5 h-3.5" />
+                              Print
                             </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+
+                            <Button
+                              asChild
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs"
+                            >
+                              <Link href={`/pay/${bill._id}`}>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                Gateway
+                              </Link>
+                            </Button>
+
+                            {canPay && (
+                              <Button
+                                size="sm"
+                                variant="gradient"
+                                className="h-8 text-xs"
+                                onClick={() => setPayBill(bill)}
+                              >
+                                {bill.status === "rejected"
+                                  ? "Resubmit"
+                                  : "Pay Now"}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

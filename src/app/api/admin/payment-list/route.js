@@ -127,7 +127,10 @@ export async function PATCH(request) {
       );
     }
 
-    const updated = await recordAdminPaymentQuery(body);
+    const updated = await recordAdminPaymentQuery({
+      ...body,
+      verifiedBy: auth.admin.id,
+    });
     revalidatePath("/admin/payment-list");
     revalidatePath("/admin/billing");
     revalidatePath("/admin/merchants");

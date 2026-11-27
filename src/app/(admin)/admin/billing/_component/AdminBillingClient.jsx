@@ -7,8 +7,10 @@ import {
   Loader2,
   Plus,
   Search,
+  XCircle,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { DEFAULT_GATEWAY_NUMBER } from "@/config/paymentGatewayConfig";
 import { getAuthHeaders } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +37,9 @@ const bdt = (n) => `৳${Math.round(Number(n || 0)).toLocaleString("en-IN")}`;
 
 const BILL_STATUS_STYLE = {
   paid: "bg-emerald-500/15 text-emerald-700 border-emerald-200",
+  pending_verification: "bg-cyan-500/15 text-cyan-800 border-cyan-300",
   unpaid: "bg-amber-500/15 text-amber-700 border-amber-200",
+  rejected: "bg-rose-500/15 text-rose-700 border-rose-300",
   overdue: "bg-rose-500/15 text-rose-700 border-rose-200",
   cancelled: "bg-slate-100 text-slate-500 border-slate-200",
 };
@@ -51,9 +55,9 @@ export default function AdminBillingClient({
 
   const [form, setForm] = useState({
     shopId: shops[0]?._id || "",
-    planName: "Pro Merchant",
+    planName: "Standard",
     invoiceTitle: "Monthly Platform Subscription",
-    amount: 499,
+    amount: 599,
     dueDays: 7,
     notes: "",
   });
@@ -64,6 +68,12 @@ export default function AdminBillingClient({
     return invoices.filter(
       (inv) =>
         String(inv.invoiceNumber || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(inv.transactionId || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(inv.senderNumber || "")
           .toLowerCase()
           .includes(q) ||
         String(inv.shopId?.shopName || "")
@@ -77,14 +87,18 @@ export default function AdminBillingClient({
 
   const totals = useMemo(() => {
     let paid = 0;
+    let pending = 0;
     let unpaid = 0;
     for (const inv of invoices) {
       if (inv.status === "paid") paid += Number(inv.totalDue || 0);
-      if (inv.status === "unpaid" || inv.status === "overdue") {
+      if (inv.status === "pending_verification") {
+        pending += Number(inv.totalDue || 0);
+      }
+      if (["unpaid", "overdue", "rejected"].includes(inv.status)) {
         unpaid += Number(inv.totalDue || 0);
       }
     }
-    return { paid, unpaid };
+    return { paid, pending, unpaid };
   }, [invoices]);
 
   const handleCreateInvoice = async (e) => {
@@ -134,19 +148,53 @@ export default function AdminBillingClient({
     }
   };
 
+  const handleVerifyAction = async (inv, action) => {
+    try {
+      const res = await fetch("/api/payment-gateway", {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          billingId: inv._id,
+          action,
+          verificationNote:
+            action === "reject"
+              ? "TrxID could not be verified on 01726278251. Please resubmit valid TrxID."
+              : "",
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        toast.error(json?.message || "Verification failed.");
+        return;
+      }
+      const nextStatus = action === "verify" ? "paid" : "rejected";
+      setInvoices((prev) =>
+        prev.map((i) => (i._id === inv._id ? { ...i, status: nextStatus } : i))
+      );
+      toast.success(json.message);
+    } catch {
+      toast.error("Failed to process TrxID verification.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-slate-200/80 bg-white shadow-2xs">
         <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-600">
-              <CreditCard className="w-4 h-4" /> SaaS Subscriptions & Invoices
+              <CreditCard className="w-4 h-4" /> SaaS Subscriptions & Gateway
+              Verification ({DEFAULT_GATEWAY_NUMBER})
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">
               Platform Billing ({invoices.length})
             </h1>
             <p className="text-xs sm:text-sm text-slate-500">
-              Collected: <strong className="text-emerald-600">{bdt(totals.paid)}</strong> · Outstanding:{" "}
+              Collected:{" "}
+              <strong className="text-emerald-600">{bdt(totals.paid)}</strong> ·
+              Pending Verify:{" "}
+              <strong className="text-cyan-600">{bdt(totals.pending)}</strong> ·
+              Outstanding:{" "}
               <strong className="text-amber-600">{bdt(totals.unpaid)}</strong>
             </p>
           </div>
@@ -157,7 +205,7 @@ export default function AdminBillingClient({
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search invoice or shop..."
+                placeholder="Search invoice, TrxID, phone..."
                 className="pl-9 rounded-xl"
               />
             </div>
@@ -179,9 +227,13 @@ export default function AdminBillingClient({
               <TableRow className="bg-slate-50/80">
                 <TableHead className="font-bold">Invoice #</TableHead>
                 <TableHead className="font-bold">Merchant & Shop</TableHead>
-                <TableHead className="font-bold">Plan</TableHead>
+                <TableHead className="font-bold">
+                  Gateway · Sender · TrxID
+                </TableHead>
                 <TableHead className="font-bold text-right">Amount</TableHead>
-                <TableHead className="font-bold text-center">Due Date</TableHead>
+                <TableHead className="font-bold text-center">
+                  Due Date
+                </TableHead>
                 <TableHead className="font-bold text-center">Status</TableHead>
                 <TableHead className="font-bold text-right">Action</TableHead>
               </TableRow>
@@ -195,7 +247,7 @@ export default function AdminBillingClient({
                         {inv.invoiceNumber}
                       </p>
                       <p className="text-[11px] text-slate-400">
-                        {inv.invoiceTitle}
+                        {inv.planName || "Basic"} · {inv.invoiceTitle}
                       </p>
                     </TableCell>
                     <TableCell>
@@ -206,8 +258,29 @@ export default function AdminBillingClient({
                         {inv.userId?.email || ""}
                       </p>
                     </TableCell>
-                    <TableCell className="font-semibold text-xs">
-                      {inv.planName || "Basic"}
+                    <TableCell className="text-xs">
+                      {inv.paymentMethod ? (
+                        <div>
+                          <span className="font-extrabold text-slate-900">
+                            {inv.paymentMethod}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 ml-1">
+                            → {inv.receiverNumber || DEFAULT_GATEWAY_NUMBER}
+                          </span>
+                          {inv.senderNumber && (
+                            <p className="text-[11px] font-mono text-slate-600">
+                              From: {inv.senderNumber}
+                            </p>
+                          )}
+                          {inv.transactionId && (
+                            <p className="text-[11px] font-mono font-bold text-violet-700">
+                              TrxID: {inv.transactionId}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">Awaiting Payment</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-extrabold text-slate-900">
                       {bdt(inv.totalDue)}
@@ -220,24 +293,52 @@ export default function AdminBillingClient({
                     <TableCell className="text-center">
                       <Badge
                         className={
-                          BILL_STATUS_STYLE[inv.status] || BILL_STATUS_STYLE.unpaid
+                          BILL_STATUS_STYLE[inv.status] ||
+                          BILL_STATUS_STYLE.unpaid
                         }
                       >
-                        {inv.status}
+                        {String(inv.status || "").replace(/_/g, " ")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <select
-                        aria-label="Update invoice status"
-                        value={inv.status}
-                        onChange={(e) => updateStatus(inv._id, e.target.value)}
-                        className="h-8 px-2 rounded-lg border border-slate-200 text-xs font-semibold bg-white"
-                      >
-                        <option value="unpaid">unpaid</option>
-                        <option value="paid">paid</option>
-                        <option value="overdue">overdue</option>
-                        <option value="cancelled">cancelled</option>
-                      </select>
+                      <div className="inline-flex items-center gap-1.5">
+                        {inv.status === "pending_verification" && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleVerifyAction(inv, "verify")}
+                              className="h-7 px-2.5 rounded-lg bg-emerald-600 text-white text-[11px] font-extrabold hover:bg-emerald-700 inline-flex items-center gap-1"
+                            >
+                              <CheckCircle2 className="w-3 h-3" /> Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleVerifyAction(inv, "reject")}
+                              className="h-7 px-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-bold hover:bg-rose-100 inline-flex items-center gap-1"
+                            >
+                              <XCircle className="w-3 h-3" /> Reject
+                            </button>
+                          </>
+                        )}
+
+                        <select
+                          aria-label="Update invoice status"
+                          value={inv.status}
+                          onChange={(e) =>
+                            updateStatus(inv._id, e.target.value)
+                          }
+                          className="h-8 px-2 rounded-lg border border-slate-200 text-xs font-semibold bg-white"
+                        >
+                          <option value="pending_verification">
+                            pending_verification
+                          </option>
+                          <option value="unpaid">unpaid</option>
+                          <option value="paid">paid</option>
+                          <option value="rejected">rejected</option>
+                          <option value="overdue">overdue</option>
+                          <option value="cancelled">cancelled</option>
+                        </select>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -247,7 +348,8 @@ export default function AdminBillingClient({
                     colSpan={7}
                     className="py-12 text-center text-xs text-slate-400"
                   >
-                    No SaaS billing invoices issued yet. Click &ldquo;Issue Invoice&rdquo; to bill a merchant store.
+                    No SaaS billing invoices issued yet. Click &ldquo;Issue
+                    Invoice&rdquo; to bill a merchant store.
                   </TableCell>
                 </TableRow>
               )}

@@ -22,9 +22,11 @@ import {
   Trash2,
   TrendingUp,
   Wallet,
+  XCircle,
   Zap,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { DEFAULT_GATEWAY_NUMBER } from "@/config/paymentGatewayConfig";
 import { getAuthHeaders } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,8 @@ const PAYMENT_METHODS = [
   "bKash",
   "Nagad",
   "Rocket",
+  "Upay",
+  "GPay",
   "Bank Transfer",
   "Card",
   "Manual",
@@ -61,8 +65,10 @@ const PAYMENT_METHODS = [
 
 const STATUS_STYLES = {
   paid: "bg-emerald-500/15 text-emerald-700 border-emerald-200",
+  pending_verification: "bg-cyan-500/15 text-cyan-800 border-cyan-300",
   unpaid: "bg-amber-500/15 text-amber-700 border-amber-200",
   overdue: "bg-rose-500/15 text-rose-700 border-rose-200",
+  rejected: "bg-rose-500/15 text-rose-700 border-rose-300",
   cancelled: "bg-slate-100 text-slate-500 border-slate-200",
 };
 
@@ -70,7 +76,9 @@ const METHOD_BADGE = {
   bKash: "bg-pink-500/10 text-pink-700 border-pink-200",
   Nagad: "bg-orange-500/10 text-orange-700 border-orange-200",
   Rocket: "bg-purple-500/10 text-purple-700 border-purple-200",
-  "Bank Transfer": "bg-blue-500/10 text-blue-700 border-blue-200",
+  Upay: "bg-blue-500/10 text-blue-700 border-blue-200",
+  GPay: "bg-sky-500/10 text-sky-700 border-sky-200",
+  "Bank Transfer": "bg-indigo-500/10 text-indigo-700 border-indigo-200",
   Card: "bg-cyan-500/10 text-cyan-700 border-cyan-200",
   Manual: "bg-slate-100 text-slate-700 border-slate-200",
 };
@@ -339,6 +347,9 @@ export default function PaymentListClient({ admin, initialData = {} }) {
         String(p.transactionId || "")
           .toLowerCase()
           .includes(q) ||
+        String(p.senderNumber || "")
+          .toLowerCase()
+          .includes(q) ||
         String(p.shopId?.shopName || "")
           .toLowerCase()
           .includes(q) ||
@@ -458,6 +469,39 @@ export default function PaymentListClient({ admin, initialData = {} }) {
       toast.error("Could not verify payment.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleQuickGatewayDecision = async (payment, action) => {
+    let verificationNote = "";
+    if (action === "reject") {
+      const reason = window.prompt(
+        `Reason for rejecting TrxID "${payment.transactionId || ""}" (optional):`,
+        "TrxID not found in Send Money statement. Please verify and resubmit."
+      );
+      if (reason === null) return;
+      verificationNote = reason;
+    }
+
+    try {
+      const res = await fetch("/api/payment-gateway", {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          billingId: payment._id,
+          action,
+          verificationNote,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        toast.error(json?.message || "Verification update failed.");
+        return;
+      }
+      toast.success(json.message);
+      await refreshData(true);
+    } catch {
+      toast.error("Error updating TrxID verification.");
     }
   };
 
@@ -659,6 +703,42 @@ export default function PaymentListClient({ admin, initialData = {} }) {
         </CardContent>
       </Card>
 
+      {/* ─── Pending TrxID Verification Alert Strip (`01726278251`) ─── */}
+      {Number(kpis.pendingVerificationCount || 0) > 0 && (
+        <div className="rounded-2xl border border-cyan-300 bg-gradient-to-r from-cyan-50 via-sky-50 to-violet-50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <span className="w-9 h-9 rounded-xl bg-cyan-600 text-white flex items-center justify-center shrink-0">
+              <BadgeCheck className="w-5 h-5" />
+            </span>
+            <div>
+              <p className="text-sm font-extrabold text-slate-900">
+                {kpis.pendingVerificationCount} Send Money TrxID Submission(s) Awaiting Verification ({bdt(kpis.pendingVerificationAmount)})
+              </p>
+              <p className="text-xs text-slate-600">
+                Check your <strong>{DEFAULT_GATEWAY_NUMBER}</strong> (bKash / Nagad / Rocket / Upay / GPay) SMS statement and click <strong>Approve</strong> or <strong>Reject</strong> below.
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="gradient"
+            onClick={() => {
+              setActiveTab("saas");
+              setStatusFilter(
+                statusFilter === "pending_verification"
+                  ? "all"
+                  : "pending_verification"
+              );
+            }}
+          >
+            {statusFilter === "pending_verification"
+              ? "Show All Payments"
+              : `Filter Pending (${kpis.pendingVerificationCount})`}
+          </Button>
+        </div>
+      )}
+
       {/* ─── 6 RGB Financial KPI Cards ─── */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
         {[
@@ -671,6 +751,14 @@ export default function PaymentListClient({ admin, initialData = {} }) {
             iconBg: "bg-emerald-500/15 text-emerald-600",
           },
           {
+            label: "Pending TrxID Verify",
+            val: bdt(kpis.pendingVerificationAmount),
+            sub: `${kpis.pendingVerificationCount || 0} submitted to ${DEFAULT_GATEWAY_NUMBER}`,
+            icon: BadgeCheck,
+            bar: "from-cyan-500 to-blue-600",
+            iconBg: "bg-cyan-500/15 text-cyan-600",
+          },
+          {
             label: "This Month Revenue",
             val: bdt(kpis.thisMonthCollectedSaaS),
             sub: "Current calendar month",
@@ -681,7 +769,7 @@ export default function PaymentListClient({ admin, initialData = {} }) {
           {
             label: "Pending Receivables",
             val: bdt(kpis.pendingReceivables),
-            sub: "Unpaid + Overdue",
+            sub: "Unpaid + Pending + Overdue",
             icon: CreditCard,
             bar: "from-amber-500 to-orange-500",
             iconBg: "bg-amber-500/15 text-amber-600",
@@ -699,14 +787,6 @@ export default function PaymentListClient({ admin, initialData = {} }) {
             val: bdt(kpis.storefrontDeliveredCash),
             sub: "Delivered orders",
             icon: ShoppingCart,
-            bar: "from-cyan-500 to-blue-600",
-            iconBg: "bg-cyan-500/15 text-cyan-600",
-          },
-          {
-            label: "Pipeline COD Transit",
-            val: bdt(kpis.storefrontPendingCod),
-            sub: "Pending / Shipped COD",
-            icon: Sparkles,
             bar: "from-fuchsia-600 to-purple-600",
             iconBg: "bg-fuchsia-500/15 text-fuchsia-600",
           },
@@ -814,8 +894,12 @@ export default function PaymentListClient({ admin, initialData = {} }) {
                 className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700"
               >
                 <option value="all">All Statuses</option>
+                <option value="pending_verification">
+                  Pending TrxID Verify
+                </option>
                 <option value="paid">Paid</option>
                 <option value="unpaid">Unpaid</option>
+                <option value="rejected">Rejected</option>
                 <option value="overdue">Overdue</option>
                 <option value="cancelled">Cancelled</option>
               </select>
@@ -896,16 +980,26 @@ export default function PaymentListClient({ admin, initialData = {} }) {
                       <TableCell>
                         {p.paymentMethod ? (
                           <div className="space-y-0.5">
-                            <Badge
-                              className={
-                                METHOD_BADGE[p.paymentMethod] ||
-                                METHOD_BADGE.Manual
-                              }
-                            >
-                              {p.paymentMethod}
-                            </Badge>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Badge
+                                className={
+                                  METHOD_BADGE[p.paymentMethod] ||
+                                  METHOD_BADGE.Manual
+                                }
+                              >
+                                {p.paymentMethod}
+                              </Badge>
+                              <span className="text-[10px] font-mono text-slate-400">
+                                → {p.receiverNumber || DEFAULT_GATEWAY_NUMBER}
+                              </span>
+                            </div>
+                            {p.senderNumber && (
+                              <p className="text-[11px] font-mono text-slate-700 font-semibold">
+                                From: {p.senderNumber}
+                              </p>
+                            )}
                             {p.transactionId && (
-                              <p className="text-[11px] font-mono text-slate-500">
+                              <p className="text-[11px] font-mono font-bold text-violet-700">
                                 TrxID: {p.transactionId}
                               </p>
                             )}
@@ -954,27 +1048,50 @@ export default function PaymentListClient({ admin, initialData = {} }) {
                             STATUS_STYLES[p.status] || STATUS_STYLES.unpaid
                           }
                         >
-                          {p.status}
+                          {String(p.status || "").replace(/_/g, " ")}
                         </Badge>
                       </TableCell>
 
                       <TableCell className="text-right">
                         <div className="inline-flex items-center gap-1.5">
-                          {p.status !== "paid" && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setVerifyTarget(p);
-                                setVerifyForm({
-                                  paymentMethod: p.paymentMethod || "bKash",
-                                  transactionId: p.transactionId || "",
-                                  notes: p.notes || "",
-                                });
-                              }}
-                              className="h-7 px-2.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 inline-flex items-center gap-1"
-                            >
-                              <CheckCircle2 className="w-3 h-3" /> Verify
-                            </button>
+                          {p.status === "pending_verification" ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleQuickGatewayDecision(p, "verify")
+                                }
+                                className="h-7 px-2.5 rounded-lg bg-emerald-600 text-white text-[11px] font-extrabold hover:bg-emerald-700 inline-flex items-center gap-1 shadow-2xs"
+                              >
+                                <CheckCircle2 className="w-3 h-3" /> Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleQuickGatewayDecision(p, "reject")
+                                }
+                                className="h-7 px-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-bold hover:bg-rose-100 inline-flex items-center gap-1"
+                              >
+                                <XCircle className="w-3 h-3" /> Reject
+                              </button>
+                            </>
+                          ) : (
+                            p.status !== "paid" && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setVerifyTarget(p);
+                                  setVerifyForm({
+                                    paymentMethod: p.paymentMethod || "bKash",
+                                    transactionId: p.transactionId || "",
+                                    notes: p.notes || "",
+                                  });
+                                }}
+                                className="h-7 px-2.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 inline-flex items-center gap-1"
+                              >
+                                <CheckCircle2 className="w-3 h-3" /> Verify
+                              </button>
+                            )
                           )}
 
                           <button
@@ -998,8 +1115,12 @@ export default function PaymentListClient({ admin, initialData = {} }) {
                             }
                             className="h-7 px-1.5 rounded-lg border border-slate-200 text-[11px] font-semibold bg-white"
                           >
+                            <option value="pending_verification">
+                              pending_verification
+                            </option>
                             <option value="paid">paid</option>
                             <option value="unpaid">unpaid</option>
+                            <option value="rejected">rejected</option>
                             <option value="overdue">overdue</option>
                             <option value="cancelled">cancelled</option>
                           </select>

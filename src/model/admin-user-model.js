@@ -215,16 +215,22 @@ const platformSettingSchema = new Schema(
             min: 0,
         },
 
-        // 3. Merchant SaaS Payment Gateways
+        // 3. Merchant SaaS Payment Gateways (Send Money + TrxID Verification)
         bkashEnabled: { type: Boolean, default: true },
-        bkashMerchantNumber: { type: String, default: "01700000000", trim: true },
-        bkashAccountType: { type: String, default: "Merchant", trim: true },
+        bkashMerchantNumber: { type: String, default: "01726278251", trim: true },
+        bkashAccountType: { type: String, default: "Send Money (Personal)", trim: true },
 
         nagadEnabled: { type: Boolean, default: true },
-        nagadMerchantNumber: { type: String, default: "01700000000", trim: true },
+        nagadMerchantNumber: { type: String, default: "01726278251", trim: true },
 
-        rocketEnabled: { type: Boolean, default: false },
-        rocketMerchantNumber: { type: String, default: "", trim: true },
+        rocketEnabled: { type: Boolean, default: true },
+        rocketMerchantNumber: { type: String, default: "01726278251", trim: true },
+
+        upayEnabled: { type: Boolean, default: true },
+        upayMerchantNumber: { type: String, default: "01726278251", trim: true },
+
+        gpayEnabled: { type: Boolean, default: true },
+        gpayMerchantNumber: { type: String, default: "01726278251", trim: true },
 
         bankTransferEnabled: { type: Boolean, default: true },
         bankName: { type: String, default: "City Bank PLC", trim: true },
@@ -342,7 +348,8 @@ if (
 
 if (
     mongoose.models.PlatformSetting &&
-    !mongoose.models.PlatformSetting.schema.path("roleTemplates")
+    (!mongoose.models.PlatformSetting.schema.path("roleTemplates") ||
+        !mongoose.models.PlatformSetting.schema.path("upayMerchantNumber"))
 ) {
     delete mongoose.models.PlatformSetting;
 }
