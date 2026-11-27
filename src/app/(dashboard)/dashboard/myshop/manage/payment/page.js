@@ -10,7 +10,6 @@ import {
   Copy,
   ShieldCheck,
   Smartphone,
-  Wallet,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -54,7 +53,8 @@ export default function PaymentGatewayPage() {
             Back to Manage Shop
           </Link>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-            Send Money <span className="rgb-gradient-text">Payment Gateway</span>
+            Send Money{" "}
+            <span className="rgb-gradient-text">Payment Gateway</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
             Active Send Money + TrxID Verification channels across bKash, Nagad,
@@ -75,12 +75,30 @@ export default function PaymentGatewayPage() {
         </div>
       </div>
 
-      {/* Unified Number Highlight Card */}
+      {/* Unified Number Highlight Card + 5 Logos Strip */}
       <div className="relative overflow-hidden rounded-3xl bg-slate-950 text-white p-6 sm:p-7 border border-slate-800 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-5">
-        <div className="space-y-2">
-          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 font-extrabold">
-            <ShieldCheck className="w-3.5 h-3.5 mr-1" />5 Active MFS Channels
-          </Badge>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 font-extrabold">
+              <ShieldCheck className="w-3.5 h-3.5 mr-1" />5 Active MFS Channels
+            </Badge>
+            <div className="inline-flex items-center gap-1.5">
+              {SEND_MONEY_GATEWAYS.map((gw) => (
+                <span
+                  key={gw.id}
+                  title={gw.name}
+                  className="w-9 h-7 rounded-lg bg-white p-1 flex items-center justify-center shadow-2xs"
+                >
+                  <img
+                    src={gw.logo}
+                    alt={gw.name}
+                    className="max-h-5 max-w-full object-contain"
+                  />
+                </span>
+              ))}
+            </div>
+          </div>
+
           <h2 className="text-xl sm:text-2xl font-extrabold">
             Official Send Money Number:{" "}
             <span className="font-mono text-cyan-300">
@@ -117,7 +135,7 @@ export default function PaymentGatewayPage() {
         </Button>
       </div>
 
-      {/* 5 Gateway Cards */}
+      {/* 5 Gateway Cards with Official Logos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {SEND_MONEY_GATEWAYS.map((gw) => (
           <Card
@@ -130,13 +148,14 @@ export default function PaymentGatewayPage() {
             />
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className="w-10 h-10 rounded-xl text-white font-extrabold text-sm flex items-center justify-center shadow-xs"
-                    style={{ backgroundColor: gw.accent }}
-                  >
-                    {gw.name.slice(0, 2)}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1.5 shadow-2xs shrink-0">
+                    <img
+                      src={gw.logo}
+                      alt={gw.name}
+                      className="max-h-9 max-w-full object-contain"
+                    />
+                  </div>
                   <div>
                     <CardTitle className="text-base font-extrabold text-slate-900">
                       {gw.name}{" "}

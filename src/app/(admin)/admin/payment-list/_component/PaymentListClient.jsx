@@ -26,7 +26,10 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { DEFAULT_GATEWAY_NUMBER } from "@/config/paymentGatewayConfig";
+import {
+  DEFAULT_GATEWAY_NUMBER,
+  getGatewayByMethod,
+} from "@/config/paymentGatewayConfig";
 import { getAuthHeaders } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -981,6 +984,13 @@ export default function PaymentListClient({ admin, initialData = {} }) {
                         {p.paymentMethod ? (
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5 flex-wrap">
+                              {getGatewayByMethod(p.paymentMethod)?.logo && (
+                                <img
+                                  src={getGatewayByMethod(p.paymentMethod).logo}
+                                  alt={p.paymentMethod}
+                                  className="w-6 h-5 rounded bg-white border border-slate-200 object-contain p-0.5 shrink-0"
+                                />
+                              )}
                               <Badge
                                 className={
                                   METHOD_BADGE[p.paymentMethod] ||

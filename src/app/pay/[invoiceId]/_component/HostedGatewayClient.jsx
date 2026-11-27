@@ -11,10 +11,13 @@ import {
   RefreshCw,
   ShieldCheck,
   Store,
-  Wallet,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { DEFAULT_GATEWAY_NUMBER } from "@/config/paymentGatewayConfig";
+import {
+  DEFAULT_GATEWAY_NUMBER,
+  SEND_MONEY_GATEWAYS,
+  getGatewayByMethod,
+} from "@/config/paymentGatewayConfig";
 import { SendMoneyGatewayCard } from "@/components/payment/SendMoneyGateway";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,6 +98,7 @@ export default function HostedGatewayClient({
 
   const isPaid = invoice.status === "paid";
   const isPending = invoice.status === "pending_verification" && !editingPending;
+  const methodMeta = getGatewayByMethod(invoice.paymentMethod);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-violet-50/40 to-cyan-50/40 py-8 px-4">
@@ -148,10 +152,21 @@ export default function HostedGatewayClient({
             <div className="h-2 bg-gradient-to-r from-emerald-500 to-teal-500" />
             <CardContent className="p-6 sm:p-8 space-y-6">
               <div className="text-center space-y-2">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center mx-auto">
-                  <BadgeCheck className="w-9 h-9" />
-                </div>
+                {methodMeta?.logo ? (
+                  <div className="w-16 h-16 rounded-2xl bg-white border border-emerald-200 shadow-xs flex items-center justify-center mx-auto p-2">
+                    <img
+                      src={methodMeta.logo}
+                      alt={methodMeta.name}
+                      className="max-h-11 max-w-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center mx-auto">
+                    <BadgeCheck className="w-9 h-9" />
+                  </div>
+                )}
                 <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-200 font-extrabold">
+                  <BadgeCheck className="w-3.5 h-3.5 mr-1" />
                   Verified & Paid
                 </Badge>
                 <h1 className="text-2xl font-extrabold text-slate-900">
@@ -209,10 +224,21 @@ export default function HostedGatewayClient({
             <div className="h-2 bg-gradient-to-r from-amber-500 to-orange-500" />
             <CardContent className="p-6 sm:p-8 space-y-6">
               <div className="text-center space-y-2">
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center mx-auto">
-                  <Clock className="w-8 h-8" />
-                </div>
+                {methodMeta?.logo ? (
+                  <div className="w-16 h-16 rounded-2xl bg-white border border-amber-200 shadow-xs flex items-center justify-center mx-auto p-2">
+                    <img
+                      src={methodMeta.logo}
+                      alt={methodMeta.name}
+                      className="max-h-11 max-w-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center mx-auto">
+                    <Clock className="w-8 h-8" />
+                  </div>
+                )}
                 <Badge className="bg-amber-500/15 text-amber-700 border-amber-200 font-extrabold">
+                  <Clock className="w-3.5 h-3.5 mr-1" />
                   Pending Verification
                 </Badge>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">
@@ -238,7 +264,10 @@ export default function HostedGatewayClient({
                   ],
                   ["Sent From (Sender)", invoice.senderNumber || "—"],
                   ["Transaction ID (TrxID)", invoice.transactionId || "—"],
-                  ["Submitted On", fmtDate(invoice.submittedAt || invoice.updatedAt)],
+                  [
+                    "Submitted On",
+                    fmtDate(invoice.submittedAt || invoice.updatedAt),
+                  ],
                   ["Amount", tk(invoice.totalDue)],
                 ].map(([k, v]) => (
                   <div
@@ -293,11 +322,26 @@ export default function HostedGatewayClient({
           </Card>
         )}
 
-        {/* Supported Gateways Footer */}
-        <div className="text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5">
-          <Wallet className="w-3.5 h-3.5" />
-          Supported Send Money Gateways ({DEFAULT_GATEWAY_NUMBER}): bKash · Nagad
-          · Rocket · Upay · GPay
+        {/* Supported Gateways Logo Footer */}
+        <div className="rounded-2xl bg-white/80 border border-slate-200/70 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-[11px] font-bold text-slate-500">
+            Official Send Money ({DEFAULT_GATEWAY_NUMBER}):
+          </span>
+          <div className="flex items-center gap-2">
+            {SEND_MONEY_GATEWAYS.map((gw) => (
+              <span
+                key={gw.id}
+                title={`${gw.name} (${gw.defaultNumber})`}
+                className="w-10 h-7 rounded-lg bg-white border border-slate-200 p-1 flex items-center justify-center shadow-2xs"
+              >
+                <img
+                  src={gw.logo}
+                  alt={gw.name}
+                  className="max-h-5 max-w-full object-contain"
+                />
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -21,7 +21,11 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { DEFAULT_GATEWAY_NUMBER } from "@/config/paymentGatewayConfig";
+import {
+  DEFAULT_GATEWAY_NUMBER,
+  SEND_MONEY_GATEWAYS,
+  getGatewayByMethod,
+} from "@/config/paymentGatewayConfig";
 import { updateSubscriptionPreferenceAction } from "@/app/actions/billing";
 import { SendMoneyGatewayDialog } from "@/components/payment/SendMoneyGateway";
 import {
@@ -443,6 +447,25 @@ export default function Subscription({ initialData = {} }) {
           ) + TrxID verification.
         </p>
 
+        {/* 5 Official Gateway Logos Strip */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {SEND_MONEY_GATEWAYS.map((gw) => (
+            <div
+              key={gw.id}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs"
+            >
+              <img
+                src={gw.logo}
+                alt={gw.name}
+                className="h-5 w-8 object-contain"
+              />
+              <span className="text-xs font-extrabold text-slate-800">
+                {gw.name}
+              </span>
+            </div>
+          ))}
+        </div>
+
         {/* Duration Selector Pills */}
         <div className="inline-flex flex-wrap items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
           {DURATION_OPTIONS.map((opt) => {
@@ -632,16 +655,27 @@ export default function Subscription({ initialData = {} }) {
                       <TableCell className="text-xs">
                         {inv.paymentMethod ? (
                           <div>
-                            <span className="font-extrabold text-slate-800">
-                              {inv.paymentMethod}
-                            </span>
-                            {inv.senderNumber && (
-                              <span className="text-[11px] text-slate-500 font-mono ml-1.5">
-                                ({inv.senderNumber})
+                            <div className="inline-flex items-center gap-1.5">
+                              {getGatewayByMethod(inv.paymentMethod)?.logo && (
+                                <img
+                                  src={
+                                    getGatewayByMethod(inv.paymentMethod).logo
+                                  }
+                                  alt={inv.paymentMethod}
+                                  className="w-6 h-5 rounded bg-white border border-slate-200 object-contain p-0.5"
+                                />
+                              )}
+                              <span className="font-extrabold text-slate-800">
+                                {inv.paymentMethod}
                               </span>
-                            )}
+                              {inv.senderNumber && (
+                                <span className="text-[11px] text-slate-500 font-mono">
+                                  ({inv.senderNumber})
+                                </span>
+                              )}
+                            </div>
                             {inv.transactionId && (
-                              <p className="text-[11px] font-mono text-violet-700 font-bold">
+                              <p className="text-[11px] font-mono text-violet-700 font-bold mt-0.5">
                                 TrxID: {inv.transactionId}
                               </p>
                             )}

@@ -11,6 +11,7 @@ export const SEND_MONEY_GATEWAYS = [
     key: "bkash",
     name: "bKash",
     bnName: "বিকাশ",
+    logo: "/images/gateways/bkash.png",
     mode: "Send Money (Personal)",
     defaultNumber: DEFAULT_GATEWAY_NUMBER,
     ussd: "*247#",
@@ -30,6 +31,7 @@ export const SEND_MONEY_GATEWAYS = [
     key: "nagad",
     name: "Nagad",
     bnName: "নগদ",
+    logo: "/images/gateways/nagad.png",
     mode: "Send Money (Personal)",
     defaultNumber: DEFAULT_GATEWAY_NUMBER,
     ussd: "*167#",
@@ -49,6 +51,7 @@ export const SEND_MONEY_GATEWAYS = [
     key: "rocket",
     name: "Rocket",
     bnName: "রকেট",
+    logo: "/images/gateways/rocket.png",
     mode: "Send Money (Personal)",
     defaultNumber: DEFAULT_GATEWAY_NUMBER,
     ussd: "*322#",
@@ -68,6 +71,7 @@ export const SEND_MONEY_GATEWAYS = [
     key: "upay",
     name: "Upay",
     bnName: "উপায়",
+    logo: "/images/gateways/upay.png",
     mode: "Send Money (Personal)",
     defaultNumber: DEFAULT_GATEWAY_NUMBER,
     ussd: "*268#",
@@ -87,6 +91,7 @@ export const SEND_MONEY_GATEWAYS = [
     key: "gpay",
     name: "GPay",
     bnName: "জিপে",
+    logo: "/images/gateways/gpay.png",
     mode: "Send Money (Wallet)",
     defaultNumber: DEFAULT_GATEWAY_NUMBER,
     ussd: "*777#",
@@ -102,6 +107,16 @@ export const SEND_MONEY_GATEWAYS = [
     ],
   },
 ];
+
+export function getGatewayByMethod(method = "") {
+  const key = String(method || "").trim().toLowerCase();
+  if (!key) return null;
+  return (
+    SEND_MONEY_GATEWAYS.find(
+      (g) => g.key === key || g.id.toLowerCase() === key
+    ) || null
+  );
+}
 
 export const BD_SENDER_PHONE_REGEX = /^(?:\+?88)?01[3-9]\d{8}$/;
 export const TRX_ID_REGEX = /^[A-Za-z0-9_-]{5,32}$/;

@@ -660,7 +660,12 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
               <CardContent className="space-y-3.5">
                 <div className="p-3.5 rounded-2xl border border-pink-200 bg-pink-50/30 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-extrabold text-pink-700">
+                    <span className="text-sm font-extrabold text-pink-700 inline-flex items-center gap-2">
+                      <img
+                        src="/images/gateways/bkash.png"
+                        alt="bKash"
+                        className="w-8 h-6 rounded-md bg-white border border-pink-100 object-contain p-0.5"
+                      />
                       1. bKash (Send Money)
                     </span>
                     <input
@@ -696,7 +701,12 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
 
                 <div className="p-3.5 rounded-2xl border border-orange-200 bg-orange-50/30 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-extrabold text-orange-700">
+                    <span className="text-sm font-extrabold text-orange-700 inline-flex items-center gap-2">
+                      <img
+                        src="/images/gateways/nagad.png"
+                        alt="Nagad"
+                        className="w-8 h-6 rounded-md bg-white border border-orange-100 object-contain p-0.5"
+                      />
                       2. Nagad (Send Money)
                     </span>
                     <input
@@ -720,7 +730,12 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
 
                 <div className="p-3.5 rounded-2xl border border-purple-200 bg-purple-50/30 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-extrabold text-purple-700">
+                    <span className="text-sm font-extrabold text-purple-700 inline-flex items-center gap-2">
+                      <img
+                        src="/images/gateways/rocket.png"
+                        alt="Rocket"
+                        className="w-8 h-6 rounded-md bg-white border border-purple-100 object-contain p-0.5"
+                      />
                       3. Rocket (Send Money)
                     </span>
                     <input
@@ -744,7 +759,12 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
 
                 <div className="p-3.5 rounded-2xl border border-blue-200 bg-blue-50/30 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-extrabold text-blue-700">
+                    <span className="text-sm font-extrabold text-blue-700 inline-flex items-center gap-2">
+                      <img
+                        src="/images/gateways/upay.png"
+                        alt="Upay"
+                        className="w-8 h-6 rounded-md bg-white border border-blue-100 object-contain p-0.5"
+                      />
                       4. Upay (Send Money)
                     </span>
                     <input
@@ -768,7 +788,12 @@ export default function AdminSettingClient({ admin, initialSettings = {} }) {
 
                 <div className="p-3.5 rounded-2xl border border-sky-200 bg-sky-50/30 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-extrabold text-sky-700">
+                    <span className="text-sm font-extrabold text-sky-700 inline-flex items-center gap-2">
+                      <img
+                        src="/images/gateways/gpay.png"
+                        alt="GPay"
+                        className="w-8 h-6 rounded-md bg-white border border-sky-100 object-contain p-0.5"
+                      />
                       5. GPay (Send Money)
                     </span>
                     <input

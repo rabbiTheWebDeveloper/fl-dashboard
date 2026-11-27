@@ -21,6 +21,7 @@ import {
   DEFAULT_GATEWAY_NUMBER,
   SEND_MONEY_GATEWAYS,
   TRX_ID_REGEX,
+  getGatewayByMethod,
   normalizeSenderPhone,
   normalizeTrxId,
 } from "@/config/paymentGatewayConfig";
@@ -45,7 +46,16 @@ const tk = (n) => `৳${Math.round(Number(n || 0)).toLocaleString("en-IN")}`;
  */
 export function resolveGatewayOptions(gatewaysProp) {
   if (Array.isArray(gatewaysProp) && gatewaysProp.length > 0) {
-    return gatewaysProp.filter((g) => g.enabled !== false);
+    return gatewaysProp
+      .map((g) => {
+        const fallback = getGatewayByMethod(g.id || g.key || g.name);
+        return {
+          ...fallback,
+          ...g,
+          logo: g.logo || fallback?.logo || "/images/gateways/bkash.png",
+        };
+      })
+      .filter((g) => g.enabled !== false);
   }
   return SEND_MONEY_GATEWAYS.map((g) => {
     const cfg = gatewaysProp?.[g.key];
@@ -133,7 +143,11 @@ export function SendMoneyGatewayCard({
     e.preventDefault();
 
     // Optional "Generate Monthly Bill" mode for subscriptions
-    if (mode === "subscription" && allowInvoiceLater && payMode === "invoice_later") {
+    if (
+      mode === "subscription" &&
+      allowInvoiceLater &&
+      payMode === "invoice_later"
+    ) {
       setSubmitting(true);
       try {
         const res = await subscribeMonthlyPlanAction({
@@ -219,29 +233,41 @@ export function SendMoneyGatewayCard({
   };
 
   if (submittedReceipt) {
+    const submittedGw =
+      getGatewayByMethod(submittedReceipt.paymentMethod) || activeGateway;
+
     return (
       <div className="rounded-3xl border border-emerald-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center mx-auto">
-            <Clock className="w-7 h-7" />
+          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center mx-auto p-2">
+            <img
+              src={submittedGw.logo}
+              alt={submittedGw.name}
+              className="max-h-11 max-w-full object-contain"
+            />
           </div>
           <Badge className="bg-amber-500/15 text-amber-700 border-amber-200 font-extrabold">
+            <Clock className="w-3.5 h-3.5 mr-1" />
             Pending Admin Verification
           </Badge>
           <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
-            Send Money TrxID Submitted!
+            {submittedGw.name} Send Money TrxID Submitted!
           </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             Your payment details have been recorded. Once verified against{" "}
             <strong className="text-slate-800">{receiverNumber}</strong>, your
-            subscription invoice will be marked <strong>Paid</strong> automatically.
+            subscription invoice will be marked <strong>Paid</strong>{" "}
+            automatically.
           </p>
         </div>
 
         <div className="rounded-2xl bg-slate-50 border border-slate-200/90 p-4 space-y-2.5 text-xs">
           {[
             ["Invoice #", submittedReceipt.invoiceNumber || "—"],
-            ["Payment Gateway", `${submittedReceipt.paymentMethod} (Send Money)`],
+            [
+              "Payment Gateway",
+              `${submittedReceipt.paymentMethod} (Send Money)`,
+            ],
             [
               "Receiver Number",
               submittedReceipt.receiverNumber || DEFAULT_GATEWAY_NUMBER,
@@ -255,7 +281,9 @@ export function SendMoneyGatewayCard({
               className="flex items-center justify-between gap-2 border-b border-slate-200/60 last:border-0 pb-2 last:pb-0"
             >
               <span className="text-slate-500 font-semibold">{k}</span>
-              <span className="font-extrabold text-slate-900 font-mono">{v}</span>
+              <span className="font-extrabold text-slate-900 font-mono">
+                {v}
+              </span>
             </div>
           ))}
         </div>
@@ -352,10 +380,14 @@ export function SendMoneyGatewayCard({
         <div className="rounded-2xl border border-rose-200 bg-rose-50/80 p-3.5 flex items-start gap-2.5 text-xs text-rose-900">
           <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
           <div>
-            <p className="font-extrabold">Previous TrxID Could Not Be Verified</p>
+            <p className="font-extrabold">
+              Previous TrxID Could Not Be Verified
+            </p>
             <p className="text-rose-700 mt-0.5">
               {invoice.verificationNote ||
-                `Rejected TrxID (${invoice.transactionId || "—"}). Please double-check your SMS and submit the valid Send Money TrxID below.`}
+                `Rejected TrxID (${
+                  invoice.transactionId || "—"
+                }). Please double-check your SMS and submit the valid Send Money TrxID below.`}
             </p>
           </div>
         </div>
@@ -392,12 +424,12 @@ export function SendMoneyGatewayCard({
       <form onSubmit={handleSubmit} className="space-y-4">
         {payMode === "pay_now" ? (
           <>
-            {/* ─── 5 MFS Gateway Selector Grid ─── */}
+            {/* ─── 5 Official Gateway Logo Selector Cards ─── */}
             <div className="space-y-2">
               <Label className="text-xs font-extrabold text-slate-700 flex items-center justify-between">
                 <span>1. Select Send Money Gateway</span>
                 <span className="text-[11px] font-semibold text-slate-400">
-                  bKash · Nagad · Rocket · Upay · GPay
+                  Tap wallet logo
                 </span>
               </Label>
 
@@ -413,39 +445,44 @@ export function SendMoneyGatewayCard({
                         borderColor: selected ? gw.accent : undefined,
                         backgroundColor: selected ? gw.softBg : "#ffffff",
                       }}
-                      className={`relative rounded-2xl border p-2.5 text-center transition flex flex-col items-center justify-center gap-1 ${
+                      className={`relative rounded-2xl border p-2 text-center transition flex flex-col items-center justify-between gap-1.5 ${
                         selected
-                          ? "border-2 shadow-xs"
+                          ? "border-2 shadow-sm scale-[1.02]"
                           : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/70"
                       }`}
                     >
                       {selected && (
                         <span
-                          className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full text-white flex items-center justify-center"
+                          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-white flex items-center justify-center shadow-xs z-10"
                           style={{ backgroundColor: gw.accent }}
                         >
                           <Check className="w-2.5 h-2.5" />
                         </span>
                       )}
-                      <span
-                        className="w-8 h-8 rounded-xl text-white font-extrabold text-xs flex items-center justify-center shadow-2xs"
-                        style={{ backgroundColor: gw.accent }}
-                      >
-                        {gw.name.slice(0, 2)}
-                      </span>
-                      <span className="text-xs font-extrabold text-slate-900 leading-tight">
-                        {gw.name}
-                      </span>
-                      <span className="text-[10px] text-slate-500 bangla-text leading-none">
-                        {gw.bnName}
-                      </span>
+
+                      <div className="w-full h-11 rounded-xl bg-white border border-slate-100 flex items-center justify-center p-1.5 overflow-hidden shadow-2xs">
+                        <img
+                          src={gw.logo}
+                          alt={gw.name}
+                          className="max-h-8 max-w-full w-auto object-contain"
+                        />
+                      </div>
+
+                      <div className="leading-tight">
+                        <p className="text-[11px] sm:text-xs font-extrabold text-slate-900">
+                          {gw.name}
+                        </p>
+                        <p className="text-[10px] text-slate-500 bangla-text">
+                          {gw.bnName}
+                        </p>
+                      </div>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* ─── Send Money Receiver Box (`01726278251`) ─── */}
+            {/* ─── Send Money Receiver Box (`01726278251`) with Selected Logo ─── */}
             <div
               className="rounded-2xl border-2 p-4 space-y-3 transition"
               style={{
@@ -454,25 +491,36 @@ export function SendMoneyGatewayCard({
               }}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-2xs">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="px-2 py-0.5 rounded-md text-[10px] font-extrabold text-white"
-                      style={{ backgroundColor: activeGateway.accent }}
-                    >
-                      {activeGateway.name} Send Money
-                    </span>
-                    <span className="text-[11px] font-semibold text-slate-500">
-                      Dial {activeGateway.ussd} or App
-                    </span>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
+                    <img
+                      src={activeGateway.logo}
+                      alt={activeGateway.name}
+                      className="max-h-10 max-w-full object-contain"
+                    />
                   </div>
-                  <p className="text-xl sm:text-2xl font-mono font-extrabold tracking-wider text-slate-900 pt-0.5">
-                    {receiverNumber}
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    Personal Send Money Number · Exact Amount:{" "}
-                    <strong className="text-slate-900">{tk(payableTotal)}</strong>
-                  </p>
+                  <div className="space-y-0.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className="px-2 py-0.5 rounded-md text-[10px] font-extrabold text-white"
+                        style={{ backgroundColor: activeGateway.accent }}
+                      >
+                        {activeGateway.name} Send Money
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-500">
+                        Dial {activeGateway.ussd} or App
+                      </span>
+                    </div>
+                    <p className="text-xl sm:text-2xl font-mono font-extrabold tracking-wider text-slate-900 pt-0.5">
+                      {receiverNumber}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Personal Number · Exact Payable:{" "}
+                      <strong className="text-slate-900">
+                        {tk(payableTotal)}
+                      </strong>
+                    </p>
+                  </div>
                 </div>
 
                 <Button

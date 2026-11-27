@@ -23,7 +23,11 @@ import {
   generateMonthlyBillingsAction,
 } from "@/app/actions/billing";
 import { PLANS } from "@/config/billingConfig";
-import { DEFAULT_GATEWAY_NUMBER } from "@/config/paymentGatewayConfig";
+import {
+  DEFAULT_GATEWAY_NUMBER,
+  SEND_MONEY_GATEWAYS,
+  getGatewayByMethod,
+} from "@/config/paymentGatewayConfig";
 import { SendMoneyGatewayDialog } from "@/components/payment/SendMoneyGateway";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -370,20 +374,37 @@ export default function BillingPage({
         })}
       </div>
 
-      {/* Send Money Gateway Banner */}
-      <div className="rounded-2xl border border-violet-200/80 bg-gradient-to-r from-violet-50/90 via-indigo-50/80 to-cyan-50/90 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Send Money Gateway Banner with 5 Official Logos */}
+      <div className="rounded-2xl border border-violet-200/80 bg-gradient-to-r from-violet-50/90 via-indigo-50/80 to-cyan-50/90 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
           <Info className="w-5 h-5 text-violet-600 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-extrabold text-slate-900">
-              Send Money Payment Gateway: {DEFAULT_GATEWAY_NUMBER}
-            </p>
-            <p className="text-xs text-slate-600 mt-0.5">
-              Pay any open invoice via{" "}
-              <strong>bKash, Nagad, Rocket, Upay, or GPay</strong> Send Money to{" "}
-              <strong className="font-mono">{DEFAULT_GATEWAY_NUMBER}</strong>{" "}
-              and submit your Sender Number + TrxID for verification.
-            </p>
+          <div className="space-y-2">
+            <div>
+              <p className="text-sm font-extrabold text-slate-900">
+                Send Money Payment Gateway: {DEFAULT_GATEWAY_NUMBER}
+              </p>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Pay any open invoice via{" "}
+                <strong>bKash, Nagad, Rocket, Upay, or GPay</strong> Send Money
+                to <strong className="font-mono">{DEFAULT_GATEWAY_NUMBER}</strong>{" "}
+                and submit your Sender Number + TrxID for verification.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {SEND_MONEY_GATEWAYS.map((gw) => (
+                <span
+                  key={gw.id}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200/90 text-[11px] font-bold text-slate-800 shadow-2xs"
+                >
+                  <img
+                    src={gw.logo}
+                    alt={gw.name}
+                    className="h-4 w-6 object-contain"
+                  />
+                  {gw.name}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
         <Button asChild size="sm" variant="outline" className="shrink-0 bg-white">
@@ -565,16 +586,28 @@ export default function BillingPage({
                         <TableCell className="text-xs">
                           {bill.paymentMethod ? (
                             <div>
-                              <span className="font-extrabold text-slate-800">
-                                {bill.paymentMethod}
-                              </span>
-                              {bill.senderNumber && (
-                                <span className="text-[11px] font-mono text-slate-500 ml-1">
-                                  ({bill.senderNumber})
+                              <div className="inline-flex items-center gap-1.5">
+                                {getGatewayByMethod(bill.paymentMethod)?.logo && (
+                                  <img
+                                    src={
+                                      getGatewayByMethod(bill.paymentMethod)
+                                        .logo
+                                    }
+                                    alt={bill.paymentMethod}
+                                    className="w-6 h-5 rounded bg-white border border-slate-200 object-contain p-0.5"
+                                  />
+                                )}
+                                <span className="font-extrabold text-slate-800">
+                                  {bill.paymentMethod}
                                 </span>
-                              )}
+                                {bill.senderNumber && (
+                                  <span className="text-[11px] font-mono text-slate-500">
+                                    ({bill.senderNumber})
+                                  </span>
+                                )}
+                              </div>
                               {bill.transactionId && (
-                                <p className="text-[11px] font-mono font-bold text-violet-700">
+                                <p className="text-[11px] font-mono font-bold text-violet-700 mt-0.5">
                                   TrxID: {bill.transactionId}
                                 </p>
                               )}
