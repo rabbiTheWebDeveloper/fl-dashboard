@@ -1,10 +1,63 @@
 "use client";
-import { useState } from "react";
-import Head from "next/head";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { registrationAction } from "@/app/actions/user";
-import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Phone,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  User,
+  Zap,
+} from "lucide-react";
+import { toast } from "react-toastify";
+import { registrationAction } from "@/app/actions/user";
+import { isAuthenticated } from "@/lib/auth";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const BD_PHONE_RE = /^(?:\+?88)?(01[3-9]\d{8})$/;
+
+function getPasswordStrength(password = "") {
+  if (!password) return { score: 0, label: "", color: "bg-slate-200" };
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 8) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/\d/.test(password) || /[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 1) return { score: 1, label: "দুর্বল", color: "bg-rose-500" };
+  if (score === 2) return { score: 2, label: "মাঝারি", color: "bg-amber-500" };
+  if (score === 3) return { score: 3, label: "ভালো", color: "bg-cyan-500" };
+  return { score: 4, label: "শক্তিশালী", color: "bg-emerald-500" };
+}
+
+function previewSlug(shopName = "") {
+  return String(shopName)
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 export default function Register() {
   const router = useRouter();
@@ -19,48 +72,67 @@ export default function Register() {
   });
 
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
+
+  const strength = useMemo(
+    () => getPasswordStrength(formData.password),
+    [formData.password]
+  );
+
+  const slugPreview = useMemo(
+    () => previewSlug(formData.shopName),
+    [formData.shopName]
+  );
+
+  const handleFieldChange = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name] || errors.general) {
+      setErrors((prev) => ({ ...prev, [name]: "", general: "" }));
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-
-    // Clear error when user starts typing
-    if (errors[name] || errors.general) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-        general: "",
-      }));
-    }
+    handleFieldChange(name, type === "checkbox" ? checked : value);
   };
 
   const validateForm = () => {
     const newErrors = {};
+    const trimmedName = formData.fullName.trim();
+    const trimmedShop = formData.shopName.trim();
+    const trimmedEmail = formData.email.trim();
+    const cleanedPhone = formData.phone.replace(/[\s-]/g, "").trim();
 
-    if (!formData.fullName.trim()) {
+    if (!trimmedName) {
       newErrors.fullName = "পুরো নাম প্রয়োজন";
+    } else if (trimmedName.length < 2) {
+      newErrors.fullName = "সঠিক পুরো নাম লিখুন";
     }
 
-    if (!formData.shopName.trim()) {
+    if (!trimmedShop) {
       newErrors.shopName = "দোকানের নাম প্রয়োজন";
+    } else if (trimmedShop.length < 2) {
+      newErrors.shopName = "দোকানের নাম কমপক্ষে ২ অক্ষরের হতে হবে";
     }
 
-    if (!formData.email) {
+    if (!trimmedEmail) {
       newErrors.email = "ইমেইল ঠিকানা প্রয়োজন";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
       newErrors.email = "ইমেইল ঠিকানা সঠিক নয়";
     }
 
-    if (!formData.phone) {
-      newErrors.phone = "ফোন নম্বর প্রয়োজন";
-    } else if (
-      !/^(?:\+88|01)?\d{11}$/.test(formData.phone.replace(/\s/g, ""))
-    ) {
-      newErrors.phone = "ফোন নম্বর সঠিক নয়";
+    if (!cleanedPhone) {
+      newErrors.phone = "মোবাইল নম্বর প্রয়োজন";
+    } else if (!BD_PHONE_RE.test(cleanedPhone)) {
+      newErrors.phone = "সঠিক ১১ সংখ্যার নম্বর দিন (যেমন: 017XXXXXXXX)";
     }
 
     if (!formData.password) {
@@ -76,7 +148,7 @@ export default function Register() {
     }
 
     if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = "আপনাকে শর্তাবলী মেনে নিতে হবে";
+      newErrors.agreeToTerms = "আপনাকে শর্তাবলী ও গোপনীয়তা নীতি মেনে নিতে হবে";
     }
 
     setErrors(newErrors);
@@ -85,13 +157,20 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
+    if (isLoading || !validateForm()) return;
 
     setIsLoading(true);
-
     try {
-      const response = await registrationAction(formData);
+      const payload = {
+        ...formData,
+        fullName: formData.fullName.trim(),
+        shopName: formData.shopName.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.replace(/[\s-]/g, "").trim(),
+      };
+
+      const response = await registrationAction(payload);
+
       if (
         response?.status === 200 &&
         response?.data?.email &&
@@ -111,12 +190,26 @@ export default function Register() {
       }
 
       const errorMessage =
-        response?.message || "রেজিস্ট্রেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।";
+        response?.message ||
+        "রেজিস্ট্রেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।";
+
+      const mappedErrors = { general: errorMessage };
+      if (response?.field) {
+        mappedErrors[response.field] = errorMessage;
+      } else if (response?.code === "EMAIL_EXISTS") {
+        mappedErrors.email = errorMessage;
+      } else if (response?.code === "PHONE_EXISTS") {
+        mappedErrors.phone = errorMessage;
+      } else if (response?.code === "SHOP_EXISTS") {
+        mappedErrors.shopName = errorMessage;
+      }
+
       toast.error(errorMessage);
-      setErrors({ general: errorMessage });
+      setErrors(mappedErrors);
     } catch (error) {
       const errorMessage =
-        error?.message || "রেজিস্ট্রেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।";
+        error?.message ||
+        "রেজিস্ট্রেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।";
       toast.error(errorMessage);
       setErrors({ general: errorMessage });
     } finally {
@@ -125,403 +218,441 @@ export default function Register() {
   };
 
   return (
-    <>
-      <Head>
-        <title>AMARDokan - নিবন্ধন</title>
-        <meta
-          name="description"
-          content="AMARDokan এ নতুন অ্যাকাউন্ট তৈরি করুন"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </Head>
+    <div className="min-h-screen relative overflow-hidden bg-slate-50 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+      {/* Ambient RGB Aurora Blobs */}
+      <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-violet-500/15 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-cyan-500/15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 left-1/3 w-96 h-96 rounded-full bg-pink-500/10 blur-3xl" />
 
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-2xl">
-          <div className="flex justify-center">
-            <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">আ</span>
-            </div>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 bangla-text">
-            AMARDokan এ নিবন্ধন করুন
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 bangla-text">
-            ইতিমধ্যে অ্যাকাউন্ট আছে?{" "}
-            <Link
-              href="/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500 bangla-text"
-            >
-              লগইন করুন
+      <div className="relative w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* Left Feature Pitch Panel (Desktop) */}
+        <div className="hidden lg:flex lg:col-span-5 flex-col justify-between rounded-3xl bg-slate-950 text-white p-8 shadow-2xl relative overflow-hidden min-h-[600px]">
+          <div className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 rounded-full bg-violet-600/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-cyan-500/25 blur-3xl" />
+
+          <div className="relative space-y-6">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <span className="text-white font-bold text-xl bangla-text">
+                  আ
+                </span>
+              </div>
+              <span className="text-xl font-extrabold tracking-tight">
+                AMARDokan
+              </span>
             </Link>
-          </p>
+
+            <Badge className="bg-white/10 text-cyan-300 border-white/15 px-3 py-1">
+              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-violet-400" />
+              ৫ মিনিটে অনলাইন শপ তৈরি করুন
+            </Badge>
+
+            <h1 className="text-3xl font-extrabold leading-snug bangla-text">
+              আপনার ই-কমার্স ব্যবসার{" "}
+              <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                অল-ইন-ওয়ান
+              </span>{" "}
+              অটোমেশন ড্যাশবোর্ড
+            </h1>
+
+            <p className="text-sm text-slate-300 leading-relaxed bangla-text">
+              অর্ডার ম্যানেজমেন্ট, কুরিয়ার বুকিং, ইনভেন্টরি ট্র্যাকিং এবং কাস্টম
+              স্টোরফ্রন্ট—সবকিছু এক প্ল্যাটফর্মে।
+            </p>
+
+            <ul className="space-y-3.5 pt-2">
+              {[
+                "কাস্টম ডোমেইন ও হাই-কনভার্টিং স্টোরফ্রন্ট থিম",
+                "Steadfast, Pathao ও RedX ওয়ান-ক্লিক কুরিয়ার ইন্টিগ্রেশন",
+                "রিয়েল-টাইম সেলস অ্যানালিটিক্স ও ইনভয়েস প্রিন্টিং",
+                "কোনো ক্রেডিট কার্ড ছাড়াই তাৎক্ষণিক ফ্রি অ্যাকাউন্ট",
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-2.5 text-sm text-slate-200 bangla-text"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-1 shrink-0" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="relative pt-8 border-t border-white/10 flex items-center gap-3 text-xs text-slate-400">
+            <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0" />
+            <span className="bangla-text">
+              SSL এনক্রিপ্টেড এবং ১০০% নিরাপদ মার্চেন্ট ডেটা সুরক্ষা
+            </span>
+          </div>
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">
-          <div className="bg-white py-8 px-6 shadow sm:rounded-lg sm:px-10">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {errors.general && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg
-                        className="h-5 w-5 text-red-400"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800 bangla-text">
-                        {errors.general}
-                      </h3>
-                    </div>
-                  </div>
-                </div>
-              )}
+        {/* Right Form Card */}
+        <div className="lg:col-span-7">
+          {/* Mobile Brand Header */}
+          <div className="lg:hidden text-center mb-6">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2.5"
+            >
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-md">
+                <span className="text-white font-bold text-xl bangla-text">
+                  আ
+                </span>
+              </div>
+              <span className="text-xl font-extrabold tracking-tight text-slate-900">
+                AMARDokan
+              </span>
+            </Link>
+          </div>
 
-              {/* First Row - Two inputs in one line */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label
-                    htmlFor="fullName"
-                    className="block text-sm font-medium text-gray-700 bangla-text"
+          <Card className="relative overflow-hidden border-slate-200/80 bg-white/95 backdrop-blur shadow-xl rounded-3xl py-6 sm:py-8">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500" />
+
+            <CardHeader className="px-5 sm:px-8 pb-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <Badge
+                  variant="outline"
+                  className="bg-violet-50 text-violet-700 border-violet-200 text-xs"
+                >
+                  <Zap className="w-3 h-3 mr-1" />
+                  ফ্রি মার্চেন্ট রেজিস্ট্রেশন
+                </Badge>
+                <p className="text-xs sm:text-sm text-slate-600 bangla-text">
+                  ইতিমধ্যে অ্যাকাউন্ট আছে?{" "}
+                  <Link
+                    href="/login"
+                    className="font-bold text-violet-600 hover:text-violet-700 underline-offset-4 hover:underline"
                   >
-                    পুরো নাম <span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      autoComplete="name"
-                      className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
-                        errors.fullName ? "border-red-300" : "border-gray-300"
-                      }`}
-                      placeholder="আপনার পুরো নাম"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                    />
+                    লগইন করুন
+                  </Link>
+                </p>
+              </div>
+
+              <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 bangla-text">
+                নতুন অ্যাকাউন্ট তৈরি করুন
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm text-slate-500 bangla-text">
+                আপনার নাম, দোকানের নাম এবং যোগাযোগের তথ্য দিয়ে শুরু করুন
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="px-5 sm:px-8 pt-4">
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                {errors.general && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50/90 p-3.5 text-rose-800"
+                  >
+                    <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+                    <p className="text-xs sm:text-sm font-medium bangla-text">
+                      {errors.general}
+                    </p>
+                  </div>
+                )}
+
+                {/* Row 1: Full Name + Shop Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="fullName"
+                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                    >
+                      পুরো নাম <span className="text-rose-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        id="fullName"
+                        name="fullName"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="আপনার পুরো নাম"
+                        value={formData.fullName}
+                        onChange={handleChange}
+                        aria-invalid={Boolean(errors.fullName)}
+                        className="pl-9 h-10 bg-white bangla-text"
+                      />
+                    </div>
                     {errors.fullName && (
-                      <p className="mt-2 text-sm text-red-600 bangla-text">
+                      <p className="text-xs text-rose-600 bangla-text">
                         {errors.fullName}
                       </p>
                     )}
                   </div>
-                </div>
 
-                <div>
-                  <label
-                    htmlFor="shopName"
-                    className="block text-sm font-medium text-gray-700 bangla-text"
-                  >
-                    দোকানের নাম <span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="shopName"
-                      name="shopName"
-                      type="text"
-                      autoComplete="organization"
-                      className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
-                        errors.shopName ? "border-red-300" : "border-gray-300"
-                      }`}
-                      placeholder="আপনার দোকানের নাম"
-                      value={formData.shopName}
-                      onChange={handleChange}
-                    />
-                    {errors.shopName && (
-                      <p className="mt-2 text-sm text-red-600 bangla-text">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="shopName"
+                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                    >
+                      দোকানের নাম <span className="text-rose-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        id="shopName"
+                        name="shopName"
+                        type="text"
+                        autoComplete="organization"
+                        placeholder="যেমন: Rahman Fashion"
+                        value={formData.shopName}
+                        onChange={handleChange}
+                        aria-invalid={Boolean(errors.shopName)}
+                        className="pl-9 h-10 bg-white bangla-text"
+                      />
+                    </div>
+                    {errors.shopName ? (
+                      <p className="text-xs text-rose-600 bangla-text">
                         {errors.shopName}
                       </p>
+                    ) : (
+                      slugPreview && (
+                        <p className="text-[11px] text-slate-400 truncate">
+                          স্টোর লিংক:{" "}
+                          <span className="font-mono text-violet-600 font-medium">
+                            /shop/{slugPreview}
+                          </span>
+                        </p>
+                      )
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Second Row - Two inputs in one line */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 bangla-text"
-                  >
-                    ইমেইল ঠিকানা <span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
-                        errors.email ? "border-red-300" : "border-gray-300"
-                      }`}
-                      placeholder="আপনার ইমেইল ঠিকানা"
-                      value={formData.email}
-                      onChange={handleChange}
-                    />
+                {/* Row 2: Email + Phone */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="email"
+                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                    >
+                      ইমেইল ঠিকানা <span className="text-rose-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="you@example.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        aria-invalid={Boolean(errors.email)}
+                        className="pl-9 h-10 bg-white"
+                      />
+                    </div>
                     {errors.email && (
-                      <p className="mt-2 text-sm text-red-600 bangla-text">
+                      <p className="text-xs text-rose-600 bangla-text">
                         {errors.email}
                       </p>
                     )}
                   </div>
-                </div>
 
-                <div>
-                  <label
-                    htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700 bangla-text"
-                  >
-                    ফোন নম্বর <span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      autoComplete="tel"
-                      className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
-                        errors.phone ? "border-red-300" : "border-gray-300"
-                      }`}
-                      placeholder="আপনার ফোন নম্বর"
-                      value={formData.phone}
-                      onChange={handleChange}
-                    />
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="phone"
+                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                    >
+                      মোবাইল নম্বর <span className="text-rose-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        placeholder="017XXXXXXXX"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        aria-invalid={Boolean(errors.phone)}
+                        className="pl-9 h-10 bg-white"
+                      />
+                    </div>
                     {errors.phone && (
-                      <p className="mt-2 text-sm text-red-600 bangla-text">
+                      <p className="text-xs text-rose-600 bangla-text">
                         {errors.phone}
                       </p>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Third Row - Two inputs in one line */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-gray-700 bangla-text"
-                  >
-                    পাসওয়ার্ড <span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete="new-password"
-                      className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
-                        errors.password ? "border-red-300" : "border-gray-300"
-                      }`}
-                      placeholder="পাসওয়ার্ড (ন্যূনতম ৬ অক্ষর)"
-                      value={formData.password}
-                      onChange={handleChange}
-                    />
+                {/* Row 3: Password + Confirm Password */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="password"
+                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                    >
+                      পাসওয়ার্ড <span className="text-rose-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        placeholder="ন্যূনতম ৬ অক্ষর"
+                        value={formData.password}
+                        onChange={handleChange}
+                        aria-invalid={Boolean(errors.password)}
+                        className="pl-9 pr-10 h-10 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        aria-label={
+                          showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"
+                        }
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                    {formData.password && (
+                      <div className="space-y-1 pt-0.5">
+                        <div className="grid grid-cols-4 gap-1">
+                          {[1, 2, 3, 4].map((level) => (
+                            <div
+                              key={level}
+                              className={`h-1 rounded-full transition-colors ${
+                                strength.score >= level
+                                  ? strength.color
+                                  : "bg-slate-200"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-slate-500 bangla-text">
+                          পাসওয়ার্ডের মান:{" "}
+                          <span className="font-semibold text-slate-700">
+                            {strength.label}
+                          </span>
+                        </p>
+                      </div>
+                    )}
                     {errors.password && (
-                      <p className="mt-2 text-sm text-red-600 bangla-text">
+                      <p className="text-xs text-rose-600 bangla-text">
                         {errors.password}
                       </p>
                     )}
                   </div>
-                </div>
 
-                <div>
-                  <label
-                    htmlFor="confirmPassword"
-                    className="block text-sm font-medium text-gray-700 bangla-text"
-                  >
-                    পাসওয়ার্ড নিশ্চিত করুন{" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      autoComplete="new-password"
-                      className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
-                        errors.confirmPassword
-                          ? "border-red-300"
-                          : "border-gray-300"
-                      }`}
-                      placeholder="পাসওয়ার্ড আবার লিখুন"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                    />
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="confirmPassword"
+                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                    >
+                      পাসওয়ার্ড নিশ্চিত করুন{" "}
+                      <span className="text-rose-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        placeholder="পাসওয়ার্ড পুনরায় লিখুন"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        aria-invalid={Boolean(errors.confirmPassword)}
+                        className="pl-9 pr-10 h-10 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        aria-label={
+                          showConfirmPassword
+                            ? "পাসওয়ার্ড লুকান"
+                            : "পাসওয়ার্ড দেখুন"
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                     {errors.confirmPassword && (
-                      <p className="mt-2 text-sm text-red-600 bangla-text">
+                      <p className="text-xs text-rose-600 bangla-text">
                         {errors.confirmPassword}
                       </p>
                     )}
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center">
-                <input
-                  id="agreeToTerms"
-                  name="agreeToTerms"
-                  type="checkbox"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  checked={formData.agreeToTerms}
-                  onChange={handleChange}
-                />
-                <label
-                  htmlFor="agreeToTerms"
-                  className="ml-2 block text-sm text-gray-900 bangla-text"
-                >
-                  আমি AMARDokan এর{" "}
-                  <Link
-                    href="/terms"
-                    className="text-indigo-600 hover:text-indigo-500"
-                  >
-                    শর্তাবলী
-                  </Link>{" "}
-                  এবং{" "}
-                  <Link
-                    href="/privacy"
-                    className="text-indigo-600 hover:text-indigo-500"
-                  >
-                    গোপনীয়তা নীতি
-                  </Link>{" "}
-                  মেনে নিচ্ছি <span className="text-red-500">*</span>
-                </label>
-              </div>
-              {errors.agreeToTerms && (
-                <p className="text-sm text-red-600 bangla-text">
-                  {errors.agreeToTerms}
-                </p>
-              )}
+                {/* Terms Agreement */}
+                <div className="pt-1 space-y-1.5">
+                  <div className="flex items-start gap-2.5">
+                    <Checkbox
+                      id="agreeToTerms"
+                      checked={formData.agreeToTerms}
+                      onCheckedChange={(checked) =>
+                        handleFieldChange("agreeToTerms", Boolean(checked))
+                      }
+                      className="mt-1"
+                    />
+                    <Label
+                      htmlFor="agreeToTerms"
+                      className="text-xs sm:text-sm font-normal text-slate-600 leading-relaxed cursor-pointer bangla-text"
+                    >
+                      আমি AMARDokan এর{" "}
+                      <Link
+                        href="/terms"
+                        className="font-semibold text-violet-600 hover:underline"
+                      >
+                        শর্তাবলী
+                      </Link>{" "}
+                      এবং{" "}
+                      <Link
+                        href="/privacy"
+                        className="font-semibold text-violet-600 hover:underline"
+                      >
+                        গোপনীয়তা নীতি
+                      </Link>{" "}
+                      মেনে নিচ্ছি <span className="text-rose-500">*</span>
+                    </Label>
+                  </div>
+                  {errors.agreeToTerms && (
+                    <p className="text-xs text-rose-600 bangla-text">
+                      {errors.agreeToTerms}
+                    </p>
+                  )}
+                </div>
 
-              <div>
-                <button
+                <Button
                   type="submit"
+                  variant="gradient"
+                  size="lg"
                   disabled={isLoading}
-                  className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-                    isLoading ? "opacity-70 cursor-not-allowed" : ""
-                  }`}
+                  className="w-full h-11 text-sm font-bold rounded-xl bangla-text mt-2"
                 >
                   {isLoading ? (
                     <>
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      নিবন্ধন করা হচ্ছে...
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      অ্যাকাউন্ট তৈরি হচ্ছে...
                     </>
                   ) : (
-                    "নিবন্ধন করুন"
+                    <>
+                      ফ্রি অ্যাকাউন্ট তৈরি করুন
+                      <ArrowRight className="w-4 h-4" />
+                    </>
                   )}
-                </button>
-              </div>
-            </form>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500 bangla-text">
-                    অথবা দিয়ে নিবন্ধন করুন
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <div>
-                  <a
-                    href="#"
-                    className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    <span className="sr-only">Facebook দিয়ে নিবন্ধন করুন</span>
-                    <svg
-                      className="w-5 h-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M20 10c0-5.523-4.477-10-10-10S0 4.477 0 10c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V10h2.54V7.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V10h2.773l-.443 2.89h-2.33v6.988C16.343 19.128 20 14.991 20 10z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </a>
-                </div>
-
-                <div>
-                  <a
-                    href="#"
-                    className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    <span className="sr-only">Google দিয়ে নিবন্ধন করুন</span>
-                    <svg
-                      className="w-5 h-5"
-                      viewBox="0 0 24 24"
-                      width="24"
-                      height="24"
-                    >
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      <style jsx global>{`
-        body {
-          font-family: "Hind Siliguri", sans-serif;
-        }
-        .bangla-text {
-          line-height: 1.8;
-        }
-      `}</style>
-    </>
+    </div>
   );
 }

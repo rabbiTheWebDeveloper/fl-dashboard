@@ -1,4 +1,4 @@
-import Shop from "@/model/shop.model";
+import Shop, { buildShopSlug } from "@/model/shop.model";
 import { UserModel } from "@/model/user-model";
 // default export or named export
 
@@ -18,21 +18,66 @@ import { ShopInfoModel } from "@/model/shopInfo-model";
 function generateVerificationCode() {
   return Math.floor(1000 + Math.random() * 9000).toString(); // 1000-9999
 }
+function normalizeBdPhone(rawPhone = "") {
+  const cleaned = String(rawPhone).replace(/[\s-]/g, "").trim();
+  const match = cleaned.match(/^(?:\+?88)?(01[3-9]\d{8})$/);
+  return match ? match[1] : null;
+}
+
+async function generateUniqueShopId() {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const candidate = Math.floor(100000 + Math.random() * 900000).toString();
+    const exists = await Shop.exists({ shopId: candidate });
+    if (!exists) return candidate;
+  }
+  return Date.now().toString().slice(-6);
+}
+
 async function registerUserAndShopQuery(data) {
   await dbConnect();
 
   const fullName = data?.fullName?.trim();
   const shopName = data?.shopName?.trim();
   const email = data?.email?.trim().toLowerCase();
-  const phone = data?.phone?.replace(/\s/g, "").trim();
+  const normalizedPhone = normalizeBdPhone(data?.phone);
   const password = data?.password;
 
-  if (!fullName || !shopName || !email || !phone || !password) {
+  if (!fullName || !shopName || !email || !data?.phone || !password) {
     return {
       status: 400,
       success: false,
       code: "MISSING_FIELDS",
       message: "সকল প্রয়োজনীয় তথ্য সঠিকভাবে পূরণ করুন।",
+    };
+  }
+
+  if (!/\S+@\S+\.\S+/.test(email)) {
+    return {
+      status: 400,
+      success: false,
+      code: "INVALID_EMAIL",
+      field: "email",
+      message: "সঠিক ইমেইল ঠিকানা প্রদান করুন।",
+    };
+  }
+
+  if (!normalizedPhone) {
+    return {
+      status: 400,
+      success: false,
+      code: "INVALID_PHONE",
+      field: "phone",
+      message: "সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।",
+    };
+  }
+
+  if (String(password).length < 6) {
+    return {
+      status: 400,
+      success: false,
+      code: "WEAK_PASSWORD",
+      field: "password",
+      message: "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।",
     };
   }
 
@@ -43,30 +88,27 @@ async function registerUserAndShopQuery(data) {
       status: 409,
       success: false,
       code: "EMAIL_EXISTS",
+      field: "email",
       message: "এই ইমেইল ঠিকানাটি ইতিমধ্যে নিবন্ধিত আছে।",
     };
   }
 
-  const existingPhone = await UserModel.findOne({ phone }).lean();
+  const existingPhone = await UserModel.findOne({
+    phone: { $in: [normalizedPhone, `+88${normalizedPhone}`] },
+  }).lean();
   if (existingPhone) {
     return {
       status: 409,
       success: false,
       code: "PHONE_EXISTS",
+      field: "phone",
       message: "এই ফোন নম্বরটি ইতিমধ্যে নিবন্ধিত আছে।",
     };
   }
 
-  // Check if shop exists
-  const shopSlug = slugify(shopName, { lower: true, strict: true });
-  if (!shopSlug) {
-    return {
-      status: 400,
-      success: false,
-      code: "INVALID_SHOP_NAME",
-      message: "দোকানের নাম সঠিক নয়। অনুগ্রহ করে ইংরেজি বা বৈধ নাম ব্যবহার করুন।",
-    };
-  }
+  // Build slug supporting both English & Bengali shop names
+  const shopId = await generateUniqueShopId();
+  const shopSlug = buildShopSlug(shopName, shopId);
 
   const existingShop = await Shop.findOne({ shopSlug }).lean();
   if (existingShop) {
@@ -74,6 +116,7 @@ async function registerUserAndShopQuery(data) {
       status: 409,
       success: false,
       code: "SHOP_EXISTS",
+      field: "shopName",
       message: "এই দোকানের নামটি ইতিমধ্যে ব্যবহৃত হয়েছে। অন্য নাম চেষ্টা করুন।",
     };
   }
@@ -87,7 +130,7 @@ async function registerUserAndShopQuery(data) {
   const user = new UserModel({
     fullName,
     email,
-    phone,
+    phone: normalizedPhone,
     password: hashedPassword,
     emailVerificationCode: code,
     emailVerificationExpires: expiry,
@@ -95,13 +138,22 @@ async function registerUserAndShopQuery(data) {
 
   await user.save();
 
-  // Create shop
-  const shop = new Shop({ shopName, owner: user._id });
-  await shop.save();
+  // Create shop & link to user — rollback user if shop save fails
+  try {
+    const shop = new Shop({
+      shopId,
+      shopName,
+      shopSlug,
+      owner: user._id,
+    });
+    await shop.save();
 
-  // Link shop to user
-  user.shops.push(shop._id);
-  await user.save();
+    user.shops.push(shop._id);
+    await user.save();
+  } catch (shopError) {
+    await UserModel.findByIdAndDelete(user._id).catch(() => {});
+    throw shopError;
+  }
 
   let emailSent = true;
   try {
