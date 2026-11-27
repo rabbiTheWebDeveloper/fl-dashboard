@@ -12,7 +12,12 @@ const PRESETS = [
   { label: "All Time",   days: "all" },
 ];
 
-function fmtDate(d) { return d.toISOString().split("T")[0]; }
+function fmtDate(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function getRange(preset) {
   const today = new Date();
@@ -44,7 +49,8 @@ export default function DashboardFilter({ dateFrom, dateTo }) {
     const params = new URLSearchParams(sp.toString());
     if (f) params.set("from", f); else params.delete("from");
     if (t) params.set("to",   t); else params.delete("to");
-    router.push(`${pathname}?${params.toString()}`);
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
   };
 
   const activeLabel = () => {

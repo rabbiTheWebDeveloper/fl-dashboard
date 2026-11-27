@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -91,7 +91,7 @@ export default function Dashboard({ data = {} }) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-black text-gray-900">Dashboard</h1>
-            <p className="text-sm text-gray-400 mt-0.5">
+            <p className="text-sm text-gray-400 mt-0.5" suppressHydrationWarning>
               {new Date().toLocaleDateString("en-BD", { weekday:"long", year:"numeric", month:"long", day:"numeric" })}
             </p>
           </div>
@@ -103,7 +103,9 @@ export default function Dashboard({ data = {} }) {
         {/* Filter Bar */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Filter by Date Range</p>
-          <DashboardFilter dateFrom={dateFrom} dateTo={dateTo} />
+          <Suspense fallback={null}>
+            <DashboardFilter dateFrom={dateFrom} dateTo={dateTo} />
+          </Suspense>
         </div>
       </div>
 

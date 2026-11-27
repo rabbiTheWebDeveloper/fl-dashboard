@@ -4,67 +4,86 @@ import { ProductModel } from "@/model/product-model";
 import { CustomerModel } from "@/model/customer-model";
 import { dbConnect } from "@/service/mongo";
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseBdDate(dateStr, endOfDay = false) {
+  if (typeof dateStr !== "string" || !DATE_RE.test(dateStr)) return null;
+  const d = new Date(`${dateStr}T${endOfDay ? "23:59:59" : "00:00:00"}+06:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function toBdDateKey(date) {
+  return new Date(date.getTime() + 6 * 60 * 60 * 1000).toISOString().split("T")[0];
+}
+
 /**
  * Build a date-range match condition.
  * dateFrom / dateTo are "YYYY-MM-DD" strings (Bangladesh time).
  * If both are absent → no date filter (all-time).
  */
 function buildDateMatch(dateFrom, dateTo) {
-  if (!dateFrom && !dateTo) return {};
+  const from = parseBdDate(dateFrom, false);
+  const to = parseBdDate(dateTo, true);
+  if (!from && !to) return {};
   const cond = {};
-  if (dateFrom) cond.$gte = new Date(dateFrom + "T00:00:00+06:00");
-  if (dateTo)   cond.$lte = new Date(dateTo   + "T23:59:59+06:00");
+  if (from) cond.$gte = from;
+  if (to) cond.$lte = to;
   return { createdAt: cond };
 }
 
 export async function getDashboardData({ shopId, userId, dateFrom, dateTo }) {
-  await dbConnect();
-  if (!shopId || !userId) return getEmptyDashboard();
-
-  // Cookie values are plain strings — convert to ObjectId for MongoDB $match
-  let shopObjId, userObjId;
   try {
-    shopObjId = new mongoose.Types.ObjectId(shopId);
-    userObjId = new mongoose.Types.ObjectId(userId);
-  } catch {
+    await dbConnect();
+    if (!shopId || !userId) return getEmptyDashboard();
+
+    // Cookie values are plain strings — convert to ObjectId for MongoDB $match
+    let shopObjId, userObjId;
+    try {
+      shopObjId = new mongoose.Types.ObjectId(shopId);
+      userObjId = new mongoose.Types.ObjectId(userId);
+    } catch {
+      return getEmptyDashboard();
+    }
+
+    const dateMatch = buildDateMatch(dateFrom, dateTo);
+
+    const [
+      orderStats,
+      revenueStats,
+      recentOrders,
+      topProducts,
+      dailySales,
+      ordersByType,
+      ordersByLocation,
+      ordersByStatus,
+      totalProducts,
+      lowStockProducts,
+      totalCustomers,
+    ] = await Promise.all([
+      getOrderStats(shopObjId, userObjId, dateMatch),
+      getRevenueStats(shopObjId, userObjId, dateMatch),
+      getRecentOrders(shopObjId, userObjId, dateMatch),
+      getTopProducts(shopObjId, userObjId, dateMatch),
+      getDailySales(shopObjId, userObjId, dateFrom, dateTo),
+      getOrdersByType(shopObjId, userObjId, dateMatch),
+      getOrdersByLocation(shopObjId, userObjId, dateMatch),
+      getOrdersByStatus(shopObjId, userObjId, dateMatch),
+      getProductStats(shopObjId, userObjId),
+      getLowStockProducts(shopObjId, userObjId),
+      getTotalCustomers(shopObjId, userObjId, dateMatch),
+    ]);
+
+    return JSON.parse(JSON.stringify({
+      orderStats, revenueStats, recentOrders, topProducts,
+      dailySales, ordersByType, ordersByLocation, ordersByStatus,
+      totalProducts, lowStockProducts, totalCustomers,
+      dateFrom: dateFrom || null,
+      dateTo:   dateTo   || null,
+    }));
+  } catch (error) {
+    console.error("getDashboardData error:", error);
     return getEmptyDashboard();
   }
-
-  const dateMatch = buildDateMatch(dateFrom, dateTo);
-
-  const [
-    orderStats,
-    revenueStats,
-    recentOrders,
-    topProducts,
-    dailySales,
-    ordersByType,
-    ordersByLocation,
-    ordersByStatus,
-    totalProducts,
-    lowStockProducts,
-    totalCustomers,
-  ] = await Promise.all([
-    getOrderStats(shopObjId, userObjId, dateMatch),
-    getRevenueStats(shopObjId, userObjId, dateMatch),
-    getRecentOrders(shopObjId, userObjId, dateMatch),
-    getTopProducts(shopObjId, userObjId, dateMatch),
-    getDailySales(shopObjId, userObjId, dateFrom, dateTo),
-    getOrdersByType(shopObjId, userObjId, dateMatch),
-    getOrdersByLocation(shopObjId, userObjId, dateMatch),
-    getOrdersByStatus(shopObjId, userObjId, dateMatch),
-    getProductStats(shopObjId, userObjId),
-    getLowStockProducts(shopObjId, userObjId),
-    getTotalCustomers(shopObjId, userObjId, dateMatch),
-  ]);
-
-  return JSON.parse(JSON.stringify({
-    orderStats, revenueStats, recentOrders, topProducts,
-    dailySales, ordersByType, ordersByLocation, ordersByStatus,
-    totalProducts, lowStockProducts, totalCustomers,
-    dateFrom: dateFrom || null,
-    dateTo:   dateTo   || null,
-  }));
 }
 
 /* ─── Order Status Counts ─────────────────────────────────────────────────── */
@@ -128,7 +147,7 @@ async function getRecentOrders(shopId, userId, dateMatch) {
         as: "customer",
       },
     },
-    { $unwind: { path: "$customer", preserveNullAndEmpty: true } },
+    { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
     {
       $project: {
         status: 1,
@@ -166,11 +185,21 @@ async function getTopProducts(shopId, userId, dateMatch) {
 
 /* ─── Daily Sales Chart (dynamic window) ─────────────────────────────────── */
 async function getDailySales(shopId, userId, dateFrom, dateTo) {
-  // Determine window: custom range or last 7 days
-  const endDate   = dateTo   ? new Date(dateTo   + "T23:59:59+06:00") : new Date();
-  const startDate = dateFrom ? new Date(dateFrom + "T00:00:00+06:00") : (() => {
-    const d = new Date(); d.setDate(d.getDate() - 6); return d;
+  // Determine window: custom range or last 7 days (in Bangladesh time +06:00)
+  const parsedEnd = parseBdDate(dateTo, true);
+  const parsedStart = parseBdDate(dateFrom, false);
+
+  const todayKey = toBdDateKey(new Date());
+  const endDate = parsedEnd || parseBdDate(todayKey, true);
+  let startDate = parsedStart || (() => {
+    const d = new Date(endDate);
+    d.setUTCDate(d.getUTCDate() - 6);
+    return parseBdDate(toBdDateKey(d), false);
   })();
+
+  if (startDate > endDate) {
+    startDate = parseBdDate(toBdDateKey(endDate), false);
+  }
 
   const raw = await OrderModel.aggregate([
     { $match: { shopId, userId, createdAt: { $gte: startDate, $lte: endDate } } },
@@ -182,13 +211,20 @@ async function getDailySales(shopId, userId, dateFrom, dateTo) {
     { $sort: { _id: 1 } },
   ]);
 
-  // Build day-by-day array filling gaps with 0
+  // Build day-by-day array filling gaps with 0 (capped at 366 days)
   const map = Object.fromEntries(raw.map((r) => [r._id, r]));
   const days = [];
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    const key = d.toISOString().split("T")[0];
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  let count = 0;
+  for (let ts = startDate.getTime(); ts <= endDate.getTime() && count < 366; ts += DAY_MS, count++) {
+    const key = toBdDateKey(new Date(ts));
     days.push({
-      day: new Date(key).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
+      day: new Date(`${key}T00:00:00Z`).toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      }),
       date: key,
       orders:  map[key]?.orders  ?? 0,
       revenue: map[key]?.revenue ?? 0,

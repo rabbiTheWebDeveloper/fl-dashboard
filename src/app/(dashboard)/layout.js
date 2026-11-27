@@ -255,7 +255,7 @@ const DashboardLayout = ({ children }) => {
     const fetchUser = async () => {
       try {
         const userData = await getUser();
-        setUser(userData);
+        setUser(userData || {});
       } catch (error) {
         console.error("Failed to fetch user:", error);
       }
