@@ -9,6 +9,7 @@ import React, {
   useState,
 } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   BadgeCheck,
@@ -136,14 +137,10 @@ function getProductPricing(product, selectedVariant = null) {
   };
 }
 
-function formatVariantLabel(combination) {
-  if (!combination || typeof combination !== "object") return "";
-  const entries = Object.entries(combination).filter(
-    ([, val]) => val !== undefined && val !== null && String(val).trim() !== ""
-  );
-  if (entries.length === 0) return "";
-  return entries.map(([k, v]) => `${k}: ${v}`).join(" · ");
-}
+import {
+  CART_EVENT_NAME,
+  formatVariantLabel,
+} from "../_lib/storefrontUtils";
 
 const BD_PHONE_REGEX = /^(?:\+?88)?01[3-9]\d{8}$/;
 
@@ -152,6 +149,7 @@ export default function StorefrontClient({
   initialCategory = "all",
   initialSearch = "",
 }) {
+  const router = useRouter();
   const {
     userId,
     shopId,
@@ -184,6 +182,7 @@ export default function StorefrontClient({
   const productGridCols = Number(theme.productGridCols) || 4; // 2 | 3 | 4
   const productCardStyle = theme.productCardStyle || "modern"; // "modern" | "minimal" | "bordered"
   const cardContentAlign = theme.cardContentAlign || "left"; // "left" | "center"
+  const baseHref = `/shop/${encodeURIComponent(shop.shopSlug || shop.shopId)}`;
 
   const sectionOrder = useMemo(() => {
     const valid = ["hero", "categories", "featured", "banners", "allProducts"];
@@ -416,24 +415,25 @@ export default function StorefrontClient({
     }
 
     const pricing = getProductPricing(product, chosenVariant);
-    const variantLabel = chosenVariant
-      ? formatVariantLabel(chosenVariant.combination)
-      : "";
+    const variantLabel = chosenVariant ? formatVariantLabel(chosenVariant) : "";
     const cartKey = `${product._id}::${chosenVariant?._id || variantIdx || "base"}`;
 
+    let updatedCart = [];
     setCart((prev) => {
       const existing = prev.find((i) => i.cartKey === cartKey);
       if (existing) {
         const nextQty = Math.min(maxStock, existing.quantity + qty);
-        return prev.map((i) =>
+        updatedCart = prev.map((i) =>
           i.cartKey === cartKey ? { ...i, quantity: nextQty } : i
         );
+        return updatedCart;
       }
-      return [
+      updatedCart = [
         ...prev,
         {
           cartKey,
           productId: product._id,
+          productCode: chosenVariant?.productCode || product.productCode || "",
           variantIndex: hasVariants ? variantIdx : 0,
           variantLabel,
           productName: product.productName,
@@ -449,12 +449,21 @@ export default function StorefrontClient({
           deliveryCharge: product.deliveryCharge || "paid",
         },
       ];
+      return updatedCart;
     });
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(updatedCart));
+      window.dispatchEvent(
+        new CustomEvent(CART_EVENT_NAME, { detail: { shopId, items: updatedCart } })
+      );
+    } catch {
+      // ignore
+    }
 
     if (openCheckoutNow) {
       setQuickViewProduct(null);
-      setCheckoutStep("checkout");
-      setCartOpen(true);
+      router.push(`${baseHref}/checkout`);
     } else {
       toast.success(`Added "${product.productName}" to your bag!`);
     }
@@ -535,16 +544,55 @@ export default function StorefrontClient({
       };
 
       const res = await createOrderAction(payload);
-      setCompletedOrder({
-        orderId: res?.data?._id || `ORD-${Date.now().toString().slice(-6)}`,
-        customerName: name,
-        customerPhone: phone,
-        grandTotal: cartTotals.grandTotal,
-        itemCount: cartTotals.totalItems,
-      });
+      const createdId = res?.data?._id || "";
+      if (typeof window !== "undefined" && createdId) {
+        try {
+          sessionStorage.setItem(
+            `amardokan_last_order_${createdId}`,
+            JSON.stringify({
+              _id: createdId,
+              invoiceNo: `INV-${String(createdId).slice(-8).toUpperCase()}`,
+              createdAt: new Date().toISOString(),
+              status: "pending",
+              orderType: "website",
+              deliveryLocation: deliveryZone,
+              customer: {
+                customerName: name,
+                customerPhone: phone,
+                customerAddress: address,
+                customerNote: customerForm.customerNote.trim(),
+              },
+              items: cart.map((i) => ({
+                productId: i.productId,
+                productName: i.productName,
+                productCode: i.productCode || "",
+                variantLabel: i.variantLabel || "",
+                image: i.image || "",
+                quantity: i.quantity,
+                regularPrice: i.regularPrice,
+                unitPrice: i.unitPrice,
+                lineTotal: i.unitPrice * i.quantity,
+              })),
+              subtotal: cartTotals.discountedSubtotal,
+              discount: cartTotals.totalDiscount,
+              shippingCost: cartTotals.shippingCost,
+              advanced: 0,
+              due: cartTotals.grandTotal,
+              grandTotal: cartTotals.grandTotal,
+            })
+          );
+        } catch {
+          // ignore
+        }
+      }
       setCart([]);
-      setCheckoutStep("success");
-      toast.success("Order placed successfully!");
+      setCartOpen(false);
+      toast.success("Order placed! Redirecting to your official invoice...");
+      router.push(
+        `${baseHref}/thank-you${
+          createdId ? `?orderId=${encodeURIComponent(createdId)}` : ""
+        }`
+      );
     } catch (error) {
       toast.error(error?.message || "Could not place order. Please try again.");
     } finally {
@@ -611,7 +659,9 @@ export default function StorefrontClient({
       >
         {/* Image Container */}
         <div
-          onClick={() => openQuickView(product)}
+          onClick={() =>
+            router.push(`${baseHref}/product/${encodeURIComponent(product._id)}`)
+          }
           className={`relative cursor-pointer overflow-hidden ${
             productGridCols === 2 ? "aspect-[4/3]" : "aspect-square"
           } ${
@@ -712,13 +762,13 @@ export default function StorefrontClient({
               </p>
             )}
 
-            <h3
-              onClick={() => openQuickView(product)}
-              className="text-sm sm:text-[15px] font-bold leading-snug line-clamp-2 cursor-pointer hover:opacity-80 transition-opacity bangla-text"
+            <Link
+              href={`${baseHref}/product/${encodeURIComponent(product._id)}`}
+              className="block text-sm sm:text-[15px] font-bold leading-snug line-clamp-2 hover:opacity-80 transition-opacity bangla-text"
               style={{ color: palette.text }}
             >
               {product.productName}
-            </h3>
+            </Link>
 
             {hasVariants && (
               <p
@@ -759,7 +809,9 @@ export default function StorefrontClient({
                 disabled={outOfStock}
                 onClick={() =>
                   hasVariants
-                    ? openQuickView(product)
+                    ? router.push(
+                        `${baseHref}/product/${encodeURIComponent(product._id)}`
+                      )
                     : addToCart(product, 0, 1, true)
                 }
                 style={{
@@ -995,8 +1047,8 @@ export default function StorefrontClient({
 
             {/* Hero Spotlight Product Card */}
             {heroSpotProduct && (
-              <div
-                onClick={() => openQuickView(heroSpotProduct)}
+              <Link
+                href={`${baseHref}/product/${encodeURIComponent(heroSpotProduct._id)}`}
                 style={{
                   backgroundColor: isBannerDark
                     ? rgba("#ffffff", 0.08)
@@ -1044,10 +1096,10 @@ export default function StorefrontClient({
                     className="inline-flex items-center gap-1 text-xs font-semibold"
                     style={{ color: palette.accent }}
                   >
-                    Tap to Quick Order <ArrowRight className="w-3.5 h-3.5" />
+                    View Details <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
-              </div>
+              </Link>
             )}
           </div>
         </div>
@@ -1713,6 +1765,30 @@ export default function StorefrontClient({
 
           {/* Right Quick Actions */}
           <div className="flex items-center gap-2 shrink-0">
+            <nav className="hidden xl:flex items-center gap-1 mr-1">
+              <Link
+                href={`${baseHref}/about`}
+                style={{ color: palette.text }}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:opacity-75 transition"
+              >
+                About
+              </Link>
+              <Link
+                href={`${baseHref}/terms`}
+                style={{ color: palette.text }}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:opacity-75 transition"
+              >
+                Terms
+              </Link>
+              <Link
+                href={`${baseHref}/privacy-policy`}
+                style={{ color: palette.text }}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:opacity-75 transition"
+              >
+                Privacy
+              </Link>
+            </nav>
+
             {whatsappUrl && (
               <a
                 href={whatsappUrl}
@@ -1798,12 +1874,8 @@ export default function StorefrontClient({
       {/* ─── Mobile Sticky Checkout Bar ─── */}
       {cartTotals.totalItems > 0 && !cartOpen && (
         <div className="fixed bottom-3 inset-x-3 z-30 sm:hidden">
-          <button
-            type="button"
-            onClick={() => {
-              setCheckoutStep("checkout");
-              setCartOpen(true);
-            }}
+          <Link
+            href={`${baseHref}/checkout`}
             style={{ backgroundColor: palette.primary }}
             className="w-full rounded-2xl p-3.5 text-white shadow-2xl flex items-center justify-between gap-3"
           >
@@ -1826,7 +1898,7 @@ export default function StorefrontClient({
             <span className="inline-flex items-center gap-1 text-xs font-extrabold bg-white/15 px-3 py-1.5 rounded-xl">
               Checkout <ArrowRight className="w-3.5 h-3.5" />
             </span>
-          </button>
+          </Link>
         </div>
       )}
 
@@ -1835,7 +1907,7 @@ export default function StorefrontClient({
         style={{ backgroundColor: palette.footer }}
         className="text-white/90 mt-auto pt-12 pb-20 sm:pb-10"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-8 border-b border-white/10">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               {shopInfo?.companyLogo?.url ? (
@@ -1864,6 +1936,34 @@ export default function StorefrontClient({
                 shopInfo?.shopInfo ||
                 `Thank you for shopping with ${shop.shopName}. Quality products delivered right to your doorstep.`}
             </p>
+          </div>
+
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-white/60">
+              Store Pages
+            </h4>
+            <ul className="space-y-2 text-xs sm:text-sm text-white/80">
+              <li>
+                <Link href={`${baseHref}/about`} className="hover:text-white hover:underline">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href={`${baseHref}/checkout`} className="hover:text-white hover:underline">
+                  Checkout & Bag
+                </Link>
+              </li>
+              <li>
+                <Link href={`${baseHref}/terms`} className="hover:text-white hover:underline">
+                  Terms & Conditions
+                </Link>
+              </li>
+              <li>
+                <Link href={`${baseHref}/privacy-policy`} className="hover:text-white hover:underline">
+                  Privacy Policy
+                </Link>
+              </li>
+            </ul>
           </div>
 
           <div className="space-y-2.5">
@@ -2422,14 +2522,14 @@ export default function StorefrontClient({
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setCheckoutStep("checkout")}
+                <Link
+                  href={`${baseHref}/checkout`}
+                  onClick={() => setCartOpen(false)}
                   style={{ backgroundColor: palette.primary }}
                   className="w-full h-11 rounded-xl text-sm font-bold text-white shadow-md inline-flex items-center justify-center gap-2 hover:opacity-95"
                 >
-                  Proceed to COD Checkout <ArrowRight className="w-4 h-4" />
-                </button>
+                  Proceed to Checkout Page <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
             </>
           ) : (
