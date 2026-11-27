@@ -79,4 +79,47 @@ async function sendVerifyEmail({ toEmail, fullName, code, expiry }) {
   await transporter.sendMail(mailOptions);
 }
 
-export { sendWelcomeEmail, sendVerifyEmail };
+async function sendPasswordResetEmail({ toEmail, fullName, code }) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "su31f2@gmail.com",
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+
+  const resetUrl = `${getBaseUrl()}/forgot-password?email=${encodeURIComponent(
+    toEmail
+  )}&step=reset`;
+
+  const mailOptions = {
+    from: `"AMARDokan" <su31f2@gmail.com>`,
+    to: toEmail,
+    subject: "আপনার AMARDokan পাসওয়ার্ড রিসেট কোড",
+    html: `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
+      <h2 style="color: #2c3e50; text-align: center;">প্রিয় ${fullName || "ব্যবহারকারী"},</h2>
+      <p>আপনার AMARDokan অ্যাকাউন্টের পাসওয়ার্ড রিসেট করার অনুরোধ পাওয়া গেছে।</p>
+      <p>নতুন পাসওয়ার্ড সেট করতে নিচের <strong>৬-অঙ্কের</strong> কোডটি ব্যবহার করুন:</p>
+
+      <div style="text-align: center;">
+        <div style="font-size: 28px; font-weight: bold; color: #4f46e5; background: #f3f4f6; padding: 15px 30px; display: inline-block; margin: 15px 0; border-radius: 6px; letter-spacing: 6px;">
+          ${code}
+        </div>
+      </div>
+
+      <p>এই কোডটি পরবর্তী <strong>১৫ মিনিট</strong> পর্যন্ত বৈধ থাকবে।</p>
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${resetUrl}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">পাসওয়ার্ড রিসেট করুন</a>
+      </div>
+      <p style="font-size: 14px; color: #777;">আপনি যদি এই অনুরোধ না করে থাকেন, তবে এই ইমেইলটি এড়িয়ে যান। আপনার পাসওয়ার্ড অপরিবর্তিত থাকবে।</p>
+      <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;" />
+      <p style="font-size: 14px; color: #666; text-align: center;">ধন্যবাদ,<br><strong>AMARDokan টিম</strong></p>
+    </div>
+  `,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
+export { sendWelcomeEmail, sendVerifyEmail, sendPasswordResetEmail };

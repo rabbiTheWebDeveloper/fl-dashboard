@@ -22,6 +22,8 @@ const userSchema = new Schema(
     emailVerified: { type: Boolean, default: false },
     emailVerificationCode: { type: String  },
     emailVerificationExpires: { type: Date  },
+    resetPasswordCode: { type: String },
+    resetPasswordExpires: { type: Date },
     payment_status: {
       type: String,
       enum: ["paid", "unpaid"],

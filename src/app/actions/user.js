@@ -4,7 +4,9 @@ import {
   changePasswordQuery,
   loginUserQuary,
   registerUserAndShopQuery,
+  requestPasswordResetQuery,
   resendVerificationEmailQuary,
+  resetPasswordWithCodeQuery,
   verifyEmailQuary,
 } from "@/queries/user";
 import { revalidatePath } from "next/cache";
@@ -63,5 +65,34 @@ export async function userPasswordChangeAction(data) {
     return response;
   } catch (error) {
     throw new Error(error);
+  }
+}
+
+export async function requestPasswordResetAction(email) {
+  try {
+    return await requestPasswordResetQuery(email);
+  } catch (error) {
+    console.error("Request password reset action error:", error);
+    return {
+      status: false,
+      code: "SERVER_ERROR",
+      message:
+        error?.message || "কোড পাঠানো যায়নি। দয়া করে আবার চেষ্টা করুন।",
+    };
+  }
+}
+
+export async function resetPasswordAction(data) {
+  try {
+    return await resetPasswordWithCodeQuery(data);
+  } catch (error) {
+    console.error("Reset password action error:", error);
+    return {
+      status: false,
+      code: "SERVER_ERROR",
+      message:
+        error?.message ||
+        "পাসওয়ার্ড পরিবর্তন করা যায়নি। দয়া করে আবার চেষ্টা করুন।",
+    };
   }
 }

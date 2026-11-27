@@ -268,12 +268,12 @@ export default function Login() {
               </div>
 
               <div className="text-sm">
-                <a
-                  href="#"
+                <Link
+                  href="/forgot-password"
                   className="font-medium text-indigo-600 hover:text-indigo-500 bangla-text"
                 >
                   পাসওয়ার্ড ভুলে গেছেন?
-                </a>
+                </Link>
               </div>
             </div>
 

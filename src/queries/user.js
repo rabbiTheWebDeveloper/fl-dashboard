@@ -3,8 +3,13 @@ import { UserModel } from "@/model/user-model";
 // default export or named export
 
 import { dbConnect } from "@/service/mongo";
-import { sendVerifyEmail, sendWelcomeEmail } from "@/utlis/mail";
+import {
+  sendPasswordResetEmail,
+  sendVerifyEmail,
+  sendWelcomeEmail,
+} from "@/utlis/mail";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import slugify from "slugify";
 import jwt from "jsonwebtoken";
 import { DomainModel } from "@/model/domain-model";
@@ -288,6 +293,120 @@ async function changePasswordQuery({ userId, oldPassword, newPassword }) {
     message: "Password changed successfully",
   };
 }
+
+function hashResetCode(code) {
+  return crypto.createHash("sha256").update(String(code)).digest("hex");
+}
+
+async function requestPasswordResetQuery(rawEmail) {
+  await dbConnect();
+
+  const email = rawEmail?.trim().toLowerCase();
+  if (!email || !/\S+@\S+\.\S+/.test(email)) {
+    return {
+      status: false,
+      code: "INVALID_EMAIL",
+      message: "সঠিক ইমেইল ঠিকানা প্রদান করুন।",
+    };
+  }
+
+  const user = await UserModel.findOne({ email });
+  if (!user) {
+    return {
+      status: false,
+      code: "USER_NOT_FOUND",
+      message: "এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি।",
+    };
+  }
+
+  const code = crypto.randomInt(100000, 1000000).toString();
+  const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+  user.resetPasswordCode = hashResetCode(code);
+  user.resetPasswordExpires = expiry;
+  await user.save();
+
+  await sendPasswordResetEmail({
+    toEmail: user.email,
+    fullName: user.fullName,
+    code,
+  });
+
+  return {
+    status: true,
+    email: user.email,
+    message: "পাসওয়ার্ড রিসেট কোড আপনার ইমেইলে পাঠানো হয়েছে।",
+  };
+}
+
+async function resetPasswordWithCodeQuery({ email: rawEmail, code, newPassword }) {
+  await dbConnect();
+
+  const email = rawEmail?.trim().toLowerCase();
+  const trimmedCode = String(code ?? "").trim();
+
+  if (!email || !trimmedCode || !newPassword) {
+    return {
+      status: false,
+      code: "MISSING_FIELDS",
+      message: "সব তথ্য সঠিকভাবে পূরণ করুন।",
+    };
+  }
+
+  if (newPassword.length < 6) {
+    return {
+      status: false,
+      code: "WEAK_PASSWORD",
+      message: "নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।",
+    };
+  }
+
+  const user = await UserModel.findOne({ email });
+  if (!user) {
+    return {
+      status: false,
+      code: "USER_NOT_FOUND",
+      message: "এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি।",
+    };
+  }
+
+  if (
+    !user.resetPasswordCode ||
+    !user.resetPasswordExpires ||
+    user.resetPasswordExpires < new Date()
+  ) {
+    return {
+      status: false,
+      code: "EXPIRED_CODE",
+      message: "রিসেট কোডের মেয়াদ শেষ হয়ে গেছে। দয়া করে নতুন কোড পাঠান।",
+    };
+  }
+
+  const incomingHash = Buffer.from(hashResetCode(trimmedCode), "hex");
+  const storedHash = Buffer.from(user.resetPasswordCode, "hex");
+  const isCodeValid =
+    incomingHash.length === storedHash.length &&
+    crypto.timingSafeEqual(incomingHash, storedHash);
+
+  if (!isCodeValid) {
+    return {
+      status: false,
+      code: "INVALID_CODE",
+      message: "ভেরিফিকেশন কোডটি সঠিক নয়।",
+    };
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  user.resetPasswordCode = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+
+  return {
+    status: true,
+    message: "পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। এখন লগইন করুন।",
+  };
+}
+
 export {
   registerUserAndShopQuery,
   getUser,
@@ -295,4 +414,6 @@ export {
   resendVerificationEmailQuary,
   loginUserQuary,
   changePasswordQuery,
+  requestPasswordResetQuery,
+  resetPasswordWithCodeQuery,
 };
