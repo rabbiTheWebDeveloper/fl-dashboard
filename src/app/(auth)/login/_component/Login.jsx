@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { loginUserQuaryAction } from "@/app/actions/user";
-import { isAuthenticated, setRole, setToken, setUser } from "@/lib/auth";
+import { getRole, isAuthenticated, setRole, setToken, setUser } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,7 +48,13 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      router.replace("/dashboard");
+      const currentRole = String(getRole() || "").toLowerCase();
+      const target = ["superadmin", "user-admin", "moderator", "support", "admin"].includes(
+        currentRole
+      )
+        ? "/admin"
+        : "/dashboard";
+      router.replace(target);
     }
   }, [router]);
 
@@ -120,7 +126,15 @@ export default function Login() {
         }
 
         toast.success(response.message || "লগইন সফল হয়েছে");
-        window.location.href = "/dashboard";
+        const resolvedRole = String(response.user?.role || "").toLowerCase();
+        const destination =
+          response.redirectTo ||
+          (["superadmin", "user-admin", "moderator", "support", "admin"].includes(
+            resolvedRole
+          )
+            ? "/admin"
+            : "/dashboard");
+        window.location.href = destination;
         return;
       }
 

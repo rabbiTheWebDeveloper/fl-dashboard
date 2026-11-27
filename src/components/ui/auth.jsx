@@ -2,7 +2,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
+import { getRole, isAuthenticated } from '@/lib/auth';
 import Loading from './loading';
 
 const PUBLIC_PATHS = [
@@ -29,7 +29,11 @@ export function Auth({ children }) {
     }
 
     if (authenticated && isPublicPath) {
-      router.replace('/dashboard');
+      const role = String(getRole() || '').toLowerCase();
+      const target = ['superadmin', 'user-admin', 'moderator', 'support', 'admin'].includes(role)
+        ? '/admin'
+        : '/dashboard';
+      router.replace(target);
       return;
     }
 

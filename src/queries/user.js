@@ -14,6 +14,7 @@ import slugify from "slugify";
 import jwt from "jsonwebtoken";
 import { DomainModel } from "@/model/domain-model";
 import { ShopInfoModel } from "@/model/shopInfo-model";
+import { authenticateAdminAccount } from "@/queries/admin";
 
 function generateVerificationCode() {
   return Math.floor(1000 + Math.random() * 9000).toString(); // 1000-9999
@@ -341,6 +342,16 @@ async function loginUserQuary(credentials) {
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     throw new Error("Server authentication configuration is missing.");
+  }
+
+  // 0️⃣ Check dedicated AdminUserModel first (supports superadmin & user-admin roles)
+  const adminAuth = await authenticateAdminAccount({
+    email,
+    password,
+    rememberMe,
+  });
+  if (adminAuth) {
+    return adminAuth;
   }
 
   // 1️⃣ Find user
