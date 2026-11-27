@@ -183,8 +183,8 @@ export default function ManageShopPage() {
           const Icon = section.icon;
           const isSoon = section.badge === "Soon";
           return (
-            <Link key={section.id} href={section.href} className="group block">
-              <Card className="h-full border-slate-200/80 bg-white/95 hover:border-violet-300 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+            <Link key={section.id} href={section.href} className="group block app-press">
+              <Card className="h-full border-slate-200/80 bg-white/95 hover:border-violet-300 hover:shadow-lg sm:hover:-translate-y-0.5 transition-all duration-200">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <div

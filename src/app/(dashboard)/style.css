@@ -14,11 +14,27 @@
   --chart-4: #f59e0b;
   --chart-5: #f43f5e;
   font-family: 'Inter', 'Hind Siliguri', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .bangla-text {
   font-family: 'Hind Siliguri', sans-serif;
   line-height: 1.75;
+}
+
+/* Native dynamic viewport & safe-area utilities */
+.h-dvh-safe {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Subtle RGB mesh canvas background */
@@ -50,6 +66,14 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Native touch press feedback */
+.app-press {
+  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
+}
+.app-press:active {
+  transform: scale(0.97);
 }
 
 /* Custom scrollbar for sidebar */

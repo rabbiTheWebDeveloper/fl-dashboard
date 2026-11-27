@@ -71,18 +71,18 @@ const ACCENTS = {
 function StatCard({ label, value, sub, icon: Icon, accent = "violet" }) {
   const palette = ACCENTS[accent] || ACCENTS.violet;
   return (
-    <Card className="relative overflow-hidden py-4 border-slate-200/80 bg-white/95">
+    <Card className="relative overflow-hidden py-3.5 sm:py-4 border-slate-200/80 bg-white/95">
       <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${palette.bar}`} />
-      <CardContent className="px-5 flex items-start justify-between gap-3">
+      <CardContent className="px-3.5 sm:px-5 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">
             {label}
           </p>
-          <p className="text-2xl font-extrabold text-slate-900 mt-1">{value}</p>
-          {sub && <p className="text-[11px] text-slate-400 mt-1 truncate">{sub}</p>}
+          <p className="text-lg sm:text-2xl font-extrabold text-slate-900 mt-0.5 sm:mt-1 truncate">{value}</p>
+          {sub && <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 sm:mt-1 truncate">{sub}</p>}
         </div>
         <div
-          className={`w-10 h-10 rounded-xl bg-gradient-to-br ${palette.iconBg} text-white flex items-center justify-center shadow-md shrink-0`}
+          className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${palette.iconBg} text-white flex items-center justify-center shadow-md shrink-0`}
         >
           <Icon className="w-4 h-4" />
         </div>
@@ -167,25 +167,24 @@ export default function Analytics({ data }) {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full lg:w-auto">
             <Input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-36 bg-white text-xs h-9"
+              className="w-full sm:w-36 bg-white text-xs h-9"
             />
-            <span className="text-slate-400 text-xs">→</span>
             <Input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-36 bg-white text-xs h-9"
+              className="w-full sm:w-36 bg-white text-xs h-9"
             />
-            <Button variant="gradient" size="sm" onClick={applyFilter}>
+            <Button variant="gradient" size="sm" onClick={applyFilter} className="col-span-2 sm:col-span-1">
               Apply Range
             </Button>
             {(data?.dateFrom || data?.dateTo) && (
-              <Button variant="outline" size="sm" onClick={resetFilter}>
+              <Button variant="outline" size="sm" onClick={resetFilter} className="col-span-2 sm:col-span-1">
                 <RotateCcw className="w-3.5 h-3.5" />
                 Reset
               </Button>
@@ -194,22 +193,24 @@ export default function Analytics({ data }) {
         </CardContent>
       </Card>
 
-      {/* Shadcn Tabs */}
-      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-        <TabsList className="bg-white border border-slate-200/80 p-1 h-auto flex-wrap">
-          <TabsTrigger value="overview" className="px-4 py-1.5">
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="sales" className="px-4 py-1.5">
-            Sales & Revenue
-          </TabsTrigger>
-          <TabsTrigger value="products" className="px-4 py-1.5">
-            Products
-          </TabsTrigger>
-          <TabsTrigger value="customers" className="px-4 py-1.5">
-            Customers
-          </TabsTrigger>
-        </TabsList>
+      {/* Shadcn Tabs — swipeable pill bar on mobile */}
+      <Tabs value={tab} onValueChange={setTab} className="space-y-5 sm:space-y-6">
+        <div className="overflow-x-auto scrollbar-hidden -mx-1 px-1">
+          <TabsList className="bg-white border border-slate-200/80 p-1 h-auto inline-flex min-w-full sm:min-w-0">
+            <TabsTrigger value="overview" className="px-4 py-1.5 text-xs sm:text-sm">
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="sales" className="px-4 py-1.5 text-xs sm:text-sm">
+              Sales & Revenue
+            </TabsTrigger>
+            <TabsTrigger value="products" className="px-4 py-1.5 text-xs sm:text-sm">
+              Products
+            </TabsTrigger>
+            <TabsTrigger value="customers" className="px-4 py-1.5 text-xs sm:text-sm">
+              Customers
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* OVERVIEW */}
         <TabsContent value="overview" className="space-y-6">

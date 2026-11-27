@@ -457,14 +457,14 @@ export default function BillingPage({
               {filtered.length} invoice(s) displayed
             </CardDescription>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hidden sm:flex-wrap -mx-1 px-1">
             {["all", "unpaid", "paid", "overdue"].map((f) => (
               <Button
                 key={f}
                 size="sm"
                 variant={filter === f ? "gradient" : "outline"}
                 onClick={() => setFilter(f)}
-                className="h-8 text-xs capitalize rounded-lg"
+                className="h-8 text-xs capitalize rounded-full sm:rounded-lg shrink-0"
               >
                 {f === "all" ? `All (${billings.length})` : f}
               </Button>
@@ -472,8 +472,78 @@ export default function BillingPage({
           </div>
         </CardHeader>
 
-        <CardContent>
-          <div className="rounded-xl border border-slate-200/80 overflow-hidden">
+        <CardContent className="px-3.5 sm:px-6">
+          {/* Mobile Native Invoice Cards (< md) */}
+          <div className="md:hidden space-y-3">
+            {filtered.length === 0 ? (
+              <div className="text-center py-12 rounded-2xl border border-dashed border-slate-200">
+                <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm font-medium text-slate-600">
+                  No invoices found
+                </p>
+              </div>
+            ) : (
+              filtered.map((bill) => (
+                <div
+                  key={bill._id}
+                  className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-mono text-xs font-extrabold text-violet-700">
+                        {bill.invoiceNumber}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Issued {fmtDate(bill.createdAt)} · Due {fmtDate(bill.dueDate)}
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={`capitalize ${
+                        STATUS_STYLE[bill.status] || STATUS_STYLE.unpaid
+                      }`}
+                    >
+                      {bill.status}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl bg-slate-50/80 px-3 py-2.5">
+                    <span className="text-xs text-slate-500">
+                      {fmtDate(bill.billingPeriodStart)} – {fmtDate(bill.billingPeriodEnd)}
+                    </span>
+                    <span className="text-base font-extrabold text-slate-900">
+                      {tk(bill.totalDue)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs flex-1"
+                      onClick={() => setViewBill(bill)}
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      Invoice
+                    </Button>
+                    {(bill.status === "unpaid" || bill.status === "overdue") && (
+                      <Button
+                        size="sm"
+                        variant="gradient"
+                        className="h-8 text-xs flex-1"
+                        onClick={() => setPayBill(bill)}
+                      >
+                        Mark Paid
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table (md+) */}
+          <div className="hidden md:block rounded-xl border border-slate-200/80 overflow-hidden">
             <Table>
               <TableHeader className="bg-slate-50/80">
                 <TableRow>

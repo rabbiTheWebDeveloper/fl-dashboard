@@ -111,7 +111,7 @@ export default function ManageUsers({ user }) {
             Collaborate securely with managers and order-fulfillment staff.
           </p>
         </div>
-        <Button variant="gradient" onClick={() => setShowModal(true)}>
+        <Button variant="gradient" onClick={() => setShowModal(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4" />
           Invite Member
         </Button>

@@ -245,16 +245,16 @@ export default function Orders({ orderlist = [] }) {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
             Order <span className="rgb-gradient-text">Management</span>
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             Track, filter, and fulfill all customer orders in one place.
           </p>
         </div>
-        <Button asChild variant="gradient">
+        <Button asChild variant="gradient" className="w-full sm:w-auto">
           <Link href="/dashboard/orders/create-order">
             <Plus className="h-4 w-4" />
             Create Manual Order
@@ -263,7 +263,7 @@ export default function Orders({ orderlist = [] }) {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {[
           {
             label: "Total Orders",
@@ -302,21 +302,21 @@ export default function Orders({ orderlist = [] }) {
           return (
             <Card
               key={s.label}
-              className="relative overflow-hidden py-4 border-slate-200/80 bg-white/95"
+              className="relative overflow-hidden py-3.5 sm:py-4 border-slate-200/80 bg-white/95"
             >
               <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${s.bar}`} />
-              <CardContent className="px-5 flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <CardContent className="px-3.5 sm:px-5 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">
                     {s.label}
                   </p>
-                  <p className="text-2xl font-extrabold text-slate-900 mt-1">
+                  <p className="text-lg sm:text-2xl font-extrabold text-slate-900 mt-0.5 sm:mt-1 truncate">
                     {s.value}
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-1">{s.sub}</p>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 sm:mt-1 truncate">{s.sub}</p>
                 </div>
                 <div
-                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.iconBg} text-white flex items-center justify-center shadow-md shrink-0`}
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${s.iconBg} text-white flex items-center justify-center shadow-md shrink-0`}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
@@ -394,8 +394,8 @@ export default function Orders({ orderlist = [] }) {
             </div>
           </div>
 
-          {/* Status Pill Tabs */}
-          <div className="flex flex-wrap gap-2 pt-1">
+          {/* Status Pill Tabs — swipeable strip on mobile */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hidden sm:flex-wrap -mx-1 px-1 pt-1">
             {statusCounts.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -405,7 +405,7 @@ export default function Orders({ orderlist = [] }) {
                   size="sm"
                   variant={isActive ? "gradient" : "outline"}
                   onClick={() => setActiveTab(tab.id)}
-                  className="h-8 text-xs rounded-lg gap-1.5"
+                  className="h-8 text-xs rounded-full sm:rounded-lg gap-1.5 shrink-0"
                 >
                   {tab.label}
                   <span
@@ -423,8 +423,152 @@ export default function Orders({ orderlist = [] }) {
           </div>
         </CardHeader>
 
-        <CardContent>
-          <div className="rounded-xl border border-slate-200/80 overflow-hidden">
+        <CardContent className="px-3.5 sm:px-6">
+          {/* Mobile Native Card List (< md) */}
+          <div className="md:hidden space-y-3">
+            {filteredOrders.length === 0 ? (
+              <div className="text-center py-12 rounded-2xl border border-dashed border-slate-200">
+                <ShoppingCart className="h-10 w-10 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm font-medium text-slate-600">
+                  No matching orders found
+                </p>
+              </div>
+            ) : (
+              filteredOrders.map((order) => {
+                const oid = getOrderId(order);
+                return (
+                  <div
+                    key={oid}
+                    className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                          checked={selectedOrders.includes(oid)}
+                          onChange={() => handleOrderSelect(oid)}
+                        />
+                        <div>
+                          <span className="font-mono text-xs font-extrabold text-violet-700">
+                            #{oid.slice(-6).toUpperCase()}
+                          </span>
+                          <p className="text-[11px] text-slate-400">
+                            {formatDate(order.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant="outline"
+                          className={
+                            statusColors[order.status] ||
+                            "bg-slate-100 text-slate-700"
+                          }
+                        >
+                          {statusLabels[order.status] || order.status}
+                        </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                            <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => updateOrderStatus(oid, "confirmed")}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2 text-emerald-600" />
+                              Mark Confirmed
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => updateOrderStatus(oid, "processing")}
+                            >
+                              <Clock className="h-4 w-4 mr-2 text-sky-600" />
+                              Mark Processing
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => updateOrderStatus(oid, "shipped")}
+                            >
+                              <Truck className="h-4 w-4 mr-2 text-violet-600" />
+                              Mark Shipped
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => updateOrderStatus(oid, "delivered")}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2 text-cyan-600" />
+                              Mark Delivered
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => updateOrderStatus(oid, "cancelled")}
+                              className="text-rose-600 focus:text-rose-600"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Cancel Order
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-50/80 p-3 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-bold text-slate-900 truncate">
+                          {order?.customer?.customerName || "Unknown"}
+                        </p>
+                        {order?.customer?.customerPhone && (
+                          <a
+                            href={`tel:${order.customer.customerPhone}`}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full shrink-0"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {order.customer.customerPhone}
+                          </a>
+                        )}
+                      </div>
+                      {order?.customer?.customerAddress && (
+                        <p className="text-xs text-slate-500 flex items-start gap-1">
+                          <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-slate-400" />
+                          <span className="line-clamp-1">
+                            {order.customer.customerAddress}
+                          </span>
+                        </p>
+                      )}
+                      <p className="text-xs text-slate-700 pt-1 border-t border-slate-200/60 line-clamp-2">
+                        {getProductDetails(order)}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <Badge variant="outline" className="text-[11px]">
+                        {order.deliveryLocation === "insideDhaka"
+                          ? "Inside Dhaka"
+                          : order.deliveryLocation === "outsideDhaka"
+                          ? "Outside Dhaka"
+                          : "Cash on Delivery"}
+                      </Badge>
+                      <div className="text-right">
+                        <span className="text-sm font-extrabold text-slate-900">
+                          {formatCurrency(order.grand_total)}
+                        </span>
+                        {Number(order.due) > 0 && (
+                          <span className="ml-2 text-xs font-semibold text-rose-600">
+                            Due {formatCurrency(order.due)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table (md+) */}
+          <div className="hidden md:block rounded-xl border border-slate-200/80 overflow-hidden">
             <Table>
               <TableHeader className="bg-slate-50/80">
                 <TableRow>

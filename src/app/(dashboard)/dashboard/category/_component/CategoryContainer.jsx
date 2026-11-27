@@ -139,16 +139,16 @@ export default function CategoryContainer({ categoryList = [] }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
             Product <span className="rgb-gradient-text">Categories</span>
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             Organize your storefront catalog into clean collections.
           </p>
         </div>
-        <Button asChild variant="gradient">
+        <Button asChild variant="gradient" className="w-full sm:w-auto">
           <Link href="/dashboard/category/add">
             <Plus className="w-4 h-4" />
             Add Category
@@ -156,10 +156,11 @@ export default function CategoryContainer({ categoryList = [] }) {
         </Button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* KPI Cards — compact 3-col strip on mobile */}
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
         {[
           {
+            shortLabel: "Total",
             label: "Total Categories",
             value: categories.length,
             icon: FolderKanban,
@@ -167,6 +168,7 @@ export default function CategoryContainer({ categoryList = [] }) {
             iconBg: "from-violet-600 to-indigo-600",
           },
           {
+            shortLabel: "Active",
             label: "Active Categories",
             value: activeCount,
             icon: CheckCircle2,
@@ -174,6 +176,7 @@ export default function CategoryContainer({ categoryList = [] }) {
             iconBg: "from-emerald-500 to-teal-600",
           },
           {
+            shortLabel: "Hidden",
             label: "Inactive Categories",
             value: inactiveCount,
             icon: EyeOff,
@@ -185,20 +188,21 @@ export default function CategoryContainer({ categoryList = [] }) {
           return (
             <Card
               key={s.label}
-              className="relative overflow-hidden py-4 border-slate-200/80 bg-white/95"
+              className="relative overflow-hidden py-3 sm:py-4 border-slate-200/80 bg-white/95"
             >
               <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${s.bar}`} />
-              <CardContent className="px-5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {s.label}
+              <CardContent className="px-3 sm:px-5 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">
+                    <span className="sm:hidden">{s.shortLabel}</span>
+                    <span className="hidden sm:inline">{s.label}</span>
                   </p>
-                  <p className="text-2xl font-extrabold text-slate-900 mt-1">
+                  <p className="text-lg sm:text-2xl font-extrabold text-slate-900 mt-0.5 sm:mt-1">
                     {s.value}
                   </p>
                 </div>
                 <div
-                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.iconBg} text-white flex items-center justify-center shadow-md`}
+                  className={`hidden sm:flex w-10 h-10 rounded-xl bg-gradient-to-br ${s.iconBg} text-white items-center justify-center shadow-md shrink-0`}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
@@ -245,8 +249,89 @@ export default function CategoryContainer({ categoryList = [] }) {
           </div>
         </CardHeader>
 
-        <CardContent>
-          <div className="rounded-xl border border-slate-200/80 overflow-hidden">
+        <CardContent className="px-3.5 sm:px-6">
+          {/* Mobile Native Category Cards (< md) */}
+          <div className="md:hidden space-y-2.5">
+            {filteredCategories.length === 0 ? (
+              <div className="text-center py-12 rounded-2xl border border-dashed border-slate-200">
+                <FolderKanban className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm font-medium text-slate-600">
+                  No categories found
+                </p>
+              </div>
+            ) : (
+              filteredCategories.map((category) => (
+                <div
+                  key={category._id}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-xs"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {category.image ? (
+                      <img
+                        className="h-11 w-11 rounded-xl object-cover border border-slate-200 bg-slate-50 shrink-0"
+                        src={category.image}
+                        alt={category.name}
+                      />
+                    ) : (
+                      <div className="h-11 w-11 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+                        <ImageIcon className="w-4 h-4 text-violet-500" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900 truncate">
+                        {category.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => !updatingId && toggleStatus(category)}
+                          disabled={updatingId === category._id}
+                        >
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] ${
+                              category.status === "active"
+                                ? "bg-emerald-500/10 text-emerald-700 border-emerald-200"
+                                : "bg-rose-500/10 text-rose-700 border-rose-200"
+                            }`}
+                          >
+                            {updatingId === category._id
+                              ? "Updating..."
+                              : category.status === "active"
+                              ? "Active"
+                              : "Inactive"}
+                          </Badge>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button asChild variant="ghost" size="icon" className="h-9 w-9">
+                      <Link
+                        href={`/dashboard/category/update?id=${category._id}`}
+                        aria-label="Edit category"
+                      >
+                        <Edit className="w-4 h-4 text-violet-600" />
+                      </Link>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-rose-600 hover:bg-rose-50"
+                      onClick={() => setCategoryToDelete(category)}
+                      aria-label="Delete category"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table (md+) */}
+          <div className="hidden md:block rounded-xl border border-slate-200/80 overflow-hidden">
             <Table>
               <TableHeader className="bg-slate-50/80">
                 <TableRow>

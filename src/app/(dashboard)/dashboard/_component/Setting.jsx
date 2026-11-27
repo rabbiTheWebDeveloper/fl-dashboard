@@ -105,15 +105,15 @@ export default function Setting({ user }) {
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="bg-white border border-slate-200/80 p-1 h-auto">
-          <TabsTrigger value="profile" className="px-4 py-2 gap-2">
+      <Tabs defaultValue="profile" className="space-y-5 sm:space-y-6">
+        <TabsList className="bg-white border border-slate-200/80 p-1 h-auto w-full sm:w-fit grid grid-cols-2 sm:inline-flex">
+          <TabsTrigger value="profile" className="px-3 sm:px-4 py-2 gap-1.5 text-xs sm:text-sm">
             <User className="w-4 h-4" />
-            Profile Information
+            Profile
           </TabsTrigger>
-          <TabsTrigger value="password" className="px-4 py-2 gap-2">
+          <TabsTrigger value="password" className="px-3 sm:px-4 py-2 gap-1.5 text-xs sm:text-sm">
             <Shield className="w-4 h-4" />
-            Password & Security
+            Security
           </TabsTrigger>
         </TabsList>
 

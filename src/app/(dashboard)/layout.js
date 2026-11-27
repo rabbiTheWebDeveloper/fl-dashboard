@@ -14,6 +14,7 @@ import {
   ExternalLink,
   FolderKanban,
   LayoutDashboard,
+  LayoutGrid,
   LayoutTemplate,
   LogOut,
   Menu,
@@ -43,6 +44,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -155,6 +157,37 @@ const navItems = [
   },
 ];
 
+const QUICK_ACTIONS = [
+  {
+    href: "/dashboard/orders/create-order",
+    label: "Create Order",
+    sub: "Manual POS / phone order",
+    icon: ShoppingCart,
+    grad: "from-violet-600 to-indigo-600",
+  },
+  {
+    href: "/dashboard/add-product",
+    label: "Add Product",
+    sub: "Upload item & variants",
+    icon: Boxes,
+    grad: "from-emerald-500 to-teal-600",
+  },
+  {
+    href: "/dashboard/category/add",
+    label: "New Category",
+    sub: "Create product collection",
+    icon: FolderKanban,
+    grad: "from-cyan-500 to-blue-600",
+  },
+  {
+    href: "/dashboard/myshop/promo-codes",
+    label: "Promo Code",
+    sub: "Launch discount campaign",
+    icon: Tag,
+    grad: "from-pink-500 to-rose-600",
+  },
+];
+
 const INITIAL_NOTIFICATIONS = [
   {
     id: 1,
@@ -195,20 +228,20 @@ function resolveActiveTab(pathname = "") {
 }
 
 const PAGE_TITLES = {
-  dashboard: "Dashboard Overview",
-  orders: "Orders Management",
-  products: "Products Inventory",
-  category: "Product Categories",
+  dashboard: "Dashboard",
+  orders: "Orders",
+  products: "Products",
+  category: "Categories",
   manage: "Manage Shop",
-  "customize-theme": "Customize Storefront Theme",
+  "customize-theme": "Theme Studio",
   "landing-pages": "Landing Pages",
-  "promo-codes": "Promo Codes & Discounts",
-  analytics: "Analytics & Insights",
-  billings: "Billing & Invoices",
-  subscription: "Subscription Plans",
-  team: "Team & Access",
-  theme: "Theme Marketplace",
-  settings: "Account Settings",
+  "promo-codes": "Promo Codes",
+  analytics: "Analytics",
+  billings: "Billings",
+  subscription: "Subscription",
+  team: "Team",
+  theme: "Themes",
+  settings: "Settings",
 };
 
 export default function DashboardLayout({ children }) {
@@ -217,6 +250,7 @@ export default function DashboardLayout({ children }) {
 
   const [user, setUser] = useState({});
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState(() =>
     pathname?.toLowerCase().includes("myshop") ? "myshop" : null
   );
@@ -251,6 +285,12 @@ export default function DashboardLayout({ children }) {
   const storeUrl = user?.domain ? `http://${user.domain}` : "/";
   const shopName = user?.shops?.shopName || "AMARDokan Store";
   const shopId = user?.shops?.shopId || "—";
+
+  const isMoreActive = ![
+    "dashboard",
+    "orders",
+    "products",
+  ].includes(activeTab);
 
   const renderSidebarContent = (onNavigate) => (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 relative overflow-hidden">
@@ -406,12 +446,12 @@ export default function DashboardLayout({ children }) {
       </nav>
 
       {/* Footer Actions */}
-      <div className="relative p-3 border-t border-white/10 space-y-1.5">
+      <div className="relative p-3 border-t border-white/10 space-y-1.5 pb-safe">
         <Link
           href={storeUrl}
           target="_blank"
           onClick={onNavigate}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors"
         >
           <ExternalLink className="w-4 h-4 text-cyan-400" />
           <span className="bangla-text">ওয়েবসাইট দেখুন</span>
@@ -419,7 +459,7 @@ export default function DashboardLayout({ children }) {
         <Link
           href="/logout"
           onClick={onNavigate}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-colors"
         >
           <LogOut className="w-4 h-4" />
           <span className="bangla-text">লগআউট</span>
@@ -430,50 +470,97 @@ export default function DashboardLayout({ children }) {
 
   return (
     <Auth>
-      <div className="dashboard-shell flex h-screen overflow-hidden rgb-canvas text-slate-900">
+      <div className="dashboard-shell flex h-dvh-safe overflow-hidden rgb-canvas text-slate-900">
         {/* Desktop Sidebar */}
         <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:shrink-0 border-r border-slate-200/80 shadow-xl">
           {renderSidebarContent(undefined)}
         </aside>
 
-        {/* Mobile Drawer using shadcn Sheet */}
+        {/* Mobile Full Navigation Drawer */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetContent
             side="left"
-            className="p-0 w-72 border-r-0 bg-slate-950 text-white"
+            className="p-0 w-[82vw] max-w-72 border-r-0 bg-slate-950 text-white"
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Navigation Menu</SheetTitle>
+              <SheetDescription>Navigate across your store workspace</SheetDescription>
             </SheetHeader>
             {renderSidebarContent(() => setMobileOpen(false))}
           </SheetContent>
         </Sheet>
 
+        {/* Mobile Bottom Quick-Action Sheet */}
+        <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
+          <SheetContent
+            side="bottom"
+            className="rounded-t-3xl border-t border-slate-200 bg-white/95 backdrop-blur-xl px-5 pt-4 pb-8 pb-safe lg:hidden"
+          >
+            <div className="w-10 h-1.5 rounded-full bg-slate-200 mx-auto mb-4" />
+            <SheetHeader className="text-left pb-3">
+              <SheetTitle className="text-base font-extrabold text-slate-900">
+                Quick Actions
+              </SheetTitle>
+              <SheetDescription className="text-xs text-slate-500">
+                Jump straight into common merchant tasks
+              </SheetDescription>
+            </SheetHeader>
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              {QUICK_ACTIONS.map((action) => {
+                const ActionIcon = action.icon;
+                return (
+                  <Link
+                    key={action.href}
+                    href={action.href}
+                    onClick={() => setQuickOpen(false)}
+                    className="app-press flex flex-col gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 hover:border-violet-300 hover:bg-white transition-colors"
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.grad} text-white flex items-center justify-center shadow-md`}
+                    >
+                      <ActionIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">
+                        {action.label}
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                        {action.sub}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
+
         {/* Main Workspace */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Top Sticky Glass Header */}
-          <header className="h-16 shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-6 flex items-center justify-between gap-4 z-30">
-            <div className="flex items-center gap-3 min-w-0">
-              <Button
-                variant="outline"
-                size="icon"
-                className="lg:hidden shrink-0"
+          {/* App-like Sticky Top Bar */}
+          <header className="h-14 sm:h-16 shrink-0 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 px-3.5 sm:px-6 flex items-center justify-between gap-3 z-30 pt-safe">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {/* Mobile Brand / Drawer Trigger */}
+              <button
+                type="button"
                 onClick={() => setMobileOpen(true)}
+                className="lg:hidden app-press flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 text-white shadow-sm shrink-0"
                 aria-label="Open menu"
               >
-                <Menu className="w-5 h-5" />
-              </Button>
+                <Menu className="w-4 h-4" />
+              </button>
+
               <div className="min-w-0">
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 truncate">
+                <h2 className="text-sm sm:text-lg font-extrabold tracking-tight text-slate-900 truncate leading-tight">
                   {PAGE_TITLES[activeTab] || "Dashboard"}
                 </h2>
-                <p className="hidden sm:block text-xs text-slate-500 truncate">
-                  Manage and scale <span className="font-medium text-slate-700 bangla-text">{shopName}</span>
+                <p className="text-[11px] sm:text-xs text-slate-500 truncate bangla-text leading-tight">
+                  {shopName}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="flex items-center gap-1.5 sm:gap-2.5">
               <Button
                 asChild
                 variant="gradient"
@@ -504,7 +591,7 @@ export default function DashboardLayout({ children }) {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="relative rounded-xl"
+                    className="relative h-9 w-9 rounded-xl bg-white"
                     aria-label="Notifications"
                   >
                     <Bell className="w-4 h-4 text-slate-600" />
@@ -515,16 +602,24 @@ export default function DashboardLayout({ children }) {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 rounded-xl p-0 overflow-hidden">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-[calc(100vw-1.5rem)] sm:w-80 rounded-2xl p-0 overflow-hidden"
+                >
                   <div className="px-4 py-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 text-white flex items-center justify-between">
-                    <span className="text-sm font-semibold bangla-text">নোটিফিকেশন</span>
+                    <span className="text-sm font-semibold bangla-text">
+                      নোটিফিকেশন
+                    </span>
                     <Badge className="bg-white/20 text-white border-0 text-[10px]">
                       {notifications.length}
                     </Badge>
                   </div>
                   <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
                     {notifications.map((n) => (
-                      <div key={n.id} className="px-4 py-3 hover:bg-slate-50 transition-colors">
+                      <div
+                        key={n.id}
+                        className="px-4 py-3 hover:bg-slate-50 transition-colors"
+                      >
                         <p className="text-xs font-medium text-slate-800 bangla-text">
                           {n.text}
                         </p>
@@ -542,10 +637,13 @@ export default function DashboardLayout({ children }) {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1.5 hover:bg-slate-50 transition-colors"
+                    className="app-press flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1 sm:px-2 sm:py-1.5 hover:bg-slate-50 transition-colors"
                   >
                     <Avatar className="h-7 w-7 rounded-lg">
-                      <AvatarImage src={user?.shopLogo || ""} alt={user?.fullName || "User"} />
+                      <AvatarImage
+                        src={user?.shopLogo || ""}
+                        alt={user?.fullName || "User"}
+                      />
                       <AvatarFallback className="rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 text-white text-xs font-bold">
                         {(user?.fullName?.[0] || "M").toUpperCase()}
                       </AvatarFallback>
@@ -553,10 +651,10 @@ export default function DashboardLayout({ children }) {
                     <span className="hidden sm:block text-xs font-semibold text-slate-700 max-w-[110px] truncate">
                       {user?.fullName || "Merchant"}
                     </span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronDown className="hidden sm:block w-3.5 h-3.5 text-slate-400" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-xl">
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl">
                   <DropdownMenuLabel>
                     <p className="text-sm font-semibold text-slate-900 truncate">
                       {user?.fullName || "Merchant Account"}
@@ -573,7 +671,10 @@ export default function DashboardLayout({ children }) {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/myshop/manage" className="cursor-pointer">
+                    <Link
+                      href="/dashboard/myshop/manage"
+                      className="cursor-pointer"
+                    >
                       <Store className="w-4 h-4 mr-2" />
                       Manage Shop
                     </Link>
@@ -584,8 +685,17 @@ export default function DashboardLayout({ children }) {
                       Billing & Invoices
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={storeUrl} target="_blank" className="cursor-pointer">
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Visit Storefront
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="text-rose-600 focus:text-rose-600">
+                  <DropdownMenuItem
+                    asChild
+                    className="text-rose-600 focus:text-rose-600"
+                  >
                     <Link href="/logout" className="cursor-pointer">
                       <LogOut className="w-4 h-4 mr-2" />
                       Logout
@@ -596,11 +706,92 @@ export default function DashboardLayout({ children }) {
             </div>
           </header>
 
-          {/* Scrollable Page Content */}
-          <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+          {/* Scrollable App Viewport — extra bottom clearance on mobile for dock */}
+          <div className="flex-1 overflow-y-auto overscroll-y-contain px-3.5 pt-4 pb-24 sm:px-6 sm:pt-6 lg:pb-6">
             {children}
           </div>
         </div>
+
+        {/* Native Mobile Bottom App Navigation Dock */}
+        <nav
+          aria-label="Mobile navigation"
+          className="lg:hidden fixed inset-x-0 bottom-0 z-40 bg-white/92 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] pb-safe"
+        >
+          <div className="grid grid-cols-5 items-center h-16 px-2 max-w-lg mx-auto">
+            <Link
+              href="/dashboard"
+              className={cn(
+                "app-press flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-colors",
+                activeTab === "dashboard"
+                  ? "text-violet-600"
+                  : "text-slate-500 hover:text-slate-900"
+              )}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="text-[10px] font-semibold leading-none">
+                Home
+              </span>
+            </Link>
+
+            <Link
+              href="/dashboard/orders"
+              className={cn(
+                "app-press flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-colors",
+                activeTab === "orders"
+                  ? "text-violet-600"
+                  : "text-slate-500 hover:text-slate-900"
+              )}
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span className="text-[10px] font-semibold leading-none">
+                Orders
+              </span>
+            </Link>
+
+            {/* Center Floating RGB Quick-Action FAB */}
+            <div className="flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setQuickOpen(true)}
+                aria-label="Quick actions"
+                className="app-press -mt-5 w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/35 ring-4 ring-white"
+              >
+                <Plus className="w-6 h-6" />
+              </button>
+            </div>
+
+            <Link
+              href="/dashboard/products"
+              className={cn(
+                "app-press flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-colors",
+                activeTab === "products"
+                  ? "text-violet-600"
+                  : "text-slate-500 hover:text-slate-900"
+              )}
+            >
+              <Boxes className="w-5 h-5" />
+              <span className="text-[10px] font-semibold leading-none">
+                Products
+              </span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className={cn(
+                "app-press flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-colors",
+                isMoreActive
+                  ? "text-violet-600"
+                  : "text-slate-500 hover:text-slate-900"
+              )}
+            >
+              <LayoutGrid className="w-5 h-5" />
+              <span className="text-[10px] font-semibold leading-none">
+                More
+              </span>
+            </button>
+          </div>
+        </nav>
       </div>
     </Auth>
   );
