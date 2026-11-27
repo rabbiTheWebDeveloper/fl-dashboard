@@ -1,292 +1,244 @@
 "use client";
-import React, { useState } from "react";
 
-const Subscription = () => {
+import React, { useState } from "react";
+import { CheckCircle2, HelpCircle, Sparkles, Zap } from "lucide-react";
+import { toast } from "react-toastify";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+
+const PLANS = [
+  {
+    id: "basic",
+    name: "Starter",
+    price: { monthly: 500, yearly: 450 },
+    description: "Essential tools for new merchants launching online",
+    features: [
+      "Up to 100 orders/month",
+      "Core sales analytics",
+      "Email support",
+      "1 merchant seat",
+      "Custom storefront theme",
+    ],
+    popular: false,
+  },
+  {
+    id: "premium",
+    name: "Growth Pro",
+    price: { monthly: 1000, yearly: 850 },
+    description: "Built for scaling Bangladeshi D2C brands",
+    features: [
+      "Up to 1,000 orders/month",
+      "Deep cohort & product analytics",
+      "Priority support",
+      "5 team accounts",
+      "Courier integrations (Steadfast, Pathao, RedX)",
+      "Custom domain connection",
+    ],
+    popular: true,
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    price: { monthly: 2000, yearly: 1800 },
+    description: "Unlimited volume & dedicated onboarding",
+    features: [
+      "Unlimited monthly orders",
+      "Real-time custom reporting",
+      "24/7 dedicated account manager",
+      "Unlimited team seats",
+      "All integrations unlocked",
+      "99.9% SLA uptime guarantee",
+    ],
+    popular: false,
+  },
+];
+
+const FAQS = [
+  {
+    question: "Can I change my plan anytime?",
+    answer:
+      "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately and prorate on your next billing cycle.",
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer:
+      "We support bKash, Nagad, Rocket, bank transfers, and major debit/credit cards.",
+  },
+  {
+    question: "Is there a free trial?",
+    answer:
+      "Yes! Every new AMARDokan merchant starts with a 14-day trial—no card required.",
+  },
+  {
+    question: "Can I cancel my subscription?",
+    answer:
+      "You can cancel anytime from Billing & Invoices with zero cancellation fees.",
+  },
+];
+
+export default function Subscription() {
   const [activePlan, setActivePlan] = useState("premium");
   const [isYearly, setIsYearly] = useState(false);
 
-  const plans = [
-    {
-      id: "basic",
-      name: "Basic",
-      price: { monthly: 500, yearly: 450 },
-      description: "Perfect for small businesses getting started",
-      features: [
-        "Up to 100 orders/month",
-        "Basic analytics",
-        "Email support",
-        "1 user account",
-        "Standard features",
-      ],
-      popular: false,
-    },
-    {
-      id: "premium",
-      name: "Premium",
-      price: { monthly: 1000, yearly: 850 },
-      description: "Ideal for growing businesses",
-      features: [
-        "Up to 1000 orders/month",
-        "Advanced analytics",
-        "Priority support",
-        "5 user accounts",
-        "Advanced features",
-        "API access",
-      ],
-      popular: true,
-    },
-    {
-      id: "enterprise",
-      name: "Enterprise",
-      price: { monthly: 2000, yearly: 1800   },
-      description: "For large-scale operations",
-      features: [
-        "Unlimited orders",
-        "Custom analytics",
-        "24/7 dedicated support",
-        "Unlimited users",
-        "All features included",
-        "Custom integrations",
-        "SLA guarantee",
-      ],
-      popular: false,
-    },
-  ];
-
-  const faqs = [
-    {
-      question: "Can I change my plan anytime?",
-      answer:
-        "Yes! You can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.",
-    },
-    {
-      question: "What payment methods do you accept?",
-      answer:
-        "We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and bank transfers for annual plans.",
-    },
-    {
-      question: "Is there a free trial?",
-      answer:
-        "Yes! We offer a 14-day free trial on all plans. No credit card required to start your trial.",
-    },
-    {
-      question: "Can I cancel my subscription?",
-      answer:
-        "Absolutely! You can cancel your subscription at any time. There are no cancellation fees, and you'll continue to have access until the end of your billing period.",
-    },
-  ];
-
-  const [openFaq, setOpenFaq] = useState(null);
-
-  const toggleFaq = (index) => {
-    setOpenFaq(openFaq === index ? null : index);
+  const handleSelectPlan = (plan) => {
+    setActivePlan(plan.id);
+    toast.success(`${plan.name} plan selected!`);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Choose Your Perfect Plan
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Join thousands of successful merchants who have transformed their
-            business with our platform
-          </p>
+    <div className="max-w-6xl mx-auto space-y-12 py-4">
+      {/* Hero */}
+      <div className="text-center space-y-4">
+        <Badge className="bg-violet-500/10 text-violet-700 border-violet-200">
+          <Sparkles className="w-3.5 h-3.5 mr-1" />
+          Flexible Merchant Pricing
+        </Badge>
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+          Choose Your <span className="rgb-gradient-text">Growth Plan</span>
+        </h1>
+        <p className="text-sm sm:text-base text-slate-500 max-w-2xl mx-auto">
+          Transparent pricing tailored for Bangladeshi online stores—upgrade as
+          your order volume grows.
+        </p>
 
-          {/* Billing Toggle */}
-          <div className="flex items-center justify-center space-x-4 mb-12">
-            <span
-              className={`text-lg ${
-                !isYearly ? "text-gray-900 font-semibold" : "text-gray-500"
-              }`}
-            >
-              Monthly
-            </span>
-            <button
-              onClick={() => setIsYearly(!isYearly)}
-              className="relative rounded-full w-14 h-7 bg-blue-600 transition-colors"
-            >
-              <div
-                className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${
-                  isYearly
-                    ? "transform translate-x-8"
-                    : "transform translate-x-1"
-                }`}
-              />
-            </button>
-            <span
-              className={`text-lg ${
-                isYearly ? "text-gray-900 font-semibold" : "text-gray-500"
-              }`}
-            >
-              Yearly <span className="text-green-600 text-sm">(Save 20%)</span>
-            </span>
-          </div>
+        {/* Billing Cycle Switch */}
+        <div className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 shadow-xs">
+          <span
+            className={`text-sm font-medium ${
+              !isYearly ? "text-slate-900 font-bold" : "text-slate-500"
+            }`}
+          >
+            Monthly
+          </span>
+          <Switch checked={isYearly} onCheckedChange={setIsYearly} />
+          <span
+            className={`text-sm font-medium ${
+              isYearly ? "text-slate-900 font-bold" : "text-slate-500"
+            }`}
+          >
+            Yearly{" "}
+            <Badge className="ml-1 bg-emerald-500/15 text-emerald-700 border-emerald-200">
+              Save 15%
+            </Badge>
+          </span>
         </div>
+      </div>
 
-        {/* Pricing Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-          {plans.map((plan) => (
-            <div
+      {/* Pricing Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        {PLANS.map((plan) => {
+          const isSelected = activePlan === plan.id;
+          const unitPrice = isYearly ? plan.price.yearly : plan.price.monthly;
+          return (
+            <Card
               key={plan.id}
-              className={`relative bg-white rounded-2xl shadow-lg border-2 ${
+              className={`flex flex-col justify-between transition-all duration-200 ${
                 plan.popular
-                  ? "border-blue-500 transform scale-105"
-                  : "border-gray-200"
-              } transition-all duration-300 hover:shadow-xl`}
+                  ? "rgb-card border-violet-400 shadow-xl bg-white lg:-translate-y-2"
+                  : "border-slate-200/80 bg-white/95 hover:shadow-md"
+              }`}
             >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                    Most Popular
-                  </span>
-                </div>
-              )}
-
-              <div className="p-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {plan.name}
-                </h3>
-                <p className="text-gray-600 mb-6">{plan.description}</p>
-
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">
-                    ৳{isYearly ? plan.price.yearly : plan.price.monthly}
-                  </span>
-                  <span className="text-gray-600">
-                    /{isYearly ? "year" : "month"}
-                  </span>
-                  {isYearly && (
-                    <div className="text-sm text-green-600 font-semibold mt-1">
-                      Save ৳{plan.price.monthly * 12 - plan.price.yearly * 12}{" "}
-                      per year
-                    </div>
+              <CardHeader>
+                <div className="flex items-center justify-between mb-1">
+                  <CardTitle className="text-xl font-extrabold text-slate-900">
+                    {plan.name}
+                  </CardTitle>
+                  {plan.popular && (
+                    <Badge className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white border-0">
+                      <Zap className="w-3 h-3 mr-1" />
+                      Most Popular
+                    </Badge>
                   )}
                 </div>
+                <CardDescription>{plan.description}</CardDescription>
 
-                <button
-                  onClick={() => setActivePlan(plan.id)}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                    plan.popular
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-                  }`}
-                >
-                  {plan.popular ? "Get Started" : "Choose Plan"}
-                </button>
+                <div className="pt-4">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-extrabold text-slate-900">
+                      ৳{unitPrice}
+                    </span>
+                    <span className="text-sm text-slate-500">/month</span>
+                  </div>
+                  {isYearly && (
+                    <p className="text-xs font-semibold text-emerald-600 mt-1">
+                      Billed annually · Save ৳
+                      {(plan.price.monthly - plan.price.yearly) * 12}/year
+                    </p>
+                  )}
+                </div>
+              </CardHeader>
 
-                <ul className="mt-8 space-y-4">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center">
-                      <svg
-                        className="w-5 h-5 text-green-500 mr-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span className="text-gray-700">{feature}</span>
+              <CardContent className="flex-1">
+                <ul className="space-y-3">
+                  {plan.features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2.5 text-sm text-slate-700"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
-              </div>
-            </div>
-          ))}
-        </div>
+              </CardContent>
 
-        {/* FAQ Section */}
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-xl text-gray-600">
-              Everything you need to know about our subscription plans
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {faqs.map((faq, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg shadow-sm border border-gray-200"
-              >
-                <button
-                  onClick={() => toggleFaq(index)}
-                  className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 rounded-lg transition-colors"
+              <CardFooter>
+                <Button
+                  className="w-full"
+                  variant={plan.popular || isSelected ? "gradient" : "outline"}
+                  onClick={() => handleSelectPlan(plan)}
                 >
-                  <span className="text-lg font-semibold text-gray-900">
-                    {faq.question}
-                  </span>
-                  <svg
-                    className={`w-5 h-5 text-gray-500 transform transition-transform ${
-                      openFaq === index ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-                {openFaq === index && (
-                  <div className="px-6 pb-4">
-                    <p className="text-gray-600">{faq.answer}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA Section */}
-        <div className="text-center mt-20 mb-10">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-white">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Ready to grow your business?
-            </h2>
-            <p className="text-xl mb-8 opacity-90">
-              Join thousands of successful merchants who have transformed their
-              business with our platform
-            </p>
-            <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-              <button className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                Start Your Free Trial
-              </button>
-              <button className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
-                Contact Sales
-              </button>
-            </div>
-          </div>
-
-          {/* Final CTA */}
-          <div className="mt-12">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Start Your Journey Today
-            </h3>
-            <p className="text-gray-600 mb-6">
-              No credit card required • 14-day free trial • Cancel anytime
-            </p>
-            <button className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
-              Get Started Now
-            </button>
-          </div>
-        </div>
+                  {isSelected ? "Selected Plan" : `Choose ${plan.name}`}
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
+
+      {/* FAQ Accordion */}
+      <Card className="border-slate-200/80 bg-white/95 max-w-3xl mx-auto">
+        <CardHeader className="text-center">
+          <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center mx-auto mb-1">
+            <HelpCircle className="w-5 h-5" />
+          </div>
+          <CardTitle className="text-xl font-bold text-slate-900">
+            Frequently Asked Questions
+          </CardTitle>
+          <CardDescription>
+            Everything you need to know about AMARDokan billing
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            {FAQS.map((faq, index) => (
+              <AccordionItem key={index} value={`faq-${index}`}>
+                <AccordionTrigger className="text-sm font-semibold text-slate-900">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-slate-600">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default Subscription;
+}

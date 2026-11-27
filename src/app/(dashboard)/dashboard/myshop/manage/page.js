@@ -1,213 +1,225 @@
 import React from "react";
-import {
-  Settings,
-  Truck,
-  MessageSquare,
-  Globe,
-  CreditCard,
-  MessageCircle,
-  FileText,
-  BarChart3,
-  Link2,
-  Image as ImageIcon,
-  Sliders,
-  Package,
-} from "lucide-react";
 import Link from "next/link";
+import {
+  ArrowUpRight,
+  BarChart3,
+  CreditCard,
+  FileText,
+  Globe,
+  Image as ImageIcon,
+  Link2,
+  MessageCircle,
+  MessageSquare,
+  Package,
+  Settings,
+  Sliders,
+  Sparkles,
+  Truck,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 const shopSections = [
   {
     id: 1,
     title: "Shop Settings",
     description:
-      "Customize your shop’s general configurations for a smooth experience.",
+      "Configure store logo, contact details, address, and storefront metadata.",
     icon: Settings,
-    color: "from-blue-500 to-blue-600",
+    gradient: "from-violet-600 to-indigo-600",
+    badge: "Core",
     href: "/dashboard/myshop/manage/shop-settings",
   },
   {
     id: 2,
-    title: "Delivery Support",
-    description:
-      "Manage delivery options to ensure smooth and efficient fulfillment.",
-    icon: Truck,
-    color: "from-green-500 to-green-600",
-    href: "/dashboard/myshop/manage/delivery",
-  },
-  {
-    id: 3,
-    title: "SMS Support",
-    description:
-      "Enable SMS notifications and keep your customers informed in real-time.",
-    icon: MessageSquare,
-    color: "from-purple-500 to-purple-600",
-    href: "/dashboard/myshop/manage/sms-support",
-  },
-  {
-    id: 4,
     title: "Shop Domain",
     description:
-      "Configure and manage your shop’s domain and general settings.",
+      "Connect and verify your custom domain for a branded shopping experience.",
     icon: Globe,
-    color: "from-indigo-500 to-indigo-600",
+    gradient: "from-cyan-500 to-blue-600",
+    badge: "Domain",
     href: "/dashboard/myshop/manage/domain",
   },
   {
+    id: 3,
+    title: "Delivery Charges",
+    description:
+      "Set Inside Dhaka, Subarea, and Outside Dhaka shipping rates.",
+    icon: Truck,
+    gradient: "from-emerald-500 to-teal-600",
+    badge: "Shipping",
+    href: "/dashboard/myshop/manage/delivery",
+  },
+  {
+    id: 4,
+    title: "Courier Setup",
+    description:
+      "Integrate Steadfast, Pathao, and RedX APIs for one-click parcel booking.",
+    icon: Package,
+    gradient: "from-amber-500 to-orange-500",
+    badge: "Logistics",
+    href: "/dashboard/myshop/manage/courier",
+  },
+  {
     id: 5,
-    title: "Payment Gateway",
-    description:
-      "Integrate payment options to provide secure and flexible checkout.",
-    icon: CreditCard,
-    color: "from-emerald-500 to-emerald-600",
-    href: "/dashboard/myshop/manage/payment",
-  },
-  {
-    id: 6,
-    title: "Chat Support",
-    description:
-      "Offer instant help and communication with a chat support system.",
-    icon: MessageCircle,
-    color: "from-cyan-500 to-cyan-600",
-    href: "/dashboard/myshop/manage/chat-support",
-  },
-  {
-    id: 7,
-    title: "Shop Policy",
-    description:
-      "Set up refund, return, and customer service policies for your shop.",
-    icon: FileText,
-    color: "from-amber-500 to-amber-600",
-    href: "/dashboard/myshop/manage/policy",
-  },
-  {
-    id: 8,
-    title: "SEO & Marketing Integrations",
-    description:
-      "Connect SEO tools and marketing integrations to increase visibility.",
-    icon: BarChart3,
-    color: "from-orange-500 to-orange-600",
-    href: "/dashboard/myshop/manage/seo-marketing",
-  },
-  {
-    id: 9,
-    title: "Social Links",
-    description:
-      "Add and manage your social media links to improve engagement.",
-    icon: Link2,
-    color: "from-pink-500 to-pink-600",
-    href: "/dashboard/myshop/manage/social-links",
-  },
-  // 🆕 Added Sections Below
-  {
-    id: 10,
     title: "Slider Management",
     description:
-      "Create and manage homepage sliders to highlight offers and promotions.",
+      "Upload hero sliders to highlight seasonal campaigns and top deals.",
     icon: Sliders,
-    color: "from-teal-500 to-teal-600",
+    gradient: "from-fuchsia-500 to-purple-600",
+    badge: "Visuals",
     href: "/dashboard/myshop/manage/slider",
   },
   {
-    id: 11,
+    id: 6,
     title: "Banner Management",
     description:
-      "Upload and manage banners to promote deals and new arrivals.",
+      "Manage promotional storefront banners for collections and flash sales.",
     icon: ImageIcon,
-    color: "from-violet-500 to-violet-600",
+    gradient: "from-rose-500 to-pink-600",
+    badge: "Visuals",
     href: "/dashboard/myshop/manage/banner",
   },
   {
-    id: 12,
-    title: "Courier Setup",
+    id: 7,
+    title: "SEO & Pixels",
     description:
-      "Add and configure courier services for efficient order deliveries.",
-    icon: Package,
-    color: "from-lime-500 to-lime-600",
-    href: "/dashboard/myshop/manage/courier",
+      "Configure Facebook Pixel, TikTok Pixel, and Google Analytics tracking.",
+    icon: BarChart3,
+    gradient: "from-indigo-500 to-sky-500",
+    badge: "Growth",
+    href: "/dashboard/myshop/manage/seo-marketing",
+  },
+  {
+    id: 8,
+    title: "Social Links",
+    description:
+      "Connect your Facebook, Instagram, YouTube, and WhatsApp profiles.",
+    icon: Link2,
+    gradient: "from-pink-500 to-rose-500",
+    badge: "Social",
+    href: "/dashboard/myshop/manage/social-links",
+  },
+  {
+    id: 9,
+    title: "Payment Gateway",
+    description:
+      "Enable bKash, Nagad, SSLCommerz, and online checkout options.",
+    icon: CreditCard,
+    gradient: "from-teal-500 to-emerald-600",
+    badge: "Soon",
+    href: "/dashboard/myshop/manage/payment",
+  },
+  {
+    id: 10,
+    title: "SMS Automation",
+    description:
+      "Send automated order confirmation and delivery alerts via SMS.",
+    icon: MessageSquare,
+    gradient: "from-purple-500 to-violet-600",
+    badge: "Soon",
+    href: "/dashboard/myshop/manage/sms-support",
+  },
+  {
+    id: 11,
+    title: "Live Chat Support",
+    description:
+      "Embed Messenger & WhatsApp chat widgets directly on your storefront.",
+    icon: MessageCircle,
+    gradient: "from-sky-500 to-cyan-600",
+    badge: "Soon",
+    href: "/dashboard/myshop/manage/chat-support",
+  },
+  {
+    id: 12,
+    title: "Store Policies",
+    description:
+      "Publish Return, Refund, and Privacy policies to boost buyer trust.",
+    icon: FileText,
+    gradient: "from-orange-500 to-amber-500",
+    badge: "Soon",
+    href: "/dashboard/myshop/manage/policy",
   },
 ];
-const ManageShopPage = () => {
+
+export default function ManageShopPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Manage Shop
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Set up and customize your shop to ensure a smooth and efficient experience.
-          </p>
-        </div>
-
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {shopSections.map((section) => {
-            const Icon = section.icon;
-            return (
-              <Link
-                href={section.href}
-                key={section.id}
-                className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-gray-200 group cursor-pointer block"
-              >
-                <div className="p-6">
-                  {/* Icon */}
-                  <div
-                    className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-r ${section.color} mb-4 group-hover:scale-105 transition-transform duration-300`}
-                  >
-                    <Icon className="text-white w-7 h-7" />
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-gray-700 transition-colors">
-                    {section.title}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {section.description}
-                  </p>
-
-                  {/* Manage Button */}
-                  <div className="mt-4 flex items-center text-sm font-medium text-gray-500 group-hover:text-gray-700 transition-colors">
-                    <span>Manage</span>
-                    <svg
-                      className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* CTA Section */}
-        <div className="mt-12 text-center">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-              Need help setting up your shop?
-            </h3>
-            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-              Our support team is here to help you get the most out of your shop configuration.
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Header */}
+      <Card className="rgb-card border-slate-200/80 bg-white/95 py-6">
+        <CardContent className="px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <Badge className="bg-violet-500/10 text-violet-700 border-violet-200 mb-2">
+              <Sparkles className="w-3 h-3 mr-1" />
+              Store Control Center
+            </Badge>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+              Manage Your <span className="rgb-gradient-text">Online Shop</span>
+            </h1>
+            <p className="text-sm text-slate-500 mt-1 max-w-2xl">
+              Configure domains, couriers, marketing pixels, sliders, and
+              storefront branding from one unified hub.
             </p>
-            <Link
-              href="/support"
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg inline-block"
-            >
-              Contact Support
-            </Link>
           </div>
-        </div>
+          <Button asChild variant="gradient">
+            <Link href="/dashboard/myshop/theme">
+              Customize Theme
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {shopSections.map((section) => {
+          const Icon = section.icon;
+          const isSoon = section.badge === "Soon";
+          return (
+            <Link key={section.id} href={section.href} className="group block">
+              <Card className="h-full border-slate-200/80 bg-white/95 hover:border-violet-300 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div
+                      className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${section.gradient} text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform`}
+                    >
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        isSoon
+                          ? "bg-amber-500/10 text-amber-700 border-amber-200 text-[10px]"
+                          : "bg-slate-100 text-slate-600 border-slate-200 text-[10px]"
+                      }
+                    >
+                      {section.badge}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-base font-bold text-slate-900 pt-3 group-hover:text-violet-700 transition-colors">
+                    {section.title}
+                  </CardTitle>
+                  <CardDescription className="text-xs leading-relaxed">
+                    {section.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 group-hover:translate-x-0.5 transition-transform">
+                    Configure <ArrowUpRight className="w-3.5 h-3.5" />
+                  </span>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
-};
-
-export default ManageShopPage;
+}

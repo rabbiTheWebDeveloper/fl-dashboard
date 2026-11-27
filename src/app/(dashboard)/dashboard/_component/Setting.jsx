@@ -1,23 +1,35 @@
 "use client";
+
 import React, { useState } from "react";
 import {
-  User,
-  Mail,
-  Phone,
-  Store,
-  Key,
-  Shield,
+  CheckCircle2,
   Eye,
   EyeOff,
-  CheckCircle,
-  Save,
-  Camera,
+  Key,
+  Mail,
+  Phone,
+  RefreshCw,
+  Shield,
+  Store,
+  User,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { userPasswordChangeAction } from "@/app/actions/user";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const Setting = ({ user }) => {
-  const [activeTab, setActiveTab] = useState("profile");
+export default function Setting({ user }) {
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState({
     fullName: user?.fullName || "",
@@ -39,384 +51,264 @@ const Setting = ({ user }) => {
     confirm: false,
   });
 
-  const handleProfileUpdate = (e) => {
-    e.preventDefault();
-    // Handle profile update logic here
-    alert("Profile updated successfully!");
-  };
-
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("New passwords don't match!");
+      toast.error("New passwords do not match!");
       return;
     }
     if (passwordData.newPassword.length < 6) {
       toast.error("Password must be at least 6 characters long!");
       return;
     }
+
+    setLoading(true);
     try {
-      const data = {
+      const response = await userPasswordChangeAction({
         userId: user?.id,
         oldPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
-      };
-
-      const response = await userPasswordChangeAction(data);
+      });
 
       if (response?.status) {
-        toast.success("Password updated successfully!");
+        toast.success(response.message || "Password updated successfully!");
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
       } else {
-        toast.error(response?.message || "Update failed.");
+        toast.error(response?.message || "Password update failed.");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Password update error:", error);
       toast.error(
         error?.message || "An error occurred while updating password."
       );
     } finally {
       setLoading(false);
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
     }
   };
 
   const togglePasswordVisibility = (field) => {
-    setShowPasswords((prev) => ({
-      ...prev,
-      [field]: !prev[field],
-    }));
+    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Account Settings
-          </h1>
-          <p className="text-gray-600">
-            Manage your profile and security settings
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`flex items-center gap-3 px-8 py-4 font-medium transition-all duration-200 ${
-                activeTab === "profile"
-                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
-            >
-              <User className="h-5 w-5" />
-              Profile Information
-            </button>
-            <button
-              onClick={() => setActiveTab("password")}
-              className={`flex items-center gap-3 px-8 py-4 font-medium transition-all duration-200 ${
-                activeTab === "password"
-                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
-            >
-              <Shield className="h-5 w-5" />
-              Password & Security
-            </button>
-          </div>
-
-          {/* Profile Tab Content */}
-          {activeTab === "profile" && (
-            <div className="p-8">
-              <div className="flex items-start gap-8">
-                {/* Profile Picture Section */}
-                <div className="flex-shrink-0">
-                  <div className="relative group">
-                    <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center border-4 border-white shadow-lg">
-                      <User className="h-10 w-10 text-indigo-600" />
-                    </div>
-                    <button className="absolute bottom-0 right-0 p-2 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-200 group-hover:scale-110">
-                      <Camera className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Form Section */}
-                <div className="flex-1">
-                  <form onSubmit={handleProfileUpdate} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Full Name */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400" />
-                          Full Name
-                        </label>
-                        <input
-                          type="text"
-                          value={userData.fullName}
-                          onChange={(e) =>
-                            setUserData({
-                              ...userData,
-                              fullName: e.target.value,
-                            })
-                          }
-                          className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                        />
-                      </div>
-
-                      {/* Email */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          Email Address
-                        </label>
-                        <input
-                          type="email"
-                          value={userData.email}
-                          onChange={(e) =>
-                            setUserData({ ...userData, email: e.target.value })
-                          }
-                          className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                        />
-                      </div>
-
-                      {/* Phone */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={userData.phone}
-                          onChange={(e) =>
-                            setUserData({ ...userData, phone: e.target.value })
-                          }
-                          className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                        />
-                      </div>
-
-                      {/* Shop Name */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Store className="h-4 w-4 text-gray-400" />
-                          Shop Name
-                        </label>
-                        <input
-                          type="text"
-                          value={userData.shopName}
-                          onChange={(e) =>
-                            setUserData({
-                              ...userData,
-                              shopName: e.target.value,
-                            })
-                          }
-                          className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bangla-text"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Shop ID (Read-only) */}
-                    <div className="max-w-xs">
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Shop ID
-                      </label>
-                      <div className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-600">
-                        {userData.shopId}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Shop ID cannot be changed
-                      </p>
-                    </div>
-
-                    {/* Save Button */}
-                    <div className="flex justify-end pt-4">
-                      {/* <button
-                        type="submit"
-                        className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
-                      >
-                        <Save className="h-4 w-4" />
-                        Save Changes
-                      </button> */}
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Password & Security Tab Content */}
-          {activeTab === "password" && (
-            <div className="p-8">
-              <div className="max-w-2xl">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Change Password
-                  </h3>
-                  <p className="text-gray-600">
-                    Update your password to keep your account secure
-                  </p>
-                </div>
-
-                <form onSubmit={handlePasswordChange} className="space-y-6">
-                  {/* Current Password */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Key className="h-4 w-4 text-gray-400" />
-                      Current Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.current ? "text" : "password"}
-                        value={passwordData.currentPassword}
-                        onChange={(e) =>
-                          setPasswordData({
-                            ...passwordData,
-                            currentPassword: e.target.value,
-                          })
-                        }
-                        placeholder="Enter your current password"
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility("current")}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        {showPasswords.current ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* New Password */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-gray-400" />
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.new ? "text" : "password"}
-                        value={passwordData.newPassword}
-                        onChange={(e) =>
-                          setPasswordData({
-                            ...passwordData,
-                            newPassword: e.target.value,
-                          })
-                        }
-                        placeholder="Enter your new password"
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility("new")}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        {showPasswords.new ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      Password must be at least 6 characters long
-                    </p>
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-gray-400" />
-                      Confirm New Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.confirm ? "text" : "password"}
-                        value={passwordData.confirmPassword}
-                        onChange={(e) =>
-                          setPasswordData({
-                            ...passwordData,
-                            confirmPassword: e.target.value,
-                          })
-                        }
-                        placeholder="Confirm your new password"
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility("confirm")}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        {showPasswords.confirm ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Password Requirements */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">
-                      Password Requirements
-                    </h4>
-                    <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• At least 6 characters long</li>
-                      <li>• Include letters and numbers</li>
-                      <li>• Should not be easily guessable</li>
-                    </ul>
-                  </div>
-
-                  {/* Update Button */}
-                  <div className="flex justify-end pt-4">
-                    <button
-                      type="submit"
-                      disabled={
-                        !passwordData.currentPassword ||
-                        !passwordData.newPassword ||
-                        !passwordData.confirmPassword ||
-                        loading
-                      }
-                      className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed relative"
-                    >
-                      {/* Loading Spinner */}
-                      {loading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-indigo-600 rounded-xl">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        </div>
-                      )}
-
-                      {/* Button Content */}
-                      <div
-                        className={`flex items-center gap-2 ${
-                          loading ? "opacity-0" : "opacity-100"
-                        }`}
-                      >
-                        <Shield className="h-4 w-4" />
-                        {loading ? "Updating..." : "Update Password"}
-                      </div>
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          Account <span className="rgb-gradient-text">Settings</span>
+        </h1>
+        <p className="text-sm text-slate-500 mt-0.5">
+          Manage your merchant profile, store identity, and account security.
+        </p>
       </div>
+
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="bg-white border border-slate-200/80 p-1 h-auto">
+          <TabsTrigger value="profile" className="px-4 py-2 gap-2">
+            <User className="w-4 h-4" />
+            Profile Information
+          </TabsTrigger>
+          <TabsTrigger value="password" className="px-4 py-2 gap-2">
+            <Shield className="w-4 h-4" />
+            Password & Security
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Profile Tab */}
+        <TabsContent value="profile">
+          <Card className="rgb-card border-slate-200/80 bg-white/95">
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16 rounded-2xl border border-slate-200 shadow-sm">
+                  <AvatarImage src={user?.shopLogo || ""} alt={userData.fullName} />
+                  <AvatarFallback className="rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 text-white text-xl font-extrabold">
+                    {(userData.fullName?.[0] || "M").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle className="text-lg font-bold text-slate-900">
+                    {userData.fullName || "Merchant Profile"}
+                  </CardTitle>
+                  <CardDescription>{userData.email}</CardDescription>
+                  <Badge className="mt-1.5 bg-emerald-500/10 text-emerald-700 border-emerald-200 capitalize">
+                    {user?.role || "merchant"}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5 text-slate-700">
+                    <User className="w-3.5 h-3.5 text-violet-600" />
+                    Full Name
+                  </Label>
+                  <Input
+                    value={userData.fullName}
+                    onChange={(e) =>
+                      setUserData({ ...userData, fullName: e.target.value })
+                    }
+                    readOnly
+                    className="bg-slate-50/70"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5 text-slate-700">
+                    <Mail className="w-3.5 h-3.5 text-cyan-600" />
+                    Email Address
+                  </Label>
+                  <Input
+                    type="email"
+                    value={userData.email}
+                    readOnly
+                    className="bg-slate-50/70"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5 text-slate-700">
+                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                    Phone Number
+                  </Label>
+                  <Input
+                    type="tel"
+                    value={userData.phone}
+                    readOnly
+                    className="bg-slate-50/70"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5 text-slate-700">
+                    <Store className="w-3.5 h-3.5 text-amber-600" />
+                    Shop Name
+                  </Label>
+                  <Input
+                    value={userData.shopName}
+                    readOnly
+                    className="bg-slate-50/70 bangla-text"
+                  />
+                </div>
+              </div>
+
+              <div className="max-w-xs space-y-1.5">
+                <Label className="text-slate-700">Shop ID</Label>
+                <Input
+                  value={userData.shopId || "N/A"}
+                  readOnly
+                  className="bg-slate-100/80 font-mono text-xs"
+                />
+                <p className="text-[11px] text-slate-400">
+                  Unique 6-digit merchant shop identifier
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Security Tab */}
+        <TabsContent value="password">
+          <Card className="rgb-card border-slate-200/80 bg-white/95">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Change Password
+              </CardTitle>
+              <CardDescription>
+                Keep your merchant workspace protected with a strong password
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <form onSubmit={handlePasswordChange} className="max-w-xl space-y-5">
+                {[
+                  {
+                    key: "current",
+                    field: "currentPassword",
+                    label: "Current Password",
+                    icon: Key,
+                    placeholder: "Enter current password",
+                  },
+                  {
+                    key: "new",
+                    field: "newPassword",
+                    label: "New Password",
+                    icon: Shield,
+                    placeholder: "At least 6 characters",
+                  },
+                  {
+                    key: "confirm",
+                    field: "confirmPassword",
+                    label: "Confirm New Password",
+                    icon: CheckCircle2,
+                    placeholder: "Re-enter new password",
+                  },
+                ].map(({ key, field, label, icon: Icon, placeholder }) => (
+                  <div key={key} className="space-y-2">
+                    <Label className="flex items-center gap-1.5 text-slate-700">
+                      <Icon className="w-3.5 h-3.5 text-violet-600" />
+                      {label}
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type={showPasswords[key] ? "text" : "password"}
+                        value={passwordData[field]}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            [field]: e.target.value,
+                          })
+                        }
+                        placeholder={placeholder}
+                        className="pr-10 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility(key)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showPasswords[key] ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="rounded-xl border border-violet-200/80 bg-violet-50/60 p-4 text-xs text-violet-900 space-y-1">
+                  <p className="font-bold">Password Guidelines</p>
+                  <p>• Minimum 6 characters long</p>
+                  <p>• Combine letters, numbers, and symbols for stronger security</p>
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="gradient"
+                  disabled={
+                    !passwordData.currentPassword ||
+                    !passwordData.newPassword ||
+                    !passwordData.confirmPassword ||
+                    loading
+                  }
+                >
+                  {loading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Shield className="w-4 h-4" />
+                  )}
+                  {loading ? "Updating..." : "Update Password"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
-};
-
-export default Setting;
+}

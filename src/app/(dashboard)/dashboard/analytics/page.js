@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { userInfo } from "@/lib";
 import { getDashboardData } from "@/queries/dashboardStats";
 import AnalyticsClient from "../_component/Analytics";
@@ -8,7 +9,7 @@ export default async function AnalyticsPage({ searchParams }) {
   const user = await userInfo();
   const params = await searchParams;
   const dateFrom = params?.dateFrom || null;
-  const dateTo   = params?.dateTo   || null;
+  const dateTo = params?.dateTo || null;
 
   const data = await getDashboardData({
     userId: user?.userId,
@@ -17,5 +18,9 @@ export default async function AnalyticsPage({ searchParams }) {
     dateTo,
   });
 
-  return <AnalyticsClient data={data} />;
+  return (
+    <Suspense fallback={null}>
+      <AnalyticsClient data={data} />
+    </Suspense>
+  );
 }

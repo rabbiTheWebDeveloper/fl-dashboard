@@ -1,266 +1,262 @@
 "use client";
+
 import React, { useState } from "react";
 import {
-  Plus,
-  User,
-  Mail,
   Crown,
+  Mail,
+  Plus,
   Settings,
-  UserCog,
-  X,
   Shield,
-  Users,
   Trash2,
-  MoreVertical,
+  User,
+  UserCog,
+  Users,
 } from "lucide-react";
+import { toast } from "react-toastify";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const ManageUsers = ({ user }) => {
+export default function ManageUsers({ user }) {
   const [showModal, setShowModal] = useState(false);
-  const [users, setUsers] = useState([user]);
+  const [users, setUsers] = useState(() =>
+    user && (user.id || user.email) ? [user] : []
+  );
   const [newUser, setNewUser] = useState({ email: "", role: "" });
 
   const handleAddUser = () => {
-    if (!newUser.email || !newUser.role) {
-      alert("Please fill all fields");
+    if (!newUser.email.trim() || !newUser.role) {
+      toast.error("Please enter an email and select a role");
       return;
     }
 
-    setUsers([
-      ...users,
+    setUsers((prev) => [
+      ...prev,
       {
         id: Date.now(),
-        name:
+        fullName:
           newUser.email
             .split("@")[0]
-            .replace(/[^a-zA-Z]/g, " ")
-            .trim() || "New User",
-        email: newUser.email,
+            .replace(/[^a-zA-Z0-9]/g, " ")
+            .trim() || "Team Member",
+        email: newUser.email.trim(),
         role: newUser.role,
-        isYou: false,
         avatar: null,
       },
     ]);
     setNewUser({ email: "", role: "" });
     setShowModal(false);
+    toast.success("Team member invited!");
   };
 
   const handleRemoveUser = (userId) => {
-    if (window.confirm("Are you sure you want to remove this user?")) {
-      setUsers(users.filter((user) => user.id !== userId));
-    }
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    toast.info("Team member removed");
   };
 
-  const getRoleIcon = (role) => {
-    switch (role) {
-      case "merchant":
-        return <Crown className="h-4 w-4" />;
-      case "Shop Manager":
-        return <Settings className="h-4 w-4" />;
-      case "Shop Staff":
-        return <UserCog className="h-4 w-4" />;
-      default:
-        return <User className="h-4 w-4" />;
+  const getRoleBadge = (role) => {
+    if (role === "merchant" || role === "Shop Owner") {
+      return {
+        label: "Shop Owner",
+        icon: Crown,
+        cls: "bg-violet-500/10 text-violet-700 border-violet-200",
+      };
     }
-  };
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case "Shop Owner":
-        return "bg-purple-100 text-purple-800 border-purple-200";
-      case "Shop Manager":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Shop Staff":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+    if (role === "Shop Manager") {
+      return {
+        label: "Shop Manager",
+        icon: Settings,
+        cls: "bg-cyan-500/10 text-cyan-700 border-cyan-200",
+      };
     }
+    return {
+      label: role || "Shop Staff",
+      icon: UserCog,
+      cls: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
+    };
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center py-8 px-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-gray-200/60">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-8 py-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 rounded-xl">
-              <Users className="h-6 w-6 text-indigo-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                Team Management
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Manage users and their permissions
-              </p>
-            </div>
-          </div>
-          <button
-            disabled
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-3 rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg group"
-          >
-            <Plus className="h-5 w-5 group-hover:scale-110 transition-transform" />
-            <span className="font-medium">Add User Coming Soon</span>
-          </button>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            Team & <span className="rgb-gradient-text">Permissions</span>
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Collaborate securely with managers and order-fulfillment staff.
+          </p>
         </div>
-
-        {/* User List */}
-        <div className="divide-y divide-gray-100">
-          {users.map((user) => (
-            <div
-              key={user.id}
-              className="flex items-center justify-between px-8 py-5 hover:bg-gray-50/80 transition-all duration-200 group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl text-indigo-700 font-semibold uppercase border-2 border-white shadow-sm">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={user.fullName}
-                        className="w-full h-full rounded-2xl object-cover"
-                      />
-                    ) : (
-                      <User className="h-5 w-5" />
-                    )}
-                  </div>
-                  {user.isYou && (
-                    <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1 border-2 border-white">
-                      <Shield className="h-3 w-3 text-white" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-gray-900 truncate">
-                      {user.fullName}
-                    </p>
-                    {user.role === "merchant" && (
-                      <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
-                        You
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Mail className="h-3 w-3 text-gray-400" />
-                    <p className="text-sm text-gray-500 truncate">
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${getRoleColor(
-                    user.role
-                  )}`}
-                >
-                  {getRoleIcon(user.role)}
-                  <span className="text-sm font-medium">{user?.role === "merchant" ? "Shop Owner" : user?.role}</span>
-                </div>
-
-                {!user.role === "merchant" ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleRemoveUser(user?.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 group/remove"
-                    >
-                      <Trash2 className="h-4 w-4 group-hover/remove:scale-110" />
-                    </button>
-                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all duration-200">
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="w-20"></div> // Spacer for alignment
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <Button variant="gradient" onClick={() => setShowModal(true)}>
+          <Plus className="w-4 h-4" />
+          Invite Member
+        </Button>
       </div>
 
-      {/* Add User Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 relative animate-in fade-in duration-200">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 rounded-lg">
-                  <UserCog className="h-5 w-5 text-indigo-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Add Team Member
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
+      <Card className="rgb-card border-slate-200/80 bg-white/95">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-600 text-white flex items-center justify-center shadow-md">
+              <Users className="w-5 h-5" />
             </div>
-
-            {/* Form */}
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-gray-400" />
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  placeholder="Enter email address"
-                  value={newUser.email}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, email: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-gray-400" />
-                  User Role
-                </label>
-                <select
-                  value={newUser.role}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, role: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none bg-white"
-                >
-                  <option value="">Select a role</option>
-                  <option value="Shop Manager">Shop Manager</option>
-                  <option value="Shop Staff">Shop Staff</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50/50 rounded-b-2xl">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-5 py-2.5 bg-white text-gray-700 rounded-xl hover:bg-gray-50 border border-gray-300 transition-all duration-200 font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddUser}
-                className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!newUser.email || !newUser.role}
-              >
-                Add Team Member
-              </button>
+            <div>
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Workspace Members ({users.length})
+              </CardTitle>
+              <CardDescription>
+                Active accounts with access to this store
+              </CardDescription>
             </div>
           </div>
-        </div>
-      )}
+        </CardHeader>
+
+        <CardContent>
+          {users.length === 0 ? (
+            <div className="text-center py-12 text-slate-400">
+              <User className="w-10 h-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm font-medium text-slate-600">
+                No team members found
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 rounded-xl border border-slate-200/80 overflow-hidden">
+              {users.map((member, idx) => {
+                const roleMeta = getRoleBadge(member?.role);
+                const RoleIcon = roleMeta.icon;
+                const isOwner = member?.role === "merchant";
+                return (
+                  <div
+                    key={member?.id || idx}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50/70 transition-colors"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <Avatar className="h-11 w-11 rounded-xl border border-slate-200">
+                        <AvatarImage src={member?.avatar || ""} alt={member?.fullName} />
+                        <AvatarFallback className="rounded-xl bg-gradient-to-br from-violet-600/15 to-cyan-500/15 text-violet-700 font-bold">
+                          {(member?.fullName?.[0] || "U").toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-900 truncate">
+                            {member?.fullName || "Merchant"}
+                          </p>
+                          {isOwner && (
+                            <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-200 text-[10px]">
+                              Owner
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
+                          <Mail className="w-3 h-3 shrink-0" />
+                          {member?.email || "—"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <Badge variant="outline" className={`gap-1.5 py-1 px-2.5 ${roleMeta.cls}`}>
+                        <RoleIcon className="w-3.5 h-3.5" />
+                        {roleMeta.label}
+                      </Badge>
+                      {!isOwner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                          onClick={() => handleRemoveUser(member.id)}
+                          aria-label="Remove user"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite Team Member</DialogTitle>
+            <DialogDescription>
+              Grant role-based dashboard access to your staff
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Email Address</Label>
+              <Input
+                type="email"
+                placeholder="staff@example.com"
+                value={newUser.email}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, email: e.target.value })
+                }
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-violet-600" />
+                Role
+              </Label>
+              <Select
+                value={newUser.role}
+                onValueChange={(v) => setNewUser({ ...newUser, role: v })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Select a role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Shop Manager">Shop Manager</SelectItem>
+                  <SelectItem value="Shop Staff">Shop Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="gradient"
+              onClick={handleAddUser}
+              disabled={!newUser.email || !newUser.role}
+            >
+              Send Invite
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-};
-
-export default ManageUsers;
+}

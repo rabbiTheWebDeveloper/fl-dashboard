@@ -1,100 +1,119 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import { API_ENDPOINTS } from "@/config/ApiEndpoints";
+
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
-import {
-  FiPlus,
-  FiEdit,
-  FiTrash2,
-  FiSearch,
-  FiFilter,
-  FiX,
-  FiSave,
-  FiImage,
-  FiEye,
-  FiEyeOff,
-} from "react-icons/fi";
 import { toast } from "react-toastify";
+import {
+  CheckCircle2,
+  Edit,
+  EyeOff,
+  FolderKanban,
+  ImageIcon,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { API_ENDPOINTS } from "@/config/ApiEndpoints";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-const CategoryContainer = ({ categoryList }) => {
-  const [categories, setCategories] = useState([...categoryList]);
-  const [filteredCategories, setFilteredCategories] = useState([...categoryList]);
+export default function CategoryContainer({ categoryList = [] }) {
+  const [categories, setCategories] = useState(() =>
+    Array.isArray(categoryList) ? categoryList : []
+  );
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
-
-  useEffect(() => {
-    let result = categories;
-    // Search filter
-    if (searchTerm) {
-      result = result.filter((category) =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    // Status filter
-    if (statusFilter !== "all") {
-      result = result.filter((category) => category.status === statusFilter);
-    }
-
-    setFilteredCategories(result);
-  }, [searchTerm, statusFilter, categories]);
-
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
-  const handleStatusFilter = (status) => {
-    setStatusFilter(status);
-  };
-
-
-const handleDelete = async (categoryId) => {
-  const confirmDelete = window.confirm("Are you sure you want to delete this category?");
-  if (!confirmDelete) return;
-
-  setIsLoading(true);
-  try {
-    const res = await fetch(`${API_ENDPOINTS.BASE_URL}/category/create-delete/${categoryId}`, {
-      method: "DELETE",
-    });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.message || "Failed to delete category");
-    }
-
-    // ✅ Remove deleted category from state
-    setCategories((prev) => prev.filter((c) => c._id !== categoryId));
-
-    toast.success("Category deleted successfully ✅");
-  } catch (error) {
-    console.error("Error deleting category:", error);
-    toast.error(error.message || "Failed to delete category ❌");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
+  const [isLoading, setIsLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+
+  const filteredCategories = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return categories.filter((category) => {
+      const matchesSearch =
+        !term || String(category?.name || "").toLowerCase().includes(term);
+      const matchesStatus =
+        statusFilter === "all" || category.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [categories, searchTerm, statusFilter]);
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
+    const categoryId = categoryToDelete._id;
+    setIsLoading(true);
+    try {
+      const res = await fetch(
+        `${API_ENDPOINTS.BASE_URL}/category/create-delete/${categoryId}`,
+        { method: "DELETE" }
+      );
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to delete category");
+      }
+
+      setCategories((prev) => prev.filter((c) => c._id !== categoryId));
+      toast.success("Category deleted successfully");
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast.error(error?.message || "Failed to delete category");
+    } finally {
+      setIsLoading(false);
+      setCategoryToDelete(null);
+    }
+  };
 
   const toggleStatus = async (category) => {
     setUpdatingId(category._id);
     const newStatus = category.status === "active" ? "inactive" : "active";
-    
+
     try {
-      const res = await fetch(`${API_ENDPOINTS.BASE_URL}/category/update/${category._id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: newStatus,
-          name: category.name,
-          userId: category.userId,
-          shopId: category.shopId,
-        }),
-      });
+      const res = await fetch(
+        `${API_ENDPOINTS.BASE_URL}/category/update/${category._id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: newStatus,
+            name: category.name,
+            userId: category.userId,
+            shopId: category.shopId,
+          }),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to update status");
 
@@ -103,7 +122,9 @@ const handleDelete = async (categoryId) => {
           cat._id === category._id ? { ...cat, status: newStatus } : cat
         )
       );
-      toast.success(`Category ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`);
+      toast.success(
+        `Category ${newStatus === "active" ? "activated" : "deactivated"}`
+      );
     } catch (error) {
       console.error("Error updating status:", error);
       toast.error("Failed to update category status");
@@ -112,211 +133,261 @@ const handleDelete = async (categoryId) => {
     }
   };
 
+  const activeCount = categories.filter((c) => c.status === "active").length;
+  const inactiveCount = categories.filter((c) => c.status === "inactive").length;
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header Section */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Category Management
-            </h1>
-            <p className="text-gray-600">
-              Manage your product categories and organization
-            </p>
-          </div>
-          <Link
-            href="/dashboard/category/add"
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
-          >
-            <FiPlus className="w-4 h-4" />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            Product <span className="rgb-gradient-text">Categories</span>
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Organize your storefront catalog into clean collections.
+          </p>
+        </div>
+        <Button asChild variant="gradient">
+          <Link href="/dashboard/category/add">
+            <Plus className="w-4 h-4" />
             Add Category
           </Link>
-        </div>
+        </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-gray-600">Total Categories</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {categories.length}
-              </p>
-            </div>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FiPlus className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-gray-600">Active Categories</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {categories.filter((cat) => cat.status === "active").length}
-              </p>
-            </div>
-            <div className="p-2 bg-green-100 rounded-lg">
-              <FiEye className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-gray-600">Inactive Categories</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {categories.filter((cat) => cat.status === "inactive").length}
-              </p>
-            </div>
-            <div className="p-2 bg-red-100 rounded-lg">
-              <FiEyeOff className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filter Section */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search categories..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <FiFilter className="text-gray-400 w-4 h-4" />
-            <select
-              value={statusFilter}
-              onChange={(e) => handleStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          {
+            label: "Total Categories",
+            value: categories.length,
+            icon: FolderKanban,
+            bar: "from-violet-600 to-indigo-500",
+            iconBg: "from-violet-600 to-indigo-600",
+          },
+          {
+            label: "Active Categories",
+            value: activeCount,
+            icon: CheckCircle2,
+            bar: "from-emerald-500 to-teal-500",
+            iconBg: "from-emerald-500 to-teal-600",
+          },
+          {
+            label: "Inactive Categories",
+            value: inactiveCount,
+            icon: EyeOff,
+            bar: "from-rose-500 to-pink-500",
+            iconBg: "from-rose-500 to-pink-600",
+          },
+        ].map((s) => {
+          const Icon = s.icon;
+          return (
+            <Card
+              key={s.label}
+              className="relative overflow-hidden py-4 border-slate-200/80 bg-white/95"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Categories Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCategories.map((category) => (
-                <tr
-                  key={category._id}
-                  className="hover:bg-gray-50 transition-colors"
+              <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${s.bar}`} />
+              <CardContent className="px-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {s.label}
+                  </p>
+                  <p className="text-2xl font-extrabold text-slate-900 mt-1">
+                    {s.value}
+                  </p>
+                </div>
+                <div
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.iconBg} text-white flex items-center justify-center shadow-md`}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0">
-                        <img
-                          className="h-10 w-10 rounded-lg object-cover bg-gray-100"
-                          src={category.image || "/images/placeholder.jpg"}
-                          alt={category.name}
-                        />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {category.name}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => !updatingId && toggleStatus(category)}
-                      disabled={updatingId === category._id}
-                      className={`px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full cursor-pointer transition-all ${
-                        category.status === "active"
-                          ? "bg-green-100 text-green-800 hover:bg-green-200"
-                          : "bg-red-100 text-red-800 hover:bg-red-200"
-                      } ${updatingId === category._id ? "opacity-50 cursor-wait" : ""}`}
-                    >
-                      {updatingId === category._id ? (
-                        <>
-                          <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5" />
-                          Updating...
-                        </>
-                      ) : (
-                        category.status === "active" ? "Active" : "Inactive"
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {category.createdAt ? new Date(category.createdAt).toLocaleDateString('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric'
-                    }) : 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <Link
-                        href={`/dashboard/category/update?id=${category._id}`}
-                        className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 transition"
-                      >
-                        <FiEdit className="w-4 h-4" />
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(category._id)}
-                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredCategories.length === 0 && (
-          <div className="text-center py-8">
-            <div className="text-gray-500">No categories found</div>
-            <Link
-              href="/dashboard/category/add"
-              className="mt-2 text-indigo-600 hover:text-indigo-800 font-medium"
-            >
-              Add your first category
-            </Link>
-          </div>
-        )}
+                  <Icon className="w-4 h-4" />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      {/* Filter & Table Card */}
+      <Card className="border-slate-200/80 bg-white/95">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-lg font-bold text-slate-900">
+                All Categories
+              </CardTitle>
+              <CardDescription>
+                {filteredCategories.length} category(s) displayed
+              </CardDescription>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search categories..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 bg-white"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-40 bg-white">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <div className="rounded-xl border border-slate-200/80 overflow-hidden">
+            <Table>
+              <TableHeader className="bg-slate-50/80">
+                <TableRow>
+                  <TableHead className="pl-5">Category</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created Date</TableHead>
+                  <TableHead className="text-right pr-5">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCategories.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-14">
+                      <FolderKanban className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                      <p className="text-sm font-medium text-slate-600">
+                        No categories found
+                      </p>
+                      <Button asChild variant="link" size="sm" className="mt-1">
+                        <Link href="/dashboard/category/add">
+                          Add your first category
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredCategories.map((category) => (
+                    <TableRow key={category._id} className="hover:bg-slate-50/70">
+                      <TableCell className="pl-5">
+                        <div className="flex items-center gap-3">
+                          {category.image ? (
+                            <img
+                              className="h-10 w-10 rounded-lg object-cover border border-slate-200 bg-slate-50"
+                              src={category.image}
+                              alt={category.name}
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-violet-50 flex items-center justify-center">
+                              <ImageIcon className="w-4 h-4 text-violet-500" />
+                            </div>
+                          )}
+                          <span className="font-semibold text-slate-900">
+                            {category.name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <button
+                          type="button"
+                          onClick={() => !updatingId && toggleStatus(category)}
+                          disabled={updatingId === category._id}
+                          className="cursor-pointer disabled:cursor-wait"
+                        >
+                          <Badge
+                            variant="outline"
+                            className={
+                              category.status === "active"
+                                ? "bg-emerald-500/10 text-emerald-700 border-emerald-200 hover:bg-emerald-500/20"
+                                : "bg-rose-500/10 text-rose-700 border-rose-200 hover:bg-rose-500/20"
+                            }
+                          >
+                            {updatingId === category._id
+                              ? "Updating..."
+                              : category.status === "active"
+                              ? "Active"
+                              : "Inactive"}
+                          </Badge>
+                        </button>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-500">
+                        {category.createdAt
+                          ? new Date(category.createdAt).toLocaleDateString(
+                              "en-GB",
+                              { day: "2-digit", month: "short", year: "numeric" }
+                            )
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-right pr-5">
+                        <div className="inline-flex items-center gap-1">
+                          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+                            <Link
+                              href={`/dashboard/category/update?id=${category._id}`}
+                              aria-label="Edit category"
+                            >
+                              <Edit className="w-4 h-4 text-violet-600" />
+                            </Link>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                            onClick={() => setCategoryToDelete(category)}
+                            aria-label="Delete category"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={Boolean(categoryToDelete)}
+        onOpenChange={(open) => !open && setCategoryToDelete(null)}
+      >
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Delete Category</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-slate-900">
+                {categoryToDelete?.name}
+              </span>
+              ? Products assigned to it will remain in your catalog.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCategoryToDelete(null)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isLoading}
+            >
+              {isLoading ? "Deleting..." : "Delete Category"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-};
-
-export default CategoryContainer;
+}
