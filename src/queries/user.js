@@ -21,16 +21,62 @@ function generateVerificationCode() {
 async function registerUserAndShopQuery(data) {
   await dbConnect();
 
-  const { fullName, shopName, email, phone, password } = data;
+  const fullName = data?.fullName?.trim();
+  const shopName = data?.shopName?.trim();
+  const email = data?.email?.trim().toLowerCase();
+  const phone = data?.phone?.replace(/\s/g, "").trim();
+  const password = data?.password;
 
-  // Check if user exists
-  const existingUser = await UserModel.findOne({ $or: [{ email }, { phone }] });
-  if (existingUser) throw new Error("Email or phone already exists");
+  if (!fullName || !shopName || !email || !phone || !password) {
+    return {
+      status: 400,
+      success: false,
+      code: "MISSING_FIELDS",
+      message: "সকল প্রয়োজনীয় তথ্য সঠিকভাবে পূরণ করুন।",
+    };
+  }
+
+  // Check if user exists (separate email vs phone for clear error message)
+  const existingEmail = await UserModel.findOne({ email }).lean();
+  if (existingEmail) {
+    return {
+      status: 409,
+      success: false,
+      code: "EMAIL_EXISTS",
+      message: "এই ইমেইল ঠিকানাটি ইতিমধ্যে নিবন্ধিত আছে।",
+    };
+  }
+
+  const existingPhone = await UserModel.findOne({ phone }).lean();
+  if (existingPhone) {
+    return {
+      status: 409,
+      success: false,
+      code: "PHONE_EXISTS",
+      message: "এই ফোন নম্বরটি ইতিমধ্যে নিবন্ধিত আছে।",
+    };
+  }
 
   // Check if shop exists
   const shopSlug = slugify(shopName, { lower: true, strict: true });
-  const existingShop = await Shop.findOne({ shopSlug });
-  if (existingShop) throw new Error("Shop name already taken");
+  if (!shopSlug) {
+    return {
+      status: 400,
+      success: false,
+      code: "INVALID_SHOP_NAME",
+      message: "দোকানের নাম সঠিক নয়। অনুগ্রহ করে ইংরেজি বা বৈধ নাম ব্যবহার করুন।",
+    };
+  }
+
+  const existingShop = await Shop.findOne({ shopSlug }).lean();
+  if (existingShop) {
+    return {
+      status: 409,
+      success: false,
+      code: "SHOP_EXISTS",
+      message: "এই দোকানের নামটি ইতিমধ্যে ব্যবহৃত হয়েছে। অন্য নাম চেষ্টা করুন।",
+    };
+  }
 
   // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -57,16 +103,21 @@ async function registerUserAndShopQuery(data) {
   user.shops.push(shop._id);
   await user.save();
 
+  let emailSent = true;
   try {
     await sendVerifyEmail({ toEmail: email, fullName, code, expiry });
   } catch (error) {
-    console.error("Email send failed:", error.message);
-    // Optional: still continue user registration if you want
+    emailSent = false;
+    console.error("Verification email send failed:", error?.message || error);
   }
 
   return {
-    message: "Please check your email for the verification code.",
     status: 200,
+    success: true,
+    emailSent,
+    message: emailSent
+      ? "রেজিস্ট্রেশন সফল হয়েছে। ভেরিফিকেশন কোডের জন্য আপনার ইমেইল চেক করুন।"
+      : "অ্যাকাউন্ট তৈরি হয়েছে, তবে ভেরিফিকেশন ইমেইল পাঠানো যায়নি। ভেরিফিকেশন পৃষ্ঠা থেকে আবার কোড পাঠান।",
     data: {
       emailVerified: user.emailVerified,
       email: user.email,
@@ -74,47 +125,85 @@ async function registerUserAndShopQuery(data) {
   };
 }
 
-async function getUser(email) {
-  await dbConnect();
+async function getUser(rawEmail) {
+  try {
+    const email = rawEmail?.trim().toLowerCase();
+    if (!email) {
+      return {
+        status: false,
+        message: "ইমেইল ঠিকানা প্রদান করা হয়নি।",
+      };
+    }
 
-  const user = await UserModel.findOne({ email }).lean();
+    await dbConnect();
+    const user = await UserModel.findOne({ email }).lean();
 
-  if (!user) {
+    if (!user) {
+      return {
+        status: false,
+        message: "ইউজার খুঁজে পাওয়া যায়নি।",
+      };
+    }
+
+    return {
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone,
+      status: true,
+    };
+  } catch (error) {
+    console.error("getUser error:", error);
     return {
       status: false,
-      message: "User not found",
+      message: "সার্ভারে সমস্যা হয়েছে। দয়া করে পরে আবার চেষ্টা করুন।",
     };
   }
-
-  return {
-    fullName: user.fullName,
-    email: user.email,
-    phone: user.phone,
-    status: true,
-  };
 }
 
-async function verifyEmailQuary(email, code) {
+async function verifyEmailQuary(rawEmail, rawCode) {
   await dbConnect();
+
+  const email = rawEmail?.trim().toLowerCase();
+  const code = String(rawCode ?? "").trim();
+
+  if (!email || !code) {
+    return {
+      success: false,
+      code: "MISSING_FIELDS",
+      message: "ইমেইল এবং ভেরিফিকেশন কোড প্রয়োজন।",
+    };
+  }
 
   // 1️⃣ Find user
   const user = await UserModel.findOne({ email });
   if (!user) {
-    throw new Error("User not found");
+    return {
+      success: false,
+      code: "USER_NOT_FOUND",
+      message: "এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি।",
+    };
   }
 
   // 2️⃣ Check if already verified
   if (user.emailVerified) {
-    return { success: true, message: "Email already verified" };
+    return { success: true, message: "ইমেইল ইতিমধ্যে ভেরিফাই করা হয়েছে।" };
   }
 
   // 3️⃣ Validate code & expiry
-  if (
-    user.emailVerificationCode !== code ||
-    !user.emailVerificationExpires ||
-    user.emailVerificationExpires < new Date()
-  ) {
-    throw new Error("Invalid or expired verification code");
+  if (!user.emailVerificationExpires || user.emailVerificationExpires < new Date()) {
+    return {
+      success: false,
+      code: "EXPIRED_CODE",
+      message: "ভেরিফিকেশন কোডের মেয়াদ শেষ হয়ে গেছে। নতুন কোড পাঠান।",
+    };
+  }
+
+  if (user.emailVerificationCode !== code) {
+    return {
+      success: false,
+      code: "INVALID_CODE",
+      message: "ভেরিফিকেশন কোডটি সঠিক নয়।",
+    };
   }
 
   // 4️⃣ Update verification
@@ -122,25 +211,44 @@ async function verifyEmailQuary(email, code) {
   user.emailVerificationCode = undefined;
   user.emailVerificationExpires = undefined;
   await user.save();
-  await sendWelcomeEmail({
-    toEmail: user.email,
-    fullName: user.fullName,
-  });
-  return { success: true, message: "Email verified successfully" };
+
+  try {
+    await sendWelcomeEmail({
+      toEmail: user.email,
+      fullName: user.fullName,
+    });
+  } catch (error) {
+    console.error("Welcome email send failed:", error?.message || error);
+  }
+
+  return { success: true, message: "ইমেইল সফলভাবে ভেরিফাই হয়েছে।" };
 }
 
-async function resendVerificationEmailQuary(email) {
+async function resendVerificationEmailQuary(rawEmail) {
   await dbConnect();
+
+  const email = rawEmail?.trim().toLowerCase();
+  if (!email) {
+    return {
+      success: false,
+      code: "INVALID_EMAIL",
+      message: "সঠিক ইমেইল ঠিকানা প্রয়োজন।",
+    };
+  }
 
   // 1️⃣ Find user
   const user = await UserModel.findOne({ email });
   if (!user) {
-    throw new Error("User not found");
+    return {
+      success: false,
+      code: "USER_NOT_FOUND",
+      message: "এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি।",
+    };
   }
 
   // 2️⃣ Already verified?
   if (user.emailVerified) {
-    return { success: true, message: "Email is already verified" };
+    return { success: true, message: "ইমেইল ইতিমধ্যে ভেরিফাই করা হয়েছে।" };
   }
 
   // 3️⃣ Generate new code & expiry
@@ -160,7 +268,7 @@ async function resendVerificationEmailQuary(email) {
     expiry,
   });
 
-  return { success: true, message: "Verification email resent successfully" };
+  return { success: true, message: "নতুন ভেরিফিকেশন কোড আপনার ইমেইলে পাঠানো হয়েছে।" };
 }
 
 async function loginUserQuary(credentials) {
@@ -269,16 +377,40 @@ async function loginUserQuary(credentials) {
 async function changePasswordQuery({ userId, oldPassword, newPassword }) {
   await dbConnect();
 
+  if (!userId || !oldPassword || !newPassword) {
+    return {
+      status: false,
+      code: "MISSING_FIELDS",
+      message: "সব তথ্য সঠিকভাবে পূরণ করুন।",
+    };
+  }
+
+  if (newPassword.length < 6) {
+    return {
+      status: false,
+      code: "WEAK_PASSWORD",
+      message: "নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।",
+    };
+  }
+
   // 1️⃣ Find user
   const user = await UserModel.findById(userId);
   if (!user) {
-    throw new Error("User not found");
+    return {
+      status: false,
+      code: "USER_NOT_FOUND",
+      message: "ইউজার খুঁজে পাওয়া যায়নি।",
+    };
   }
 
   // 2️⃣ Verify old password
   const isMatch = await bcrypt.compare(oldPassword, user.password);
   if (!isMatch) {
-    throw new Error("Old password is incorrect");
+    return {
+      status: false,
+      code: "INVALID_OLD_PASSWORD",
+      message: "বর্তমান পাসওয়ার্ড সঠিক নয়।",
+    };
   }
 
   // 3️⃣ Hash new password
@@ -290,7 +422,7 @@ async function changePasswordQuery({ userId, oldPassword, newPassword }) {
 
   return {
     status: true,
-    message: "Password changed successfully",
+    message: "পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে।",
   };
 }
 

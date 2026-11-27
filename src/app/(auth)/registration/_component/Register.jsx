@@ -29,10 +29,11 @@ export default function Register() {
     }));
 
     // Clear error when user starts typing
-    if (errors[name]) {
+    if (errors[name] || errors.general) {
       setErrors((prev) => ({
         ...prev,
         [name]: "",
+        general: "",
       }));
     }
   };
@@ -89,22 +90,35 @@ export default function Register() {
 
     setIsLoading(true);
 
-    // Simulate API call
     try {
-      // In a real application, you would make an API call here
       const response = await registrationAction(formData);
       if (
-        response.status === 200 &&
-        response.data.email &&
-        response.data.emailVerified === false
+        response?.status === 200 &&
+        response?.data?.email &&
+        response?.data?.emailVerified === false
       ) {
-        router.push(`/account-verify?email=${response.data.email}`);
+        if (response.emailSent === false) {
+          toast.warning(response.message);
+        } else {
+          toast.success(
+            response.message || "রেজিস্ট্রেশন সফল হয়েছে। ইমেইল ভেরিফাই করুন।"
+          );
+        }
+        router.push(
+          `/account-verify?email=${encodeURIComponent(response.data.email)}`
+        );
+        return;
       }
+
+      const errorMessage =
+        response?.message || "রেজিস্ট্রেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।";
+      toast.error(errorMessage);
+      setErrors({ general: errorMessage });
     } catch (error) {
-      toast.error(error.message);
-      setErrors({
-        general: "রেজিস্ট্রেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।",
-      });
+      const errorMessage =
+        error?.message || "রেজিস্ট্রেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।";
+      toast.error(errorMessage);
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }

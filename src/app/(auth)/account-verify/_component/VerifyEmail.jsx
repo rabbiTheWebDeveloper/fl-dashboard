@@ -78,23 +78,23 @@ export default function VerifyEmail({ user }) {
     setIsLoading(true);
 
     try {
-      // Simulate API call
       const response = await verifyEmailAction(user.email, code.join(""));
-  
 
-      if (response.success) {
-        toast.success("ইমেইল ভেরিফিকেশন সফল!");
+      if (response?.success) {
+        toast.success(response.message || "ইমেইল ভেরিফিকেশন সফল!");
         router.push("/login");
+        return;
       }
 
-      // Redirect to dashboard or login
+      const errorMessage =
+        response?.message || "ভেরিফিকেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।";
+      toast.error(errorMessage);
+      setErrors({ general: errorMessage });
     } catch (error) {
-      toast.error(
-        error.message || "ভেরিফিকেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।"
-      );
-      setErrors({
-        general: "ভেরিফিকেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।",
-      });
+      const errorMessage =
+        error?.message || "ভেরিফিকেশন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।";
+      toast.error(errorMessage);
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -104,15 +104,27 @@ export default function VerifyEmail({ user }) {
   const handleResendCode = async () => {
     try {
       setCanResend(false);
-      await resendVerificationEmailAction(user.email);
+      const response = await resendVerificationEmailAction(user.email);
 
-      setCountdown(60);
-      toast.success("নতুন ভেরিফিকেশন কোড আপনার ইমেইলে পাঠানো হয়েছে।");
+      if (response?.success) {
+        setCountdown(60);
+        toast.success(
+          response.message || "নতুন ভেরিফিকেশন কোড আপনার ইমেইলে পাঠানো হয়েছে।"
+        );
+      } else {
+        const errorMessage =
+          response?.message ||
+          "কোড পুনরায় পাঠানো যায়নি। দয়া করে আবার চেষ্টা করুন।";
+        toast.error(errorMessage);
+        setErrors({ general: errorMessage });
+        setCanResend(true);
+      }
     } catch (error) {
       console.error("Resend error:", error);
-      toast.error(
-        error.message || "কোড পুনরায় পাঠানো যায়নি। দয়া করে আবার চেষ্টা করুন।"
-      );
+      const errorMessage =
+        error?.message || "কোড পুনরায় পাঠানো যায়নি। দয়া করে আবার চেষ্টা করুন।";
+      toast.error(errorMessage);
+      setErrors({ general: errorMessage });
       setCanResend(true);
     }
   };
