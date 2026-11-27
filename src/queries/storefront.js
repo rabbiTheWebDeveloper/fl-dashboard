@@ -307,47 +307,6 @@ export async function getStorefrontShellBySlugQuery(rawSlug) {
   const shopId = shop._id;
   const userId = shop.owner;
 
-  // Non-blocking Bangladesh (UTC+6) visitor telemetry for `/admin/visitor`
-  (async () => {
-    try {
-      const now = new Date();
-      const bdNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
-      const bdDate = bdNow.toISOString().slice(0, 10);
-      const bdHour = bdNow.getUTCHours();
-      const sidStr = String(shopId);
-
-      await Promise.all([
-        visitorCountModel.findOneAndUpdate(
-          { date: bdDate },
-          { $inc: { dailyCount: 1, totalCount: 1 } },
-          { upsert: true }
-        ),
-        VisitorCountDayModel.findOneAndUpdate(
-          { date: bdDate },
-          {
-            $inc: {
-              totalCount: 1,
-              [`hourlyCounts.${bdHour}.count`]: 1,
-            },
-          },
-          { upsert: true }
-        ),
-        shopVisitorModel.findOneAndUpdate(
-          { shopId: sidStr, date: bdDate, type: "storefront" },
-          {
-            $inc: {
-              totalCount: 1,
-              [`hourlyCounts.${bdHour}.count`]: 1,
-            },
-          },
-          { upsert: true }
-        ),
-      ]);
-    } catch {
-      // never block storefront rendering on telemetry errors
-    }
-  })();
-
   const [
     merchant,
     shopInfo,

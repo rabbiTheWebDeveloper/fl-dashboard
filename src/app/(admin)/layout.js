@@ -4,11 +4,14 @@ import React, { useCallback, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Activity,
   BarChart3,
   Boxes,
   CreditCard,
   Crown,
   ExternalLink,
+  Globe,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -41,17 +44,24 @@ import {
 
 const ADMIN_NAV_ITEMS = [
   {
-    href: "/admin",
-    label: "Executive Overview",
-    shortLabel: "Overview",
+    href: "/admin/dashboard",
+    matchHrefs: ["/admin", "/admin/dashboard"],
+    label: "Dashboard",
+    shortLabel: "Dashboard",
     icon: LayoutDashboard,
   },
   {
+    href: "/admin/role",
+    label: "Role & Permissions",
+    shortLabel: "Roles",
+    icon: KeyRound,
+    badge: "RBAC",
+  },
+  {
     href: "/admin/users",
-    label: "Admin & Roles",
+    label: "Admin Staff",
     shortLabel: "Admins",
     icon: UserCog,
-    badge: "RBAC",
   },
   {
     href: "/admin/merchants",
@@ -64,6 +74,12 @@ const ADMIN_NAV_ITEMS = [
     label: "All Stores",
     shortLabel: "Stores",
     icon: Store,
+  },
+  {
+    href: "/admin/domain",
+    label: "Custom Domains",
+    shortLabel: "Domains",
+    icon: Globe,
   },
   {
     href: "/admin/orders",
@@ -88,6 +104,12 @@ const ADMIN_NAV_ITEMS = [
     label: "SaaS Billing",
     shortLabel: "Billing",
     icon: CreditCard,
+  },
+  {
+    href: "/admin/visitor",
+    label: "Visitor Traffic",
+    shortLabel: "Visitors",
+    icon: Activity,
   },
   {
     href: "/admin/analytics",
@@ -205,12 +227,12 @@ export default function AdminPortalLayout({ children }) {
   }
 
   const effectivePath = pendingPath || pathname;
-  const activeNav =
-    ADMIN_NAV_ITEMS.find((item) =>
-      item.href === "/admin"
-        ? effectivePath === "/admin"
-        : effectivePath?.startsWith(item.href)
-    ) || ADMIN_NAV_ITEMS[0];
+  const isItemActive = (item) =>
+    item.matchHrefs
+      ? item.matchHrefs.includes(effectivePath)
+      : effectivePath?.startsWith(item.href);
+
+  const activeNav = ADMIN_NAV_ITEMS.find(isItemActive) || ADMIN_NAV_ITEMS[0];
 
   const roleText = String(adminUser?.role || getRole() || "superadmin").toUpperCase();
   const isNavigating =
@@ -278,10 +300,7 @@ export default function AdminPortalLayout({ children }) {
       <nav className="relative flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {ADMIN_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const active =
-            item.href === "/admin"
-              ? effectivePath === "/admin"
-              : effectivePath?.startsWith(item.href);
+          const active = isItemActive(item);
 
           return (
             <Link
@@ -412,10 +431,7 @@ export default function AdminPortalLayout({ children }) {
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 h-16 bg-white/95 backdrop-blur-xl border-t border-slate-200 grid grid-cols-5 px-1">
         {ADMIN_NAV_ITEMS.slice(0, 4).map((item) => {
           const Icon = item.icon;
-          const active =
-            item.href === "/admin"
-              ? effectivePath === "/admin"
-              : effectivePath?.startsWith(item.href);
+          const active = isItemActive(item);
           return (
             <Link
               key={item.href}
