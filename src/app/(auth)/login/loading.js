@@ -1,37 +1,28 @@
-import React from 'react';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-const Loading = () => {
+export default function Loading() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 gap-4">
-      {/* SVG Spinner */}
-      <svg
-        className="h-16 w-16 animate-spin text-blue-600"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          className="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          strokeWidth="4"
-        ></circle>
-        <path
-          className="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
-      </svg>
-      
-      {/* Loading Text */}
-      <div className="text-center space-y-1">
-        <h3 className="text-lg font-medium text-gray-800">Loading Application</h3>
-        <p className="text-sm text-gray-500">Just a moment please...</p>
+    <div
+      className="min-h-screen relative flex items-center justify-center p-4 sm:p-6 bg-slate-950 bg-cover bg-center"
+      style={{ backgroundImage: "url('/images/register-bg.jpg')" }}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-slate-950/65" />
+      <div className="relative z-10 w-full max-w-md">
+        <Card className="rounded-3xl border-white/15 bg-slate-900/78 backdrop-blur-2xl py-8 shadow-2xl">
+          <CardHeader className="px-6 sm:px-8 space-y-3">
+            <Skeleton className="h-5 w-36 rounded-full bg-white/10" />
+            <Skeleton className="h-8 w-56 rounded-lg bg-white/10" />
+            <Skeleton className="h-4 w-64 max-w-full rounded-md bg-white/10" />
+          </CardHeader>
+          <CardContent className="px-6 sm:px-8 space-y-4 pt-2">
+            <Skeleton className="h-11 w-full rounded-xl bg-white/10" />
+            <Skeleton className="h-11 w-full rounded-xl bg-white/10" />
+            <Skeleton className="h-5 w-36 rounded-md bg-white/10" />
+            <Skeleton className="h-12 w-full rounded-xl bg-white/15 mt-2" />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-};
-
-export default Loading;
+}
