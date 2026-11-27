@@ -3,21 +3,19 @@ import UpdateProduct from "../_component/UpdateProduct";
 import { getShopProductByIDQuery } from "@/queries/product";
 import { getAllCategoriesUserQuary } from "@/queries/categories";
 
-const page = async ({ searchParams }) => {
-  const { id } = await searchParams;
-  const user = await userInfo();
-  const product = await getShopProductByIDQuery(id);
-  const categories = await getAllCategoriesUserQuary(user);
-  return (
-    <>
-      <UpdateProduct
-        user={user}
-        product={product}
-        categories={categories}
-        productId={id}
-      />
-    </>
-  );
-};
+export default async function UpdateProductPage({ searchParams }) {
+  const [{ id }, user] = await Promise.all([searchParams, userInfo()]);
+  const [product, categories] = await Promise.all([
+    getShopProductByIDQuery(id),
+    getAllCategoriesUserQuary(user),
+  ]);
 
-export default page;
+  return (
+    <UpdateProduct
+      user={user}
+      product={product}
+      categories={categories}
+      productId={id}
+    />
+  );
+}

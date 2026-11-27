@@ -37,13 +37,55 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* Subtle RGB mesh canvas background */
+/* GPU-friendly subtle RGB mesh canvas background */
 .rgb-canvas {
   background-color: #f8fafc;
   background-image:
-    radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.07) 0px, transparent 45%),
-    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.07) 0px, transparent 45%),
-    radial-gradient(at 50% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.06) 0px, transparent 45%),
+    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.06) 0px, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(236, 72, 153, 0.04) 0px, transparent 50%);
+}
+
+/* Smooth GPU-composited route transition */
+@keyframes dashboardPageEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.dashboard-page-enter {
+  animation: dashboardPageEnter 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+/* Top RGB route progress bar */
+@keyframes navProgressSlide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.nav-progress-bar {
+  animation: navProgressSlide 900ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-page-enter,
+  .nav-progress-bar {
+    animation: none !important;
+  }
 }
 
 /* RGB top-border accent card */
@@ -68,9 +110,9 @@
   background-clip: text;
 }
 
-/* Native touch press feedback */
+/* Native touch press feedback (GPU transform only) */
 .app-press {
-  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .app-press:active {
   transform: scale(0.97);

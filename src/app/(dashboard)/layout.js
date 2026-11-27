@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
   Bell,
@@ -245,8 +245,16 @@ const PAGE_TITLES = {
 };
 
 export default function DashboardLayout({ children }) {
+  const router = useRouter();
   const pathname = usePathname();
-  const activeTab = resolveActiveTab(pathname);
+  const contentScrollRef = useRef(null);
+
+  const [isPending, startTransition] = useTransition();
+  const [pendingPath, setPendingPath] = useState(null);
+
+  // Use optimistic path immediately on click so sidebar pill & header respond in 0ms
+  const effectivePath = pendingPath || pathname;
+  const activeTab = resolveActiveTab(effectivePath);
 
   const [user, setUser] = useState({});
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -257,26 +265,61 @@ export default function DashboardLayout({ children }) {
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
 
   useEffect(() => {
+    setPendingPath(null);
     if (pathname?.toLowerCase().includes("myshop")) {
       setOpenGroup("myshop");
+    }
+    if (contentScrollRef.current) {
+      contentScrollRef.current.scrollTo({ top: 0, behavior: "instant" });
     }
   }, [pathname]);
 
   useEffect(() => {
     let mounted = true;
-    const fetchUser = async () => {
-      try {
-        const userData = await getUser();
+    getUser()
+      .then((userData) => {
         if (mounted) setUser(userData || {});
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-      }
-    };
-    fetchUser();
+      })
+      .catch((error) => console.error("Failed to fetch user:", error));
     return () => {
       mounted = false;
     };
   }, []);
+
+  const handleSmoothNav = useCallback(
+    (e, href, afterClose) => {
+      if (
+        e.defaultPrevented ||
+        e.button !== 0 ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.shiftKey ||
+        e.altKey
+      ) {
+        return;
+      }
+      if (afterClose) afterClose();
+      if (href === pathname) {
+        e.preventDefault();
+        return;
+      }
+      e.preventDefault();
+      setPendingPath(href);
+      startTransition(() => {
+        router.push(href);
+      });
+    },
+    [pathname, router]
+  );
+
+  const handlePrefetch = useCallback(
+    (href) => {
+      if (href && href !== pathname) {
+        router.prefetch(href);
+      }
+    },
+    [pathname, router]
+  );
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const markAllRead = () =>
@@ -285,14 +328,11 @@ export default function DashboardLayout({ children }) {
   const storeUrl = user?.domain ? `http://${user.domain}` : "/";
   const shopName = user?.shops?.shopName || "AMARDokan Store";
   const shopId = user?.shops?.shopId || "—";
+  const isNavigating = isPending || Boolean(pendingPath && pendingPath !== pathname);
 
-  const isMoreActive = ![
-    "dashboard",
-    "orders",
-    "products",
-  ].includes(activeTab);
+  const isMoreActive = !["dashboard", "orders", "products"].includes(activeTab);
 
-  const renderSidebarContent = (onNavigate) => (
+  const renderSidebarContent = (onCloseDrawer) => (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 relative overflow-hidden">
       {/* Ambient RGB Glow */}
       <div className="pointer-events-none absolute -top-24 -left-24 w-64 h-64 rounded-full bg-violet-600/20 blur-3xl" />
@@ -302,7 +342,9 @@ export default function DashboardLayout({ children }) {
       <div className="relative px-5 pt-5 pb-4 border-b border-white/10">
         <Link
           href="/dashboard"
-          onClick={onNavigate}
+          prefetch
+          onMouseEnter={() => handlePrefetch("/dashboard")}
+          onClick={(e) => handleSmoothNav(e, "/dashboard", onCloseDrawer)}
           className="flex items-center gap-3 group"
         >
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
@@ -319,7 +361,7 @@ export default function DashboardLayout({ children }) {
         </Link>
 
         {/* Merchant Shop Card */}
-        <div className="mt-4 rounded-xl bg-white/[0.05] border border-white/10 p-3 backdrop-blur-sm">
+        <div className="mt-4 rounded-xl bg-white/[0.05] border border-white/10 p-3">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 rounded-xl border border-white/15">
               <AvatarImage src={user?.shopLogo || ""} alt={shopName} />
@@ -372,7 +414,7 @@ export default function DashboardLayout({ children }) {
                     setOpenGroup((prev) => (prev === item.tab ? null : item.tab))
                   }
                   className={cn(
-                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150",
                     isActive
                       ? "bg-gradient-to-r from-violet-600/90 via-indigo-600/90 to-cyan-600/80 text-white shadow-md shadow-indigo-950/50"
                       : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
@@ -384,7 +426,7 @@ export default function DashboardLayout({ children }) {
                   </span>
                   <ChevronDown
                     className={cn(
-                      "w-4 h-4 transition-transform duration-200",
+                      "w-4 h-4 transition-transform duration-150",
                       expanded && "rotate-180"
                     )}
                   />
@@ -399,9 +441,13 @@ export default function DashboardLayout({ children }) {
                         <Link
                           key={sub.tab}
                           href={sub.href}
-                          onClick={onNavigate}
+                          prefetch
+                          onMouseEnter={() => handlePrefetch(sub.href)}
+                          onClick={(e) =>
+                            handleSmoothNav(e, sub.href, onCloseDrawer)
+                          }
                           className={cn(
-                            "flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                            "flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-150",
                             subActive
                               ? "bg-white/15 text-cyan-300 font-semibold"
                               : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
@@ -422,9 +468,11 @@ export default function DashboardLayout({ children }) {
             <Link
               key={item.tab}
               href={item.href}
-              onClick={onNavigate}
+              prefetch
+              onMouseEnter={() => handlePrefetch(item.href)}
+              onClick={(e) => handleSmoothNav(e, item.href, onCloseDrawer)}
               className={cn(
-                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150 group",
                 isActive
                   ? "bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 text-white shadow-md shadow-indigo-950/50"
                   : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
@@ -437,7 +485,9 @@ export default function DashboardLayout({ children }) {
               <span
                 className={cn(
                   "w-1.5 h-1.5 rounded-full transition-opacity",
-                  isActive ? "bg-white opacity-100" : `${item.dot} opacity-0 group-hover:opacity-80`
+                  isActive
+                    ? "bg-white opacity-100"
+                    : `${item.dot} opacity-0 group-hover:opacity-80`
                 )}
               />
             </Link>
@@ -450,7 +500,7 @@ export default function DashboardLayout({ children }) {
         <Link
           href={storeUrl}
           target="_blank"
-          onClick={onNavigate}
+          onClick={onCloseDrawer}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors"
         >
           <ExternalLink className="w-4 h-4 text-cyan-400" />
@@ -458,7 +508,7 @@ export default function DashboardLayout({ children }) {
         </Link>
         <Link
           href="/logout"
-          onClick={onNavigate}
+          onClick={onCloseDrawer}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-colors"
         >
           <LogOut className="w-4 h-4" />
@@ -484,7 +534,9 @@ export default function DashboardLayout({ children }) {
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Navigation Menu</SheetTitle>
-              <SheetDescription>Navigate across your store workspace</SheetDescription>
+              <SheetDescription>
+                Navigate across your store workspace
+              </SheetDescription>
             </SheetHeader>
             {renderSidebarContent(() => setMobileOpen(false))}
           </SheetContent>
@@ -494,7 +546,7 @@ export default function DashboardLayout({ children }) {
         <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
           <SheetContent
             side="bottom"
-            className="rounded-t-3xl border-t border-slate-200 bg-white/95 backdrop-blur-xl px-5 pt-4 pb-8 pb-safe lg:hidden"
+            className="rounded-t-3xl border-t border-slate-200 bg-white px-5 pt-4 pb-8 pb-safe lg:hidden"
           >
             <div className="w-10 h-1.5 rounded-full bg-slate-200 mx-auto mb-4" />
             <SheetHeader className="text-left pb-3">
@@ -512,7 +564,10 @@ export default function DashboardLayout({ children }) {
                   <Link
                     key={action.href}
                     href={action.href}
-                    onClick={() => setQuickOpen(false)}
+                    prefetch
+                    onClick={(e) =>
+                      handleSmoothNav(e, action.href, () => setQuickOpen(false))
+                    }
                     className="app-press flex flex-col gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 hover:border-violet-300 hover:bg-white transition-colors"
                   >
                     <div
@@ -536,11 +591,10 @@ export default function DashboardLayout({ children }) {
         </Sheet>
 
         {/* Main Workspace */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
           {/* App-like Sticky Top Bar */}
-          <header className="h-14 sm:h-16 shrink-0 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 px-3.5 sm:px-6 flex items-center justify-between gap-3 z-30 pt-safe">
+          <header className="relative h-14 sm:h-16 shrink-0 bg-white/92 backdrop-blur-md border-b border-slate-200/80 px-3.5 sm:px-6 flex items-center justify-between gap-3 z-30 pt-safe">
             <div className="flex items-center gap-2.5 min-w-0">
-              {/* Mobile Brand / Drawer Trigger */}
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
@@ -567,7 +621,13 @@ export default function DashboardLayout({ children }) {
                 size="sm"
                 className="hidden sm:inline-flex"
               >
-                <Link href="/dashboard/orders/create-order">
+                <Link
+                  href="/dashboard/orders/create-order"
+                  prefetch
+                  onClick={(e) =>
+                    handleSmoothNav(e, "/dashboard/orders/create-order")
+                  }
+                >
                   <Plus className="w-4 h-4" />
                   New Order
                 </Link>
@@ -665,7 +725,12 @@ export default function DashboardLayout({ children }) {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/settings" className="cursor-pointer">
+                    <Link
+                      href="/dashboard/settings"
+                      prefetch
+                      onClick={(e) => handleSmoothNav(e, "/dashboard/settings")}
+                      className="cursor-pointer"
+                    >
                       <User className="w-4 h-4 mr-2" />
                       Account Settings
                     </Link>
@@ -673,6 +738,10 @@ export default function DashboardLayout({ children }) {
                   <DropdownMenuItem asChild>
                     <Link
                       href="/dashboard/myshop/manage"
+                      prefetch
+                      onClick={(e) =>
+                        handleSmoothNav(e, "/dashboard/myshop/manage")
+                      }
                       className="cursor-pointer"
                     >
                       <Store className="w-4 h-4 mr-2" />
@@ -680,13 +749,22 @@ export default function DashboardLayout({ children }) {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/billings" className="cursor-pointer">
+                    <Link
+                      href="/dashboard/billings"
+                      prefetch
+                      onClick={(e) => handleSmoothNav(e, "/dashboard/billings")}
+                      className="cursor-pointer"
+                    >
                       <CreditCard className="w-4 h-4 mr-2" />
                       Billing & Invoices
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href={storeUrl} target="_blank" className="cursor-pointer">
+                    <Link
+                      href={storeUrl}
+                      target="_blank"
+                      className="cursor-pointer"
+                    >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Visit Storefront
                     </Link>
@@ -704,22 +782,42 @@ export default function DashboardLayout({ children }) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+
+            {/* Instant RGB Top Route Progress Indicator */}
+            {isNavigating && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2.5px] overflow-hidden bg-violet-100">
+                <div className="nav-progress-bar h-full w-1/2 bg-gradient-to-r from-violet-600 via-cyan-500 to-emerald-400" />
+              </div>
+            )}
           </header>
 
-          {/* Scrollable App Viewport — extra bottom clearance on mobile for dock */}
-          <div className="flex-1 overflow-y-auto overscroll-y-contain px-3.5 pt-4 pb-24 sm:px-6 sm:pt-6 lg:pb-6">
-            {children}
+          {/* Scrollable App Viewport with GPU-accelerated enter transition */}
+          <div
+            ref={contentScrollRef}
+            className="flex-1 overflow-y-auto overscroll-y-contain px-3.5 pt-4 pb-24 sm:px-6 sm:pt-6 lg:pb-6"
+          >
+            <div
+              key={pathname}
+              className={cn(
+                "dashboard-page-enter transition-opacity duration-150",
+                isNavigating && "opacity-75 pointer-events-none"
+              )}
+            >
+              {children}
+            </div>
           </div>
         </div>
 
         {/* Native Mobile Bottom App Navigation Dock */}
         <nav
           aria-label="Mobile navigation"
-          className="lg:hidden fixed inset-x-0 bottom-0 z-40 bg-white/92 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] pb-safe"
+          className="lg:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] pb-safe"
         >
           <div className="grid grid-cols-5 items-center h-16 px-2 max-w-lg mx-auto">
             <Link
               href="/dashboard"
+              prefetch
+              onClick={(e) => handleSmoothNav(e, "/dashboard")}
               className={cn(
                 "app-press flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-colors",
                 activeTab === "dashboard"
@@ -735,6 +833,8 @@ export default function DashboardLayout({ children }) {
 
             <Link
               href="/dashboard/orders"
+              prefetch
+              onClick={(e) => handleSmoothNav(e, "/dashboard/orders")}
               className={cn(
                 "app-press flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-colors",
                 activeTab === "orders"
@@ -748,7 +848,6 @@ export default function DashboardLayout({ children }) {
               </span>
             </Link>
 
-            {/* Center Floating RGB Quick-Action FAB */}
             <div className="flex items-center justify-center">
               <button
                 type="button"
@@ -762,6 +861,8 @@ export default function DashboardLayout({ children }) {
 
             <Link
               href="/dashboard/products"
+              prefetch
+              onClick={(e) => handleSmoothNav(e, "/dashboard/products")}
               className={cn(
                 "app-press flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-colors",
                 activeTab === "products"

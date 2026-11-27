@@ -16,13 +16,14 @@ const PUBLIC_PATHS = [
 export function Auth({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     const isPublicPath = PUBLIC_PATHS.includes(pathname);
     const authenticated = isAuthenticated();
 
     if (!authenticated && !isPublicPath) {
+      setAuthorized(false);
       router.replace('/login');
       return;
     }
@@ -32,10 +33,10 @@ export function Auth({ children }) {
       return;
     }
 
-    setIsLoading(false);
+    setAuthorized(true);
   }, [pathname, router]);
 
-  if (isLoading) return <Loading />;
+  if (!authorized) return <Loading />;
 
   return children;
 }

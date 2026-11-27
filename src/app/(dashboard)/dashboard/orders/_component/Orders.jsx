@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import {
@@ -148,8 +148,10 @@ export default function Orders({ orderlist = [] }) {
       .join(", ");
   };
 
+  const deferredSearch = useDeferredValue(searchTerm);
+
   const filteredOrders = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = deferredSearch.trim().toLowerCase();
     return orders.filter((order) => {
       const oid = getOrderId(order).toLowerCase();
       const name = String(order?.customer?.customerName || "").toLowerCase();
@@ -160,7 +162,7 @@ export default function Orders({ orderlist = [] }) {
       const matchesStatus = activeTab === "all" || order.status === activeTab;
       return matchesSearch && matchesStatus;
     });
-  }, [orders, searchTerm, activeTab]);
+  }, [orders, deferredSearch, activeTab]);
 
   const isAllSelected =
     filteredOrders.length > 0 &&

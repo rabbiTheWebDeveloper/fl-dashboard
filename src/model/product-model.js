@@ -199,6 +199,8 @@ productSchema.index({ categoryName: 1 });
 productSchema.index({ isActive: 1, isFeatured: 1 });
 productSchema.index({ "variants.productCode": 1 });
 productSchema.index({ createdAt: -1 });
+productSchema.index({ shopId: 1, userId: 1, createdAt: -1 });
+productSchema.index({ shopId: 1, userId: 1, availableQuantity: 1 });
 
 // Static method to find active products
 productSchema.statics.findActive = function () {

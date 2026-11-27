@@ -64,5 +64,8 @@ const orderSchema = new Schema(
   }
 );
 
+orderSchema.index({ shopId: 1, userId: 1, createdAt: -1 });
+orderSchema.index({ shopId: 1, userId: 1, status: 1 });
+
 export const OrderModel =
   mongoose.models.Orders ?? mongoose.model("Orders", orderSchema);

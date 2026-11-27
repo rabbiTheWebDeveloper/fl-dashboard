@@ -1,48 +1,57 @@
 import { dbConnect } from "@/service/mongo";
 import { ProductModel } from "@/model/product-model";
 
-async function getAllProductQuary({ shopId, userId }) {
+async function getAllProductQuary({ shopId, userId } = {}) {
+  if (!shopId || !userId) return [];
   await dbConnect();
   try {
-    const categories = await ProductModel.find({ shopId, userId })
-      .populate({ path: "categoryId", select: "name", as: "category" })
-      .sort({
-        createdAt: -1,
-      });
-    return JSON.parse(JSON.stringify(categories));
+    const products = await ProductModel.find({ shopId, userId })
+      .select(
+        "productName productCode categoryId regularPrice availableQuantity isActive mainImage createdAt"
+      )
+      .populate({ path: "categoryId", select: "name" })
+      .sort({ createdAt: -1 })
+      .lean();
+    return JSON.parse(JSON.stringify(products));
   } catch (error) {
-    throw new Error(error.message || "Failed to fetch categories");
+    throw new Error(error.message || "Failed to fetch products");
   }
 }
 
-async function getAllProductUserQuary({ shopId, userId }) {
+async function getAllProductUserQuary({ shopId, userId } = {}) {
+  if (!shopId || !userId) return [];
   await dbConnect();
   try {
-    const categories = await ProductModel.find({ shopId, userId })
+    const products = await ProductModel.find({ shopId, userId })
       .sort({ createdAt: -1 })
-      .select("name _id")
+      .select("name productName _id")
       .lean();
-    return JSON.parse(JSON.stringify(categories));
+    return JSON.parse(JSON.stringify(products));
   } catch (error) {
-    throw new Error(error.message || "Failed to fetch categories");
+    throw new Error(error.message || "Failed to fetch products");
   }
 }
-async function getAllProductOrderUserQuary({ shopId, userId }) {
+
+async function getAllProductOrderUserQuary({ shopId, userId } = {}) {
+  if (!shopId || !userId) return [];
   await dbConnect();
   try {
-    const categories = await ProductModel.find({ shopId, userId })
+    const products = await ProductModel.find({ shopId, userId })
       .sort({ createdAt: -1 })
-      .select("productName _id variants mainImage regularPrice discountType discountValue")
+      .select(
+        "productName _id variants mainImage regularPrice discountType discountValue"
+      )
       .lean();
-    return JSON.parse(JSON.stringify(categories));
+    return JSON.parse(JSON.stringify(products));
   } catch (error) {
-    throw new Error(error.message || "Failed to fetch categories");
+    throw new Error(error.message || "Failed to fetch products");
   }
 }
+
 async function getShopProductByIDQuery(id) {
   await dbConnect();
-  const products = await ProductModel.findById(id).lean();
-  if (!products) {
+  const product = await ProductModel.findById(id).lean();
+  if (!product) {
     return {
       message: "Product not found.",
       status: 404,
@@ -50,8 +59,9 @@ async function getShopProductByIDQuery(id) {
     };
   }
 
-  return JSON.parse(JSON.stringify(products));
+  return JSON.parse(JSON.stringify(product));
 }
+
 export {
   getAllProductQuary,
   getAllProductUserQuary,

@@ -344,6 +344,7 @@ export default function Dashboard({ data = {} }) {
                       strokeWidth={2.5}
                       fill="url(#rgbOrders)"
                       name="Orders"
+                      animationDuration={300}
                       dot={{ r: 3, fill: "#7c3aed" }}
                       activeDot={{ r: 5 }}
                     />
@@ -355,6 +356,7 @@ export default function Dashboard({ data = {} }) {
                       strokeWidth={2.5}
                       fill="url(#rgbRevenue)"
                       name="Revenue (৳)"
+                      animationDuration={300}
                       dot={{ r: 3, fill: "#10b981" }}
                       activeDot={{ r: 5 }}
                     />
@@ -389,6 +391,7 @@ export default function Dashboard({ data = {} }) {
                         paddingAngle={4}
                         dataKey="value"
                         strokeWidth={0}
+                        animationDuration={300}
                       >
                         {statusPie.map((e, i) => (
                           <Cell key={i} fill={e.color} />
@@ -476,7 +479,7 @@ export default function Dashboard({ data = {} }) {
                         width={90}
                       />
                       <Tooltip content={<ChartTooltip />} />
-                      <Bar dataKey="value" name="Orders" radius={[0, 6, 6, 0]}>
+                      <Bar dataKey="value" name="Orders" radius={[0, 6, 6, 0]} animationDuration={300}>
                         {cdata.map((e, i) => (
                           <Cell key={i} fill={e.color || "#7c3aed"} />
                         ))}

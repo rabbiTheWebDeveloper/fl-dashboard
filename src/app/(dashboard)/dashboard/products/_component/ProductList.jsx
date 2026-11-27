@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -92,8 +92,10 @@ export default function ProductList({ productlist = [] }) {
     return Array.from(names);
   }, [products]);
 
+  const deferredSearch = useDeferredValue(searchTerm);
+
   const filteredProducts = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = deferredSearch.trim().toLowerCase();
     return products.filter((product) => {
       const name = String(product?.productName || "").toLowerCase();
       const code = String(product?.productCode || product?.sku || "").toLowerCase();
@@ -120,7 +122,7 @@ export default function ProductList({ productlist = [] }) {
 
       return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [products, searchTerm, categoryFilter, statusFilter]);
+  }, [products, deferredSearch, categoryFilter, statusFilter]);
 
   const totalPages = Math.max(
     1,

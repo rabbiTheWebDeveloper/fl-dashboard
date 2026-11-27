@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import {
@@ -59,8 +59,10 @@ export default function CategoryContainer({ categoryList = [] }) {
   const [updatingId, setUpdatingId] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
 
+  const deferredSearch = useDeferredValue(searchTerm);
+
   const filteredCategories = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = deferredSearch.trim().toLowerCase();
     return categories.filter((category) => {
       const matchesSearch =
         !term || String(category?.name || "").toLowerCase().includes(term);
@@ -68,7 +70,7 @@ export default function CategoryContainer({ categoryList = [] }) {
         statusFilter === "all" || category.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [categories, searchTerm, statusFilter]);
+  }, [categories, deferredSearch, statusFilter]);
 
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
