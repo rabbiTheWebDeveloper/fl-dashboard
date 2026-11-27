@@ -1,20 +1,26 @@
 import Dashboard from "./_component/Dashboard";
-import { userInfo } from "@/lib";
+import { getUserInfo, userInfo } from "@/lib";
 import { getDashboardData } from "@/queries/dashboardStats";
 
 export const dynamic = "force-dynamic";
 
 const page = async ({ searchParams }) => {
-  const params = await searchParams;
-  const user = await userInfo();
+  const [params, user, fullUser] = await Promise.all([
+    searchParams,
+    userInfo(),
+    getUserInfo(),
+  ]);
 
   const data = await getDashboardData({
     ...user,
-    dateFrom: params?.from  || null,
-    dateTo:   params?.to    || null,
+    dateFrom: params?.from || null,
+    dateTo: params?.to || null,
   });
 
-  return <Dashboard data={data} />;
+  const shopSlug =
+    fullUser?.shops?.shopSlug || fullUser?.shops?.shopId || "";
+
+  return <Dashboard data={data} shopSlug={shopSlug} />;
 };
 
 export default page;

@@ -10,10 +10,11 @@ import { revalidatePath } from "next/cache";
 export async function myshopThemeColorUpdateQuaryAction(data) {
   try {
     const response = await themeQuery(data);
-    // revalidatePath(`/registration`);
+    revalidatePath("/dashboard/myshop/theme");
+    revalidatePath("/shop", "layout");
     return response;
   } catch (error) {
-    throw new Error(error);
+    throw new Error(error?.message || "Failed to update store theme");
   }
 }
 
@@ -64,4 +65,4 @@ export async function saveCourierSettingsAction({ userId, shopId, courierType, d
   } catch (error) {
     throw new Error(error.message || "Failed to save courier settings");
   }
-}
+}

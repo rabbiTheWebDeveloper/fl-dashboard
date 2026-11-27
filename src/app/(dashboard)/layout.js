@@ -325,7 +325,12 @@ export default function DashboardLayout({ children }) {
   const markAllRead = () =>
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
 
-  const storeUrl = user?.domain ? `http://${user.domain}` : "/";
+  const storeSlug = user?.shops?.shopSlug || user?.shops?.shopId;
+  const storeUrl = user?.domain
+    ? `http://${user.domain}`
+    : storeSlug
+    ? `/shop/${encodeURIComponent(storeSlug)}`
+    : "/shop";
   const shopName = user?.shops?.shopName || "AMARDokan Store";
   const shopId = user?.shops?.shopId || "—";
   const isNavigating = isPending || Boolean(pendingPath && pendingPath !== pathname);

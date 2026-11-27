@@ -129,8 +129,11 @@ function MetricCard({ title, value, icon: Icon, accent = "violet", prefix = "", 
   );
 }
 
-export default function Dashboard({ data = {} }) {
+export default function Dashboard({ data = {}, shopSlug = "" }) {
   const [chartTab, setChartTab] = useState("orders");
+  const liveStoreHref = shopSlug
+    ? `/shop/${encodeURIComponent(shopSlug)}`
+    : "/shop";
 
   const {
     orderStats = {
@@ -209,7 +212,7 @@ export default function Dashboard({ data = {} }) {
                 </Link>
               </Button>
               <Button asChild variant="gradient" size="sm" className="w-full sm:w-auto">
-                <Link href="/" target="_blank">
+                <Link href={liveStoreHref} target="_blank">
                   <ExternalLink className="w-4 h-4" />
                   Storefront
                 </Link>
