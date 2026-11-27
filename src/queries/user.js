@@ -219,8 +219,9 @@ async function loginUserQuary(credentials) {
   }
 
   // 4️⃣ Generate JWT token
+  const userRole = user.role || "merchant";
   const token = jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
+    { id: user._id, email: user.email, role: userRole },
     jwtSecret,
     { expiresIn: rememberMe ? "7d" : "1d" }
   );
@@ -252,7 +253,7 @@ async function loginUserQuary(credentials) {
         fullName: user.fullName,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        role: userRole,
         shops: primaryShop,
         domain: domain?.domain_name || null,
         shopLogo: shopInfo?.companyLogo?.url || null,
