@@ -38,7 +38,7 @@ import { Label } from "@/components/ui/label";
 const BD_PHONE_RE = /^(?:\+?88)?(01[3-9]\d{8})$/;
 
 function getPasswordStrength(password = "") {
-  if (!password) return { score: 0, label: "", color: "bg-slate-200" };
+  if (!password) return { score: 0, label: "", color: "bg-white/15" };
   let score = 0;
   if (password.length >= 6) score++;
   if (password.length >= 8) score++;
@@ -46,9 +46,9 @@ function getPasswordStrength(password = "") {
   if (/\d/.test(password) || /[^A-Za-z0-9]/.test(password)) score++;
 
   if (score <= 1) return { score: 1, label: "দুর্বল", color: "bg-rose-500" };
-  if (score === 2) return { score: 2, label: "মাঝারি", color: "bg-amber-500" };
-  if (score === 3) return { score: 3, label: "ভালো", color: "bg-cyan-500" };
-  return { score: 4, label: "শক্তিশালী", color: "bg-emerald-500" };
+  if (score === 2) return { score: 2, label: "মাঝারি", color: "bg-amber-400" };
+  if (score === 3) return { score: 3, label: "ভালো", color: "bg-cyan-400" };
+  return { score: 4, label: "শক্তিশালী", color: "bg-emerald-400" };
 }
 
 function previewSlug(shopName = "") {
@@ -217,121 +217,128 @@ export default function Register() {
     }
   };
 
+  const inputBaseClass =
+    "pl-9 h-11 bg-slate-950/65 border-white/15 text-white placeholder:text-slate-400 focus-visible:border-cyan-400 focus-visible:ring-cyan-400/25 rounded-xl";
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-slate-50 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
-      {/* Ambient RGB Aurora Blobs */}
-      <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-violet-500/15 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-cyan-500/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 left-1/3 w-96 h-96 rounded-full bg-pink-500/10 blur-3xl" />
+    <div
+      className="min-h-screen relative flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8 bg-slate-950 bg-cover bg-center bg-no-repeat bg-fixed"
+      style={{ backgroundImage: "url('/images/register-bg.jpg')" }}
+    >
+      {/* Balanced gradient scrim so the e-commerce store scene stays vivid while text remains ultra-legible */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/45 to-slate-950/65" />
 
-      <div className="relative w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        {/* Left Feature Pitch Panel (Desktop) */}
-        <div className="hidden lg:flex lg:col-span-5 flex-col justify-between rounded-3xl bg-slate-950 text-white p-8 shadow-2xl relative overflow-hidden min-h-[600px]">
-          <div className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 rounded-full bg-violet-600/30 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-cyan-500/25 blur-3xl" />
-
-          <div className="relative space-y-6">
-            <Link href="/" className="inline-flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <span className="text-white font-bold text-xl bangla-text">
+      <div className="relative z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+        {/* Left Hero Brand Column (Desktop) */}
+        <div className="hidden lg:flex lg:col-span-5 flex-col justify-between space-y-8 text-white pr-2">
+          <div className="space-y-6">
+            <Link href="/" className="inline-flex items-center gap-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/40 ring-1 ring-white/20 group-hover:scale-105 transition-transform">
+                <span className="text-white font-bold text-2xl bangla-text">
                   আ
                 </span>
               </div>
-              <span className="text-xl font-extrabold tracking-tight">
-                AMARDokan
-              </span>
+              <div>
+                <span className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-200 bg-clip-text text-transparent">
+                  AMARDokan
+                </span>
+                <p className="text-xs text-cyan-300/80">
+                  Merchant E-Commerce Cloud
+                </p>
+              </div>
             </Link>
 
-            <Badge className="bg-white/10 text-cyan-300 border-white/15 px-3 py-1">
+            <Badge className="bg-white/10 hover:bg-white/15 text-cyan-300 border-white/15 backdrop-blur-md px-3.5 py-1 text-xs">
               <Sparkles className="w-3.5 h-3.5 mr-1.5 text-violet-400" />
               ৫ মিনিটে অনলাইন শপ তৈরি করুন
             </Badge>
 
-            <h1 className="text-3xl font-extrabold leading-snug bangla-text">
+            <h1 className="text-3xl xl:text-4xl font-extrabold leading-tight bangla-text">
               আপনার ই-কমার্স ব্যবসার{" "}
               <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-emerald-300 bg-clip-text text-transparent">
                 অল-ইন-ওয়ান
               </span>{" "}
-              অটোমেশন ড্যাশবোর্ড
+              অটোমেশন প্ল্যাটফর্ম
             </h1>
 
             <p className="text-sm text-slate-300 leading-relaxed bangla-text">
               অর্ডার ম্যানেজমেন্ট, কুরিয়ার বুকিং, ইনভেন্টরি ট্র্যাকিং এবং কাস্টম
-              স্টোরফ্রন্ট—সবকিছু এক প্ল্যাটফর্মে।
+              স্টোরফ্রন্ট—সবকিছু এক আধুনিক ড্যাশবোর্ডে।
             </p>
 
-            <ul className="space-y-3.5 pt-2">
+            <div className="space-y-3 pt-1">
               {[
                 "কাস্টম ডোমেইন ও হাই-কনভার্টিং স্টোরফ্রন্ট থিম",
                 "Steadfast, Pathao ও RedX ওয়ান-ক্লিক কুরিয়ার ইন্টিগ্রেশন",
                 "রিয়েল-টাইম সেলস অ্যানালিটিক্স ও ইনভয়েস প্রিন্টিং",
                 "কোনো ক্রেডিট কার্ড ছাড়াই তাৎক্ষণিক ফ্রি অ্যাকাউন্ট",
               ].map((item) => (
-                <li
+                <div
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-slate-200 bangla-text"
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-md px-4 py-3 text-sm text-slate-100 bangla-text"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-1 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>{item}</span>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
-          <div className="relative pt-8 border-t border-white/10 flex items-center gap-3 text-xs text-slate-400">
-            <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0" />
+          <div className="flex items-center gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-500/10 backdrop-blur-md px-4 py-3 text-xs text-cyan-100">
+            <ShieldCheck className="w-5 h-5 text-cyan-300 shrink-0" />
             <span className="bangla-text">
               SSL এনক্রিপ্টেড এবং ১০০% নিরাপদ মার্চেন্ট ডেটা সুরক্ষা
             </span>
           </div>
         </div>
 
-        {/* Right Form Card */}
+        {/* Right Glassmorphic Registration Card */}
         <div className="lg:col-span-7">
           {/* Mobile Brand Header */}
-          <div className="lg:hidden text-center mb-6">
+          <div className="lg:hidden text-center mb-5">
             <Link
               href="/"
               className="inline-flex items-center justify-center gap-2.5"
             >
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-md">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/40 ring-1 ring-white/25">
                 <span className="text-white font-bold text-xl bangla-text">
                   আ
                 </span>
               </div>
-              <span className="text-xl font-extrabold tracking-tight text-slate-900">
+              <span className="text-xl font-extrabold tracking-tight text-white">
                 AMARDokan
               </span>
             </Link>
           </div>
 
-          <Card className="relative overflow-hidden border-slate-200/80 bg-white/95 backdrop-blur shadow-xl rounded-3xl py-6 sm:py-8">
-            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500" />
+          <Card className="relative overflow-hidden border-white/15 bg-slate-900/75 backdrop-blur-2xl text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)] rounded-3xl py-6 sm:py-8">
+            {/* RGB Spectrum Top Accent */}
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 via-cyan-400 to-emerald-400" />
 
             <CardHeader className="px-5 sm:px-8 pb-2">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <Badge
                   variant="outline"
-                  className="bg-violet-50 text-violet-700 border-violet-200 text-xs"
+                  className="bg-violet-500/15 text-violet-200 border-violet-400/30 text-xs"
                 >
-                  <Zap className="w-3 h-3 mr-1" />
+                  <Zap className="w-3 h-3 mr-1 text-cyan-300" />
                   ফ্রি মার্চেন্ট রেজিস্ট্রেশন
                 </Badge>
-                <p className="text-xs sm:text-sm text-slate-600 bangla-text">
+                <p className="text-xs sm:text-sm text-slate-300 bangla-text">
                   ইতিমধ্যে অ্যাকাউন্ট আছে?{" "}
                   <Link
                     href="/login"
-                    className="font-bold text-violet-600 hover:text-violet-700 underline-offset-4 hover:underline"
+                    className="font-bold text-cyan-300 hover:text-cyan-200 underline-offset-4 hover:underline"
                   >
                     লগইন করুন
                   </Link>
                 </p>
               </div>
 
-              <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 bangla-text">
+              <CardTitle className="text-2xl sm:text-3xl font-extrabold text-white mt-3 bangla-text">
                 নতুন অ্যাকাউন্ট তৈরি করুন
               </CardTitle>
-              <CardDescription className="text-xs sm:text-sm text-slate-500 bangla-text">
+              <CardDescription className="text-xs sm:text-sm text-slate-300/90 bangla-text">
                 আপনার নাম, দোকানের নাম এবং যোগাযোগের তথ্য দিয়ে শুরু করুন
               </CardDescription>
             </CardHeader>
@@ -341,9 +348,9 @@ export default function Register() {
                 {errors.general && (
                   <div
                     role="alert"
-                    className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50/90 p-3.5 text-rose-800"
+                    className="flex items-start gap-2.5 rounded-2xl border border-rose-500/40 bg-rose-500/15 p-3.5 text-rose-200"
                   >
-                    <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+                    <AlertCircle className="w-4 h-4 text-rose-400 mt-0.5 shrink-0" />
                     <p className="text-xs sm:text-sm font-medium bangla-text">
                       {errors.general}
                     </p>
@@ -355,9 +362,9 @@ export default function Register() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="fullName"
-                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                      className="text-xs sm:text-sm font-semibold text-slate-200 bangla-text"
                     >
-                      পুরো নাম <span className="text-rose-500">*</span>
+                      পুরো নাম <span className="text-rose-400">*</span>
                     </Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -370,11 +377,11 @@ export default function Register() {
                         value={formData.fullName}
                         onChange={handleChange}
                         aria-invalid={Boolean(errors.fullName)}
-                        className="pl-9 h-10 bg-white bangla-text"
+                        className={`${inputBaseClass} bangla-text`}
                       />
                     </div>
                     {errors.fullName && (
-                      <p className="text-xs text-rose-600 bangla-text">
+                      <p className="text-xs text-rose-400 bangla-text">
                         {errors.fullName}
                       </p>
                     )}
@@ -383,9 +390,9 @@ export default function Register() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="shopName"
-                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                      className="text-xs sm:text-sm font-semibold text-slate-200 bangla-text"
                     >
-                      দোকানের নাম <span className="text-rose-500">*</span>
+                      দোকানের নাম <span className="text-rose-400">*</span>
                     </Label>
                     <div className="relative">
                       <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -398,18 +405,18 @@ export default function Register() {
                         value={formData.shopName}
                         onChange={handleChange}
                         aria-invalid={Boolean(errors.shopName)}
-                        className="pl-9 h-10 bg-white bangla-text"
+                        className={`${inputBaseClass} bangla-text`}
                       />
                     </div>
                     {errors.shopName ? (
-                      <p className="text-xs text-rose-600 bangla-text">
+                      <p className="text-xs text-rose-400 bangla-text">
                         {errors.shopName}
                       </p>
                     ) : (
                       slugPreview && (
                         <p className="text-[11px] text-slate-400 truncate">
                           স্টোর লিংক:{" "}
-                          <span className="font-mono text-violet-600 font-medium">
+                          <span className="font-mono text-cyan-300 font-medium">
                             /shop/{slugPreview}
                           </span>
                         </p>
@@ -423,9 +430,9 @@ export default function Register() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="email"
-                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                      className="text-xs sm:text-sm font-semibold text-slate-200 bangla-text"
                     >
-                      ইমেইল ঠিকানা <span className="text-rose-500">*</span>
+                      ইমেইল ঠিকানা <span className="text-rose-400">*</span>
                     </Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -438,11 +445,11 @@ export default function Register() {
                         value={formData.email}
                         onChange={handleChange}
                         aria-invalid={Boolean(errors.email)}
-                        className="pl-9 h-10 bg-white"
+                        className={inputBaseClass}
                       />
                     </div>
                     {errors.email && (
-                      <p className="text-xs text-rose-600 bangla-text">
+                      <p className="text-xs text-rose-400 bangla-text">
                         {errors.email}
                       </p>
                     )}
@@ -451,9 +458,9 @@ export default function Register() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="phone"
-                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                      className="text-xs sm:text-sm font-semibold text-slate-200 bangla-text"
                     >
-                      মোবাইল নম্বর <span className="text-rose-500">*</span>
+                      মোবাইল নম্বর <span className="text-rose-400">*</span>
                     </Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -467,11 +474,11 @@ export default function Register() {
                         value={formData.phone}
                         onChange={handleChange}
                         aria-invalid={Boolean(errors.phone)}
-                        className="pl-9 h-10 bg-white"
+                        className={inputBaseClass}
                       />
                     </div>
                     {errors.phone && (
-                      <p className="text-xs text-rose-600 bangla-text">
+                      <p className="text-xs text-rose-400 bangla-text">
                         {errors.phone}
                       </p>
                     )}
@@ -483,9 +490,9 @@ export default function Register() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="password"
-                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                      className="text-xs sm:text-sm font-semibold text-slate-200 bangla-text"
                     >
-                      পাসওয়ার্ড <span className="text-rose-500">*</span>
+                      পাসওয়ার্ড <span className="text-rose-400">*</span>
                     </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -498,12 +505,12 @@ export default function Register() {
                         value={formData.password}
                         onChange={handleChange}
                         aria-invalid={Boolean(errors.password)}
-                        className="pl-9 pr-10 h-10 bg-white"
+                        className={`${inputBaseClass} pr-10`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
                         aria-label={
                           showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"
                         }
@@ -524,21 +531,21 @@ export default function Register() {
                               className={`h-1 rounded-full transition-colors ${
                                 strength.score >= level
                                   ? strength.color
-                                  : "bg-slate-200"
+                                  : "bg-white/15"
                               }`}
                             />
                           ))}
                         </div>
-                        <p className="text-[11px] text-slate-500 bangla-text">
+                        <p className="text-[11px] text-slate-300 bangla-text">
                           পাসওয়ার্ডের মান:{" "}
-                          <span className="font-semibold text-slate-700">
+                          <span className="font-semibold text-white">
                             {strength.label}
                           </span>
                         </p>
                       </div>
                     )}
                     {errors.password && (
-                      <p className="text-xs text-rose-600 bangla-text">
+                      <p className="text-xs text-rose-400 bangla-text">
                         {errors.password}
                       </p>
                     )}
@@ -547,10 +554,10 @@ export default function Register() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="confirmPassword"
-                      className="text-xs sm:text-sm font-semibold text-slate-700 bangla-text"
+                      className="text-xs sm:text-sm font-semibold text-slate-200 bangla-text"
                     >
                       পাসওয়ার্ড নিশ্চিত করুন{" "}
-                      <span className="text-rose-500">*</span>
+                      <span className="text-rose-400">*</span>
                     </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -563,12 +570,12 @@ export default function Register() {
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         aria-invalid={Boolean(errors.confirmPassword)}
-                        className="pl-9 pr-10 h-10 bg-white"
+                        className={`${inputBaseClass} pr-10`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
                         aria-label={
                           showConfirmPassword
                             ? "পাসওয়ার্ড লুকান"
@@ -583,7 +590,7 @@ export default function Register() {
                       </button>
                     </div>
                     {errors.confirmPassword && (
-                      <p className="text-xs text-rose-600 bangla-text">
+                      <p className="text-xs text-rose-400 bangla-text">
                         {errors.confirmPassword}
                       </p>
                     )}
@@ -599,31 +606,31 @@ export default function Register() {
                       onCheckedChange={(checked) =>
                         handleFieldChange("agreeToTerms", Boolean(checked))
                       }
-                      className="mt-1"
+                      className="mt-1 border-white/30 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
                     />
                     <Label
                       htmlFor="agreeToTerms"
-                      className="text-xs sm:text-sm font-normal text-slate-600 leading-relaxed cursor-pointer bangla-text"
+                      className="text-xs sm:text-sm font-normal text-slate-300 leading-relaxed cursor-pointer bangla-text"
                     >
                       আমি AMARDokan এর{" "}
                       <Link
                         href="/terms"
-                        className="font-semibold text-violet-600 hover:underline"
+                        className="font-semibold text-cyan-300 hover:underline"
                       >
                         শর্তাবলী
                       </Link>{" "}
                       এবং{" "}
                       <Link
                         href="/privacy"
-                        className="font-semibold text-violet-600 hover:underline"
+                        className="font-semibold text-cyan-300 hover:underline"
                       >
                         গোপনীয়তা নীতি
                       </Link>{" "}
-                      মেনে নিচ্ছি <span className="text-rose-500">*</span>
+                      মেনে নিচ্ছি <span className="text-rose-400">*</span>
                     </Label>
                   </div>
                   {errors.agreeToTerms && (
-                    <p className="text-xs text-rose-600 bangla-text">
+                    <p className="text-xs text-rose-400 bangla-text">
                       {errors.agreeToTerms}
                     </p>
                   )}
@@ -634,7 +641,7 @@ export default function Register() {
                   variant="gradient"
                   size="lg"
                   disabled={isLoading}
-                  className="w-full h-11 text-sm font-bold rounded-xl bangla-text mt-2"
+                  className="w-full h-12 text-sm sm:text-base font-bold rounded-xl shadow-lg shadow-indigo-500/30 bangla-text mt-2"
                 >
                   {isLoading ? (
                     <>
