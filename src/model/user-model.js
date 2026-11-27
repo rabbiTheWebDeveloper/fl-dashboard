@@ -31,6 +31,30 @@ const userSchema = new Schema(
       index: true,
     },
     next_payment_date: { type: Date, default: null },
+    subscription_plan: {
+      type: String,
+      enum: ["Basic", "Standard", "Professional"],
+      default: "Basic",
+      index: true,
+    },
+    subscription_cycle: {
+      type: String,
+      enum: ["monthly", "yearly"],
+      default: "monthly",
+    },
+    subscription_status: {
+      type: String,
+      enum: ["trial", "active", "past_due", "cancelled"],
+      default: "active",
+    },
+    subscription_started_at: {
+      type: Date,
+      default: Date.now,
+    },
+    auto_renew: {
+      type: Boolean,
+      default: true,
+    },
     refreshSessions: {
       type: [
         {
@@ -60,7 +84,8 @@ userSchema.index({ email: 1, role: 1 });
 
 if (
   mongoose.models.User &&
-  !mongoose.models.User.schema.path("refreshSessions")
+  (!mongoose.models.User.schema.path("refreshSessions") ||
+    !mongoose.models.User.schema.path("subscription_plan"))
 ) {
   delete mongoose.models.User;
 }
