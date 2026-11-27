@@ -8,20 +8,20 @@ export const ADMIN_ROLES = [
 ];
 
 export const ADMIN_MODULES = [
-  "overview",
-  "dashboard",
-  "users",
-  "role",
-  "merchants",
-  "shops",
-  "domain",
-  "orders",
-  "products",
-  "payment-list",
-  "billing",
-  "visitor",
-  "analytics",
-  "settings",
+    "overview",
+    "dashboard",
+    "users",
+    "role",
+    "merchants",
+    "shops",
+    "domain",
+    "orders",
+    "products",
+    "payment-list",
+    "billing",
+    "visitor",
+    "analytics",
+    "settings",
 ];
 
 const adminUserSchema = new Schema(
@@ -261,54 +261,54 @@ const platformSettingSchema = new Schema(
             trim: true,
         },
 
-    // 5. Role Permission Matrix Templates (`/admin/role`)
-    roleTemplates: {
-      type: Schema.Types.Mixed,
-      default: {
-        superadmin: [
-          "overview",
-          "dashboard",
-          "users",
-          "role",
-          "merchants",
-          "shops",
-          "domain",
-          "orders",
-          "products",
-          "payment-list",
-          "billing",
-          "visitor",
-          "analytics",
-          "settings",
-        ],
-        "user-admin": [
-          "overview",
-          "dashboard",
-          "users",
-          "role",
-          "merchants",
-          "shops",
-          "domain",
-          "orders",
-          "products",
-          "payment-list",
-          "billing",
-          "visitor",
-          "analytics",
-        ],
-        moderator: [
-          "overview",
-          "dashboard",
-          "merchants",
-          "shops",
-          "domain",
-          "orders",
-          "products",
-          "visitor",
-        ],
-        support: ["overview", "dashboard", "merchants", "orders", "visitor"],
-      },
-    },
+        // 5. Role Permission Matrix Templates (`/admin/role`)
+        roleTemplates: {
+            type: Schema.Types.Mixed,
+            default: {
+                superadmin: [
+                    "overview",
+                    "dashboard",
+                    "users",
+                    "role",
+                    "merchants",
+                    "shops",
+                    "domain",
+                    "orders",
+                    "products",
+                    "payment-list",
+                    "billing",
+                    "visitor",
+                    "analytics",
+                    "settings",
+                ],
+                "user-admin": [
+                    "overview",
+                    "dashboard",
+                    "users",
+                    "role",
+                    "merchants",
+                    "shops",
+                    "domain",
+                    "orders",
+                    "products",
+                    "payment-list",
+                    "billing",
+                    "visitor",
+                    "analytics",
+                ],
+                moderator: [
+                    "overview",
+                    "dashboard",
+                    "merchants",
+                    "shops",
+                    "domain",
+                    "orders",
+                    "products",
+                    "visitor",
+                ],
+                support: ["overview", "dashboard", "merchants", "orders", "visitor"],
+            },
+        },
 
         updatedBy: {
             type: Schema.Types.ObjectId,
@@ -330,8 +330,8 @@ if (
 }
 
 if (
-  mongoose.models.PlatformSetting &&
-  !mongoose.models.PlatformSetting.schema.path("roleTemplates")
+    mongoose.models.PlatformSetting &&
+    !mongoose.models.PlatformSetting.schema.path("roleTemplates")
 ) {
     delete mongoose.models.PlatformSetting;
 }
