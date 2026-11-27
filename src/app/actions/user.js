@@ -42,10 +42,15 @@ export async function resendVerificationEmailAction(email) {
 export async function loginUserQuaryAction(data) {
   try {
     const response = await loginUserQuary(data);
-    // revalidatePath(`/registration`);
     return response;
   } catch (error) {
-    throw new Error(error);
+    console.error("Login action error:", error);
+    return {
+      status: false,
+      code: "SERVER_ERROR",
+      message:
+        error?.message || "লগইন ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।",
+    };
   }
 }
 

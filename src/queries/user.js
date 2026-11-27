@@ -9,7 +9,7 @@ import slugify from "slugify";
 import jwt from "jsonwebtoken";
 import { DomainModel } from "@/model/domain-model";
 import { ShopInfoModel } from "@/model/shopInfo-model";
-const JWT_SECRET = process.env.JWT_SECRET;
+
 function generateVerificationCode() {
   return Math.floor(1000 + Math.random() * 9000).toString(); // 1000-9999
 }
@@ -161,56 +161,101 @@ async function resendVerificationEmailQuary(email) {
 async function loginUserQuary(credentials) {
   await dbConnect();
 
-  const { email, password } = credentials;
+  const email = credentials?.email?.trim().toLowerCase();
+  const password = credentials?.password;
+  const rememberMe = Boolean(credentials?.rememberMe);
+
+  if (!email || !password) {
+    return {
+      status: false,
+      code: "MISSING_CREDENTIALS",
+      message: "ইমেইল এবং পাসওয়ার্ড উভয়ই প্রয়োজন।",
+    };
+  }
+
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error("Server authentication configuration is missing.");
+  }
 
   // 1️⃣ Find user
   const user = await UserModel.findOne({ email })
     .populate("shops", "shopId shopName shopSlug") // only select necessary fields
     .lean();
   if (!user) {
-    throw new Error("User not found");
+    return {
+      status: false,
+      code: "USER_NOT_FOUND",
+      message: "এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি।",
+    };
   }
 
   // 2️⃣ Check if email is verified
   if (!user.emailVerified) {
-    throw new Error("Email not verified. Please verify your email.");
+    return {
+      status: false,
+      code: "EMAIL_NOT_VERIFIED",
+      email: user.email,
+      message: "আপনার ইমেইল এখনো ভেরিফাই করা হয়নি। দয়া করে ইমেইল ভেরিফাই করুন।",
+    };
   }
 
   // 3️⃣ Compare password
+  if (!user.password) {
+    return {
+      status: false,
+      code: "INVALID_CREDENTIALS",
+      message: "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।",
+    };
+  }
+
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    throw new Error("Invalid password");
+    return {
+      status: false,
+      code: "INVALID_CREDENTIALS",
+      message: "পাসওয়ার্ড সঠিক নয়। আবার চেষ্টা করুন।",
+    };
   }
 
   // 4️⃣ Generate JWT token
   const token = jwt.sign(
     { id: user._id, email: user.email, role: user.role },
-    JWT_SECRET,
-    { expiresIn: "7d" } // adjust expiry as needed
+    jwtSecret,
+    { expiresIn: rememberMe ? "7d" : "1d" }
   );
-  const domain = await DomainModel.findOne(
-    { userId: user._id, shopId: user.shops[0]._id },
-    { domain_name: 1, domain_status: 1, _id: 0 }
-  ).lean();
-  const shopInfo = await ShopInfoModel.findOne(
-    { userId: user._id, shopId: user.shops[0]._id },
-    { companyLogo: 1, _id: 0 }
-  ).lean();
+
+  const primaryShop =
+    Array.isArray(user.shops) && user.shops.length > 0 ? user.shops[0] : null;
+
+  const [domain, shopInfo] = primaryShop?._id
+    ? await Promise.all([
+        DomainModel.findOne(
+          { userId: user._id, shopId: primaryShop._id },
+          { domain_name: 1, domain_status: 1, _id: 0 }
+        ).lean(),
+        ShopInfoModel.findOne(
+          { userId: user._id, shopId: primaryShop._id },
+          { companyLogo: 1, _id: 0 }
+        ).lean(),
+      ])
+    : [null, null];
+
   // 5️⃣ Return user info + token
   return JSON.parse(
     JSON.stringify({
       status: true,
-      message: "Login successful",
-      token: token,
+      message: "লগইন সফল হয়েছে",
+      token,
       user: {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
         phone: user.phone,
         role: user.role,
-        shops: user.shops[0],
-        domain: domain ? domain?.domain_name : null,
-        shopLogo: shopInfo ? shopInfo?.companyLogo?.url : null,
+        shops: primaryShop,
+        domain: domain?.domain_name || null,
+        shopLogo: shopInfo?.companyLogo?.url || null,
       },
     })
   );

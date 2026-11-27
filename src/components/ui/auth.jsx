@@ -5,29 +5,33 @@ import { useRouter, usePathname } from 'next/navigation';
 import { isAuthenticated } from '@/lib/auth';
 import Loading from './loading';
 
-
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/registration',
+  '/account-verify',
+  '/forgot-password',
+];
 
 export function Auth({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const publicPaths = ['/', '/register', '/forgot-password'];
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const isPublicPath = publicPaths.includes(pathname);
-      const authenticated = isAuthenticated();
+    const isPublicPath = PUBLIC_PATHS.includes(pathname);
+    const authenticated = isAuthenticated();
 
-      if (!authenticated && !isPublicPath) {
-        router.push('/');
-        setIsLoading(false);
-      } else if (authenticated && isPublicPath) {
-        router.push('/dashboard/market');
-        setIsLoading(false);
-      }
-    };
+    if (!authenticated && !isPublicPath) {
+      router.replace('/login');
+      return;
+    }
 
-    checkAuth();
+    if (authenticated && isPublicPath) {
+      router.replace('/dashboard');
+      return;
+    }
+
     setIsLoading(false);
   }, [pathname, router]);
 

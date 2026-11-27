@@ -7,7 +7,6 @@ import {
   verifyEmailAction,
 } from "@/app/actions/user";
 import { toast } from "react-toastify";
-import { Router } from "next/router";
 import { useRouter } from "next/navigation";
 
 export default function VerifyEmail({ user }) {

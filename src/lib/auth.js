@@ -5,20 +5,25 @@ import { jwtDecode } from "jwt-decode";
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
 const ROLE_KEY = "role";
-const COOKIE_OPTIONS = {
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
-  expires: 1, // 1 day
-};
+
+const getCookieOptions = ({ rememberMe = false, expires } = {}) => ({
+  path: "/",
+  secure:
+    typeof window !== "undefined"
+      ? window.location.protocol === "https:"
+      : process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  expires: expires ?? (rememberMe ? 7 : 1),
+});
 
 // Token management
 export const getToken = () => Cookies.get(TOKEN_KEY);
 
-export const setToken = (token) => {
+export const setToken = (token, options = {}) => {
   if (!token) return false;
   try {
-    Cookies.set(TOKEN_KEY, token, COOKIE_OPTIONS);
-    return true;
+    Cookies.set(TOKEN_KEY, token, getCookieOptions(options));
+    return Boolean(Cookies.get(TOKEN_KEY));
   } catch (error) {
     console.error("Error setting token:", error);
     return false;
@@ -42,13 +47,13 @@ export const getUser = async () => {
   }
 };
 
-export const setUser = (user) => {
+export const setUser = (user, options = {}) => {
   if (!user) return false;
   try {
     // Ensure we're storing a string
     const userStr = typeof user === "string" ? user : JSON.stringify(user);
-    Cookies.set(USER_KEY, userStr, COOKIE_OPTIONS);
-    return true;
+    Cookies.set(USER_KEY, userStr, getCookieOptions(options));
+    return Boolean(Cookies.get(USER_KEY));
   } catch (error) {
     console.error("Error setting user:", error);
     return false;
@@ -59,11 +64,11 @@ export const setUser = (user) => {
 export const getRole = () => Cookies.get(ROLE_KEY);
 export const getUserId = () => Cookies?.get(USER_KEY);
 
-export const setRole = (role) => {
+export const setRole = (role, options = {}) => {
   if (!role) return false;
   try {
-    Cookies.set(ROLE_KEY, role, COOKIE_OPTIONS);
-    return true;
+    Cookies.set(ROLE_KEY, role, getCookieOptions(options));
+    return Boolean(Cookies.get(ROLE_KEY));
   } catch (error) {
     console.error("Error setting role:", error);
     return false;
@@ -92,6 +97,7 @@ export const isTokenExpired = (token) => {
   if (!token) return true;
   try {
     const tokenData = jwtDecode(token);
+    if (!tokenData?.exp) return true;
     const expirationTime = tokenData.exp * 1000;
     return Date.now() > expirationTime - 300000;
   } catch (error) {
@@ -117,9 +123,10 @@ export const getAuthHeaders = () => {
 
 export const logout = () => {
   try {
-    // Clear all React Query cache
-
-    // Remove cookies
+    // Remove cookies from root path and current path
+    Cookies.remove(TOKEN_KEY, { path: "/" });
+    Cookies.remove(USER_KEY, { path: "/" });
+    Cookies.remove(ROLE_KEY, { path: "/" });
     Cookies.remove(TOKEN_KEY);
     Cookies.remove(USER_KEY);
     Cookies.remove(ROLE_KEY);
@@ -143,7 +150,13 @@ export const generateShortName = (fullName) => {
 };
 
 export const isPublicPath = (path) => {
-  const publicPaths = ["/login", "/register", "/forgot-password"];
+  const publicPaths = [
+    "/",
+    "/login",
+    "/registration",
+    "/account-verify",
+    "/forgot-password",
+  ];
   return publicPaths.includes(path);
 };
 
