@@ -9,7 +9,9 @@ import {
   resetPasswordWithCodeQuery,
   verifyEmailQuary,
 } from "@/queries/user";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { getRefreshCookieConfig } from "@/lib/jwtTokens";
 
 const KNOWN_MAIL_CODES = new Set([
   "MAIL_CONFIG_ERROR",
@@ -132,7 +134,16 @@ export async function resendVerificationEmailAction(email) {
 
 export async function loginUserQuaryAction(data) {
   try {
-    return await loginUserQuary(data);
+    const result = await loginUserQuary(data);
+    if (result?.status && result?.refreshToken) {
+      const cookieStore = await cookies();
+      cookieStore.set(
+        "refreshToken",
+        result.refreshToken,
+        getRefreshCookieConfig(result.refreshMaxAge)
+      );
+    }
+    return result;
   } catch (error) {
     console.error("Login action error:", error);
     const formatted = formatAuthServerError(

@@ -15,6 +15,7 @@ import jwt from "jsonwebtoken";
 import { DomainModel } from "@/model/domain-model";
 import { ShopInfoModel } from "@/model/shopInfo-model";
 import { authenticateAdminAccount } from "@/queries/admin";
+import { issueMerchantSessionTokens } from "@/queries/authTokens";
 
 function generateVerificationCode() {
   return Math.floor(1000 + Math.random() * 9000).toString(); // 1000-9999
@@ -394,46 +395,16 @@ async function loginUserQuary(credentials) {
     };
   }
 
-  // 4️⃣ Generate JWT token
-  const userRole = user.role || "merchant";
-  const token = jwt.sign(
-    { id: user._id, email: user.email, role: userRole },
-    jwtSecret,
-    { expiresIn: rememberMe ? "7d" : "1d" }
-  );
+  // 4️⃣ Issue access + refresh token pair and return user payload
+  const sessionBundle = await issueMerchantSessionTokens(user._id, {
+    rememberMe,
+  });
 
-  const primaryShop =
-    Array.isArray(user.shops) && user.shops.length > 0 ? user.shops[0] : null;
-
-  const [domain, shopInfo] = primaryShop?._id
-    ? await Promise.all([
-        DomainModel.findOne(
-          { userId: user._id, shopId: primaryShop._id },
-          { domain_name: 1, domain_status: 1, _id: 0 }
-        ).lean(),
-        ShopInfoModel.findOne(
-          { userId: user._id, shopId: primaryShop._id },
-          { companyLogo: 1, _id: 0 }
-        ).lean(),
-      ])
-    : [null, null];
-
-  // 5️⃣ Return user info + token
   return JSON.parse(
     JSON.stringify({
       status: true,
       message: "লগইন সফল হয়েছে",
-      token,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        phone: user.phone,
-        role: userRole,
-        shops: primaryShop,
-        domain: domain?.domain_name || null,
-        shopLogo: shopInfo?.companyLogo?.url || null,
-      },
+      ...sessionBundle,
     })
   );
 }
@@ -479,8 +450,9 @@ async function changePasswordQuery({ userId, oldPassword, newPassword }) {
   // 3️⃣ Hash new password
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  // 4️⃣ Update password
+  // 4️⃣ Update password & revoke old refresh sessions
   user.password = hashedPassword;
+  user.refreshSessions = [];
   await user.save();
 
   return {
@@ -594,6 +566,7 @@ async function resetPasswordWithCodeQuery({ email: rawEmail, code, newPassword }
   user.password = await bcrypt.hash(newPassword, 10);
   user.resetPasswordCode = undefined;
   user.resetPasswordExpires = undefined;
+  user.refreshSessions = [];
   await user.save();
 
   return {

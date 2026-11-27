@@ -31,6 +31,16 @@ const userSchema = new Schema(
       index: true,
     },
     next_payment_date: { type: Date, default: null },
+    refreshSessions: {
+      type: [
+        {
+          tokenHash: { type: String, required: true },
+          expiresAt: { type: Date, required: true },
+          createdAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
     shops: [
       {
         type: Schema.Types.ObjectId,
@@ -47,6 +57,13 @@ const userSchema = new Schema(
 
 userSchema.index({ createdAt: -1 });
 userSchema.index({ email: 1, role: 1 });
+
+if (
+  mongoose.models.User &&
+  !mongoose.models.User.schema.path("refreshSessions")
+) {
+  delete mongoose.models.User;
+}
 
 export const UserModel =
   mongoose.models.User ?? mongoose.model("User", userSchema);

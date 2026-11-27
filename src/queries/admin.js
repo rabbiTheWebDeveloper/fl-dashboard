@@ -28,6 +28,7 @@ import {
   VAT_PERCENT,
 } from "@/config/billingConfig";
 import { dbConnect } from "@/service/mongo";
+import { issueAdminSessionTokens } from "@/queries/authTokens";
 
 const DEFAULT_SUPERADMIN_EMAIL = "admin@sm.com";
 const DEFAULT_SUPERADMIN_INITIAL_PASS = "810880";
@@ -103,35 +104,15 @@ export async function authenticateAdminAccount({
     throw new Error("Server JWT_SECRET configuration is missing.");
   }
 
-  admin.lastLoginAt = new Date();
-  await admin.save();
-
-  const token = jwt.sign(
-    {
-      id: admin._id,
-      email: admin.email,
-      role: admin.role,
-      isAdmin: true,
-    },
-    jwtSecret,
-    { expiresIn: rememberMe ? "7d" : "1d" }
-  );
+  const sessionBundle = await issueAdminSessionTokens(admin._id, {
+    rememberMe,
+  });
 
   return serialize({
     status: true,
     message: `Welcome back, ${admin.fullName}!`,
     redirectTo: "/admin",
-    token,
-    user: {
-      id: String(admin._id),
-      fullName: admin.fullName,
-      email: admin.email,
-      phone: admin.phone || "",
-      role: admin.role,
-      permissions: admin.permissions || [],
-      department: admin.department || "Platform Operations",
-      isAdmin: true,
-    },
+    ...sessionBundle,
   });
 }
 
@@ -445,6 +426,7 @@ export async function updateAdminUserQuery(id, updates = {}) {
   }
   if (updates.newPassword && String(updates.newPassword).length >= 6) {
     admin.password = await bcrypt.hash(String(updates.newPassword), 10);
+    admin.refreshSessions = [];
   }
 
   await admin.save();
@@ -1049,6 +1031,7 @@ export async function changeAdminPasswordQuery({
   if (!valid) throw new Error("Current password is incorrect.");
 
   admin.password = await bcrypt.hash(String(newPassword), 10);
+  admin.refreshSessions = [];
   await admin.save();
 
   return { success: true };

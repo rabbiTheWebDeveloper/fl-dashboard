@@ -26,10 +26,10 @@ import {
   Wallet,
 } from "lucide-react";
 import {
+  ensureValidSession,
   getRole,
   getUser,
-  isAuthenticated,
-  logout,
+  logoutAsync,
 } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -154,25 +154,39 @@ export default function AdminPortalLayout({ children }) {
       return;
     }
 
-    const authed = isAuthenticated();
-    const role = String(getRole() || "").toLowerCase();
+    let mounted = true;
+    ensureValidSession().then((session) => {
+      if (!mounted) return;
+      if (!session.ok) {
+        setAuthorized(false);
+        router.replace("/admin/login");
+        return;
+      }
 
-    if (!authed) {
-      setAuthorized(false);
-      router.replace("/admin/login");
-      return;
-    }
+      const role = String(session.role || getRole() || "").toLowerCase();
+      if (!VALID_ROLES.has(role)) {
+        setAuthorized(false);
+        router.replace("/dashboard");
+        return;
+      }
 
-    if (!VALID_ROLES.has(role)) {
-      setAuthorized(false);
-      router.replace("/dashboard");
-      return;
-    }
-
-    setAuthorized(true);
-    getUser().then((u) => {
-      if (u) setAdminUser(u);
+      setAuthorized(true);
+      getUser().then((u) => {
+        if (mounted && u) setAdminUser(u);
+      });
     });
+
+    // Proactive silent refresh check every 4 minutes
+    const intervalId = setInterval(() => {
+      ensureValidSession().then((res) => {
+        if (!res.ok) router.replace("/admin/login");
+      });
+    }, 4 * 60 * 1000);
+
+    return () => {
+      mounted = false;
+      clearInterval(intervalId);
+    };
   }, [isLoginPage, pathname, router]);
 
   const handleNav = useCallback(
@@ -201,8 +215,8 @@ export default function AdminPortalLayout({ children }) {
     [pathname, router]
   );
 
-  const handleSignOut = () => {
-    logout();
+  const handleSignOut = async () => {
+    await logoutAsync();
     window.location.href = "/admin/login";
   };
 

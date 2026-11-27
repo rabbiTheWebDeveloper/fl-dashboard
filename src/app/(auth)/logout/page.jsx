@@ -1,17 +1,19 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { logout } from '@/lib/auth';
+import { useEffect } from "react";
+import { logoutAsync } from "@/lib/auth";
 
 export default function Logout() {
   useEffect(() => {
-    try {
-      logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      window.location.href = '/login';
-    }
+    let cancelled = false;
+    logoutAsync().finally(() => {
+      if (!cancelled) {
+        window.location.href = "/login";
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return null;

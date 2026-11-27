@@ -19,7 +19,14 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { loginUserQuaryAction } from "@/app/actions/user";
-import { getRole, isAuthenticated, setRole, setToken, setUser } from "@/lib/auth";
+import {
+  ensureValidSession,
+  getRole,
+  setRefreshToken,
+  setRole,
+  setToken,
+  setUser,
+} from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,15 +54,23 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      const currentRole = String(getRole() || "").toLowerCase();
-      const target = ["superadmin", "user-admin", "moderator", "support", "admin"].includes(
-        currentRole
-      )
-        ? "/admin"
-        : "/dashboard";
-      router.replace(target);
-    }
+    ensureValidSession().then((session) => {
+      if (session.ok) {
+        const currentRole = String(
+          session.role || getRole() || ""
+        ).toLowerCase();
+        const target = [
+          "superadmin",
+          "user-admin",
+          "moderator",
+          "support",
+          "admin",
+        ].includes(currentRole)
+          ? "/admin"
+          : "/dashboard";
+        router.replace(target);
+      }
+    });
   }, [router]);
 
   const handleFieldChange = (name, value) => {
@@ -116,6 +131,9 @@ export default function Login() {
         const tokenSet = setToken(response.token, cookieOptions);
         const userSet = setUser(response.user, cookieOptions);
         const roleSet = setRole(response.user?.role, cookieOptions);
+        if (response.refreshToken) {
+          setRefreshToken(response.refreshToken, cookieOptions);
+        }
 
         if (!tokenSet || !userSet || !roleSet) {
           const cookieError =

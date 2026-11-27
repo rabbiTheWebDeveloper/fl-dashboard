@@ -17,8 +17,9 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
+  ensureValidSession,
   getRole,
-  isAuthenticated,
+  setRefreshToken,
   setRole,
   setToken,
   setUser,
@@ -39,16 +40,18 @@ export default function AdminLoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      const role = String(getRole() || "").toLowerCase();
-      if (
-        ["superadmin", "user-admin", "moderator", "support", "admin"].includes(
-          role
-        )
-      ) {
-        router.replace("/admin");
+    ensureValidSession().then((session) => {
+      if (session.ok) {
+        const role = String(session.role || getRole() || "").toLowerCase();
+        if (
+          ["superadmin", "user-admin", "moderator", "support", "admin"].includes(
+            role
+          )
+        ) {
+          router.replace("/admin");
+        }
       }
-    }
+    });
   }, [router]);
 
   const handleSubmit = async (e) => {
@@ -85,6 +88,9 @@ export default function AdminLoginPage() {
       setToken(json.token, cookieOpts);
       setUser(json.user, cookieOpts);
       setRole(json.user?.role || "superadmin", cookieOpts);
+      if (json.refreshToken) {
+        setRefreshToken(json.refreshToken, cookieOpts);
+      }
 
       toast.success(json.message || "Welcome to Admin Command Center!");
       window.location.href = "/admin";

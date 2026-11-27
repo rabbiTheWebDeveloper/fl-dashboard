@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getRefreshCookieConfig } from "@/lib/jwtTokens";
 import { authenticateAdminAccount } from "@/queries/admin";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,7 @@ export async function POST(request) {
       );
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         status: 200,
         success: true,
@@ -58,6 +59,16 @@ export async function POST(request) {
       },
       { status: 200 }
     );
+
+    if (result.refreshToken) {
+      response.cookies.set(
+        "refreshToken",
+        result.refreshToken,
+        getRefreshCookieConfig(result.refreshMaxAge)
+      );
+    }
+
+    return response;
   } catch (error) {
     return NextResponse.json(
       {
